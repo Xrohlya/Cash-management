@@ -136,15 +136,17 @@ def income(payload: MoneyInput, authorization: str | None = Header(default=None)
     uid = user_id_from_header(authorization)
     if payload.amount <= 0:
         raise HTTPException(400, "Amount must be positive")
-    mandatory = round(payload.amount * 0.06, 2)
-    net = payload.amount - mandatory
     now = datetime.now().isoformat(timespec="seconds")
     start = financial_start(date.today()).isoformat()
     with db() as conn:
         with conn.cursor() as cur:
             ensure_user(cur, uid)
+            cur.execute("SELECT mandatory_percent FROM users WHERE user_id=%s", (uid,))
+            percent = float(cur.fetchone()[0] or 6)
+            mandatory = round(payload.amount * percent / 100, 2)
+            net = payload.amount - mandatory
             cur.execute("INSERT INTO transactions(user_id,kind,amount,description,created_at) VALUES(%s,'income',%s,'Доход',%s)", (uid,payload.amount,now))
-            cur.execute("INSERT INTO transactions(user_id,kind,amount,description,created_at) VALUES(%s,'mandatory',%s,'Обязательный вычет 6%%',%s)", (uid,mandatory,now))
+            cur.execute("INSERT INTO transactions(user_id,kind,amount,description,created_at) VALUES(%s,'mandatory',%s,%s,%s)", (uid,mandatory,f"Обязательный вычет {percent:g}%",now))
             cur.execute("""INSERT INTO months(user_id,month,budget,spent,rent,saved)
                            VALUES(%s,%s,%s,0,0,0)
                            ON CONFLICT(user_id,month) DO UPDATE SET budget=months.budget+EXCLUDED.budget""",
