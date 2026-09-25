@@ -1,1 +1,0 @@
-// Set the deployed backend HTTPS URL after deployment.\nwindow.CASH_API_URL = '';\n

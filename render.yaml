@@ -1,14 +1,25 @@
+databases:
+  - name: cash-management-db
+    plan: free
+    databaseName: cash_management
+    user: cash_management
+
 services:
   - type: web
     name: cash-management-api
     runtime: python
-    buildCommand: pip install -r backend/requirements.txt
-    startCommand: uvicorn backend.app:app --host 0.0.0.0 --port $PORT
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cash-management-db
+          property: connectionString
       - key: BOT_TOKEN
         sync: false
-      - key: DATABASE_URL
+      - key: WEBAPP_URL
         sync: false
-      - key: WEBAPP_MAX_AGE
-        value: "86400"
+      - key: ALLOWED_ORIGINS
+        sync: false

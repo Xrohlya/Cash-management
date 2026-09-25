@@ -1,45 +1,62 @@
-# Cloud deployment
+# Развёртывание без потери истории
 
-Architecture: GitHub Pages Mini App → HTTPS FastAPI → PostgreSQL.
+Для нескольких пользователей используйте PostgreSQL. SQLite оставлен для локального режима и резервной копии.
 
-Render supports FastAPI web services and managed PostgreSQL. Use a paid PostgreSQL instance for permanent financial data; Render documents that free Postgres expires after 30 days.
+## 1. Подготовьте Render
 
-## 1. Create PostgreSQL
-In Render: New → PostgreSQL. Choose a paid plan for permanent storage. Copy the Internal Database URL.
+Создайте Blueprint из `render.yaml`. Он поднимет бесплатную облачную часть:
 
-## 2. Create API
-New → Web Service → connect Xrohlya/Cash-management.
-Build:
-pip install -r backend/requirements.txt
-Start:
-uvicorn backend.app:app --host 0.0.0.0 --port $PORT
+- PostgreSQL `cash-management-db`;
+- web-сервис API и Mini App;
+- web-сервис API и Mini App.
 
-Environment:
-BOT_TOKEN = the existing bot token from config/access.py
-DATABASE_URL = PostgreSQL Internal Database URL
-WEBAPP_MAX_AGE = 86400
+Telegram-бот пока продолжает работать на текущем компьютере. Постоянный Render worker является платным ресурсом и добавляется отдельно только после явного решения о переносе бота в облако.
 
-## 3. Initialize schema
-Run once in the Render shell:
-psql "$DATABASE_URL" -f backend/schema.sql
+## 2. Перенесите историю
 
-## 4. Migrate the existing database
-Do NOT upload budget.db to GitHub.
-On the local machine, copy the real budget.db into the project as data/budget.db, set DATABASE_URL to the Render PostgreSQL URL, then run:
-python backend/migrate_sqlite.py
+Получите внешний `DATABASE_URL` PostgreSQL и выполните из папки проекта:
 
-Verify counts and totals before switching the bot.
+```bash
+source .venv/bin/activate
+export DATABASE_URL='postgresql://...'
+python tools/migrate_sqlite_to_postgres.py data/budget.db
+```
 
-## 5. Mini App
-Set config.js:
-window.CASH_API_URL = 'https://YOUR-SERVICE.onrender.com';
+Скрипт открывает SQLite только для чтения, проверяет целостность и переносит пользователей, месяцы, транзакции и цели. Повторный запуск не дублирует транзакции.
 
-The Mini App sends Telegram initData in:
-Authorization: tma <initData>
+## 3. Настройте переменные
 
-The API validates Telegram's HMAC signature and derives the user ID from verified data. It never trusts a user_id supplied by the browser.
+Для web-сервиса:
 
-## 6. Bot
-The existing bot must also be switched from SQLite repository calls to PostgreSQL before the local bot is retired. Do not delete the local budget.db; keep it as a backup until cloud operation has been verified.
+- `DATABASE_URL` — подключение PostgreSQL;
+- `BOT_TOKEN` — токен BotFather;
+- `WEBAPP_URL` — публичный адрес web-сервиса без завершающего `/`;
+- `ALLOWED_ORIGINS` — тот же адрес.
 
-Telegram's official Mini App documentation explicitly says initData must be validated on the server and initDataUnsafe must not be trusted.
+Для локального процесса бота после финального переключения:
+
+- `DATABASE_URL` — та же PostgreSQL;
+- `BOT_TOKEN` — тот же токен;
+- `WEBAPP_URL` — адрес web-сервиса.
+
+## 4. Переключите бота
+
+Чтобы не потерять операции в момент перехода:
+
+1. Выполните предварительную миграцию, пока старый бот работает.
+2. Остановите старый `app.py`.
+3. Сделайте свежий SQLite backup или ещё раз запустите миграцию из актуальной базы.
+4. Запустите новую локальную копию `python app.py` либо заранее созданный облачный worker.
+5. Проверьте `/health`, `/start`, Mini App и историю одного пользователя.
+
+Два polling-процесса с одним Telegram-токеном одновременно работать не должны.
+
+## 5. Telegram Mini App
+
+Публичный URL должен использовать HTTPS. После старта новой версии бота код сам задаёт кнопку меню через Bot API. При необходимости укажите тот же домен в BotFather для вашего бота.
+
+API не принимает `user_id` от браузера. Он проверяет HMAC-подпись `Telegram.WebApp.initData`, извлекает подписанный ID и выдаёт только данные этого пользователя.
+
+## Резервные копии
+
+Перед переключением сохраните отдельную копию `data/budget.db`. В PostgreSQL включите резервное копирование средствами хостинга. Никогда не храните `BOT_TOKEN`, `.env` и дампы БД в публичном репозитории.

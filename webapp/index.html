@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>Мой бюджет</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow" id="period">Финансовый месяц</p>
+      <h1>Мой бюджет</h1>
+    </div>
+    <button class="icon-button" id="refresh" type="button" aria-label="Обновить" title="Обновить">↻</button>
+  </header>
+
+  <main>
+    <section class="balance-band" aria-labelledby="available-label">
+      <p id="available-label">Доступно</p>
+      <strong id="available">—</strong>
+      <div class="limit-row">
+        <span>Лимит на день <b id="daily-limit">—</b></span>
+        <span>Сегодня <b id="today">—</b></span>
+      </div>
+    </section>
+
+    <section class="metrics" aria-label="Сводка">
+      <article><span>Бюджет</span><b id="budget">—</b></article>
+      <article><span>Расходы</span><b id="spent">—</b></article>
+      <article><span>Квартира</span><b id="rent">—</b></article>
+      <article><span>Накопления</span><b id="savings">—</b></article>
+    </section>
+
+    <section class="operation-section">
+      <h2>Новая операция</h2>
+      <div class="segments" id="operation-kind" role="tablist" aria-label="Тип операции">
+        <button class="active" type="button" data-kind="expense">Расход</button>
+        <button type="button" data-kind="income">Доход</button>
+        <button type="button" data-kind="rent">Квартира</button>
+        <button type="button" data-kind="save">Отложить</button>
+      </div>
+      <form id="operation-form">
+        <label>
+          <span>Сумма</span>
+          <div class="amount-input"><input id="amount" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required><b>₽</b></div>
+        </label>
+        <label>
+          <span>Категория или комментарий</span>
+          <input id="description" name="description" maxlength="255" autocomplete="off" placeholder="Например, продукты">
+        </label>
+        <button class="primary" id="submit" type="submit">Записать расход</button>
+      </form>
+    </section>
+
+    <section class="history-section">
+      <div class="section-heading">
+        <h2>Последние операции</h2>
+        <span id="days-left"></span>
+      </div>
+      <div id="history" class="history" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="blocking-message" id="blocking-message" hidden>
+    <h2>Откройте приложение из Telegram</h2>
+    <p>Авторизация доступна через кнопку меню вашего бота.</p>
+  </div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
