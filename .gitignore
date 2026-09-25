@@ -7,5 +7,6 @@ __pycache__/
 logs/
 data/*.db
 data/*.db-*
+backups/
 data/reports/
 .pytest_cache/
