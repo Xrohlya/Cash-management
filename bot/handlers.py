@@ -14,6 +14,7 @@ from database.repository import (
     add_bulk_expenses,
     recent_transactions, get_status_message, set_status_message,
     clear_status_message, daily_expense_transactions, average_daily_expense,
+    get_status_snapshot,
 )
 from services.budget import status, money, available_budget
 from services.parser import parse_amount, parse_expense, looks_like_income, extract_date, strip_date_words
@@ -78,8 +79,8 @@ def track_message(message: Message):
 async def send_transient(message: Message, text: str, **kwargs):
     """Show temporary-looking text by editing the ONE persistent bot message."""
     user_id = message.from_user.id
-    ensure_user(user_id)
-    saved = get_status_message(user_id)
+    snapshot = get_status_snapshot(user_id)
+    saved = snapshot["status_message"]
     parse_mode = kwargs.pop("parse_mode", "HTML")
     reply_markup = kwargs.pop("reply_markup", main_menu())
 
@@ -117,10 +118,10 @@ def parse_expense_list(text: str):
 
 async def update_status(message_or_callback, user_id: int):
     """Keep one persistent status message per user and update it in place."""
-    ensure_user(user_id)
-    text = status(user_id)
+    snapshot = get_status_snapshot(user_id)
+    text = status(user_id, snapshot)
     markup = main_menu()
-    saved = get_status_message(user_id)
+    saved = snapshot["status_message"]
 
     if saved:
         chat_id, message_id = saved
@@ -155,9 +156,9 @@ async def update_status(message_or_callback, user_id: int):
 async def edit_interface(callback: CallbackQuery, text: str, reply_markup=None):
     """Edit the user's one persistent interface message, even from an old button."""
     user_id = callback.from_user.id
-    ensure_user(user_id)
+    snapshot = get_status_snapshot(user_id)
     markup = reply_markup or main_menu()
-    saved = get_status_message(user_id)
+    saved = snapshot["status_message"]
     if saved:
         try:
             await callback.bot.edit_message_text(

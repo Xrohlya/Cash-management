@@ -3,7 +3,7 @@ import hmac
 import json
 import time
 from contextlib import asynccontextmanager
-from datetime import date, timedelta
+from datetime import timedelta
 from pathlib import Path
 from urllib.parse import parse_qsl
 
@@ -20,14 +20,9 @@ from database.repository import (
     add_income,
     add_rent,
     add_to_savings,
-    daily_expenses,
     ensure_user,
-    financial_period_end,
-    financial_period_start,
-    get_financial_day,
-    get_month,
     get_percent,
-    get_savings,
+    get_status_snapshot,
     recent_transactions,
     set_financial_day,
 )
@@ -84,29 +79,21 @@ def current_user(x_telegram_init_data: str = Header(default="")) -> int:
 
 
 def state(user_id: int):
-    month = get_month(user_id)
-    start = financial_period_start(user_id)
-    end = financial_period_end(user_id)
-    remaining = (
-        float(month["budget"])
-        - float(month["spent"])
-        - float(month["rent"])
-        - float(month["saved"])
-    )
-    days = max(1, (end - date.today()).days)
+    snapshot = get_status_snapshot(user_id)
+    end = snapshot["end"]
     return {
-        "available": round(remaining, 2),
-        "today": round(daily_expenses(user_id), 2),
-        "daily_limit": round(remaining / days, 2),
-        "days_left": days,
-        "spent": round(float(month["spent"]), 2),
-        "rent": round(float(month["rent"]), 2),
-        "saved_this_month": round(float(month["saved"]), 2),
-        "savings": round(get_savings(user_id), 2),
-        "budget": round(float(month["budget"]), 2),
-        "mandatory_percent": get_percent(user_id),
-        "financial_day": get_financial_day(user_id),
-        "period_start": start.isoformat(),
+        "available": round(snapshot["remaining"], 2),
+        "today": round(snapshot["spent_today"], 2),
+        "daily_limit": round(snapshot["daily_limit"], 2),
+        "days_left": max(1, snapshot["days_left"]),
+        "spent": round(snapshot["spent"], 2),
+        "rent": round(snapshot["rent"], 2),
+        "saved_this_month": round(snapshot["saved"], 2),
+        "savings": round(snapshot["savings"], 2),
+        "budget": round(snapshot["budget"], 2),
+        "mandatory_percent": snapshot["mandatory_percent"],
+        "financial_day": snapshot["financial_day"],
+        "period_start": snapshot["start"].isoformat(),
         "period_end": (end - timedelta(days=1)).isoformat(),
     }
 
