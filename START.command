@@ -37,6 +37,12 @@ from config.settings import require_bot_token
 require_bot_token()
 PY
 
+if lsof -tiTCP:8787 -sTCP:LISTEN >/dev/null 2>&1; then
+  echo "Старая версия бота ещё работает на порту 8787."
+  echo "Остановите её через Ctrl+C в старом терминале и запустите задачу снова."
+  exit 1
+fi
+
 mkdir -p logs
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8788 > logs/api.log 2>&1 &
 API_PID=$!
