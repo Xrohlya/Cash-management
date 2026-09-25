@@ -23,7 +23,14 @@ if [ ! -d ".venv" ]; then
   "$PYTHON" -m venv .venv
 fi
 source .venv/bin/activate
-python -m pip install -q -r requirements.txt
+
+REQUIREMENTS_HASH="$(shasum -a 256 requirements.txt | awk '{print $1}')"
+INSTALLED_HASH="$(cat .venv/.requirements.sha256 2>/dev/null || true)"
+if [ "$REQUIREMENTS_HASH" != "$INSTALLED_HASH" ]; then
+  echo "Устанавливаю зависимости..."
+  python -m pip install -q -r requirements.txt
+  printf '%s\n' "$REQUIREMENTS_HASH" > .venv/.requirements.sha256
+fi
 
 python - <<'PY'
 from config.settings import require_bot_token
@@ -39,13 +46,21 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-sleep 1
-if ! kill -0 "$API_PID" 2>/dev/null; then
+for _ in {1..30}; do
+  if curl -fsS http://127.0.0.1:8788/health >/dev/null 2>&1; then
+    break
+  fi
+  if ! kill -0 "$API_PID" 2>/dev/null; then
+    break
+  fi
+  sleep 1
+done
+if ! curl -fsS http://127.0.0.1:8788/health >/dev/null 2>&1; then
   echo "API не запустился. Проверьте logs/api.log"
   tail -n 40 logs/api.log
   exit 1
 fi
 
 echo "API: http://127.0.0.1:8788/health"
-echo "Важно: сначала остановите старую копию бота с тем же токеном."
+echo "Бот запущен. Для остановки нажмите Ctrl+C."
 python app.py

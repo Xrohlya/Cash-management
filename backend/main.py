@@ -30,7 +30,6 @@ from database.repository import (
     recent_transactions,
 )
 from services.analytics import current_period_stats
-from tools.render_bootstrap import migrate_from_environment
 
 
 WEBAPP_DIR = Path(__file__).resolve().parent.parent / "webapp"
@@ -108,7 +107,6 @@ def state(user_id: int):
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     init_db()
-    migrate_from_environment()
     yield
 
 
