@@ -4,7 +4,7 @@ from config.settings import DEFAULT_MANDATORY_PERCENT
 from database.db import get_connection
 
 
-FINANCIAL_DAY = 20
+DEFAULT_FINANCIAL_DAY = 20
 
 CATEGORY_ALIASES = {
     "еда": "Еда",
@@ -76,38 +76,84 @@ def get_savings(user_id: int) -> float:
         return float(row["savings"])
 
 
-def financial_period_start(dt=None) -> date:
+def get_financial_day(user_id: int) -> int:
+    ensure_user(user_id)
+    with get_connection() as conn:
+        row = conn.execute("SELECT financial_day FROM users WHERE user_id=?", (user_id,)).fetchone()
+    return int(row["financial_day"] or DEFAULT_FINANCIAL_DAY)
+
+
+def set_financial_day(user_id: int, financial_day: int):
+    if not 1 <= financial_day <= 28:
+        raise ValueError("День начала периода должен быть от 1 до 28.")
+    ensure_user(user_id)
+    with get_connection() as conn:
+        conn.execute("UPDATE users SET financial_day=? WHERE user_id=?", (financial_day, user_id))
+    # The new current period may have a different key. Rebuild only its summary
+    # from immutable transaction history, leaving all prior periods untouched.
+    rebuild_month_from_transactions(user_id, financial_period_start(user_id))
+
+
+def financial_period_start(user_id: int, dt=None) -> date:
     dt = dt or datetime.now()
-    if dt.day >= FINANCIAL_DAY:
-        return date(dt.year, dt.month, FINANCIAL_DAY)
+    financial_day = get_financial_day(user_id)
+    if dt.day >= financial_day:
+        return date(dt.year, dt.month, financial_day)
     if dt.month == 1:
-        return date(dt.year - 1, 12, FINANCIAL_DAY)
-    return date(dt.year, dt.month - 1, FINANCIAL_DAY)
+        return date(dt.year - 1, 12, financial_day)
+    return date(dt.year, dt.month - 1, financial_day)
 
 
-def financial_period_end(dt=None) -> date:
-    start = financial_period_start(dt)
+def financial_period_end(user_id: int, dt=None) -> date:
+    start = financial_period_start(user_id, dt)
     if start.month == 12:
-        return date(start.year + 1, 1, FINANCIAL_DAY)
-    return date(start.year, start.month + 1, FINANCIAL_DAY)
+        return date(start.year + 1, 1, start.day)
+    return date(start.year, start.month + 1, start.day)
 
 
-def month_key(dt=None):
-    return financial_period_start(dt).isoformat()
+def month_key(user_id: int, dt=None):
+    return financial_period_start(user_id, dt).isoformat()
 
 
 def ensure_month(user_id: int, key=None):
-    key = key or month_key()
+    key = key or month_key(user_id)
     ensure_user(user_id)
     with get_connection() as conn:
         conn.execute("INSERT OR IGNORE INTO months(user_id, month) VALUES (?, ?)", (user_id, key))
 
 
 def get_month(user_id: int, key=None):
-    key = key or month_key()
+    key = key or month_key(user_id)
     ensure_month(user_id, key)
     with get_connection() as conn:
         return conn.execute("SELECT * FROM months WHERE user_id=? AND month=?", (user_id, key)).fetchone()
+
+
+def rebuild_month_from_transactions(user_id: int, start: date):
+    end = financial_period_end(user_id, start)
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT kind, amount FROM transactions WHERE user_id=? AND created_at>=? AND created_at<?",
+            (user_id, start.isoformat(), end.isoformat()),
+        ).fetchall()
+        totals = {"income": 0.0, "mandatory": 0.0, "expense": 0.0, "rent": 0.0, "save": 0.0}
+        for row in rows:
+            if row["kind"] in totals:
+                totals[row["kind"]] += float(row["amount"])
+        conn.execute("INSERT OR IGNORE INTO months(user_id, month) VALUES (?, ?)", (user_id, start.isoformat()))
+        conn.execute(
+            "UPDATE months SET budget=?, spent=?, rent=?, saved=? WHERE user_id=? AND month=?",
+            (
+                round(totals["income"] - totals["mandatory"], 2),
+                round(totals["expense"], 2),
+                round(totals["rent"], 2),
+                round(totals["save"], 2),
+                user_id,
+                start.isoformat(),
+            ),
+        )
+
+
 
 
 def _claim_request(conn, user_id: int, request_id: str | None) -> bool:
@@ -124,7 +170,7 @@ def add_income(user_id: int, gross: float, percent: float, description="Дохо
     ensure_month(user_id)
     fee = round(gross * percent / 100, 2)
     net = round(gross - fee, 2)
-    key = month_key()
+    key = month_key(user_id)
     now = datetime.now().isoformat(timespec="seconds")
     with get_connection() as conn:
         if not _claim_request(conn, user_id, request_id):
@@ -142,7 +188,7 @@ def add_income(user_id: int, gross: float, percent: float, description="Дохо
 
 
 def _add_budget_reduction(user_id, kind, column, amount, description, request_id=None, created_at=None):
-    key = month_key(created_at)
+    key = month_key(user_id, created_at)
     ensure_month(user_id, key)
     timestamp = (created_at or datetime.now()).isoformat(timespec="seconds")
     with get_connection() as conn:
@@ -190,7 +236,7 @@ def add_to_savings(user_id: int, amount: float, description="Накоплени�
 
 
 def add_bulk_expenses(user_id: int, items: list[tuple[float, str]], request_id=None) -> bool:
-    key = month_key()
+    key = month_key(user_id)
     ensure_month(user_id, key)
     total = round(sum(amount for amount, _ in items), 2)
     now = datetime.now().isoformat(timespec="seconds")
@@ -270,7 +316,7 @@ def daily_expense_transactions(user_id: int, day=None):
 
 def average_daily_expense(user_id: int, day=None) -> float:
     day = day or date.today()
-    start = financial_period_start(day)
+    start = financial_period_start(user_id, day)
     days_elapsed = (day - start).days + 1
     with get_connection() as conn:
         row = conn.execute(

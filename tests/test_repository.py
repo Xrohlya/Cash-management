@@ -52,6 +52,18 @@ class RepositoryTest(unittest.TestCase):
         self.assertEqual(get_goal(101), (5000.0, date(2027, 1, 1)))
         self.assertIsNone(get_goal(202))
 
+    def test_financial_day_is_per_user_and_rebuilds_current_summary(self):
+        repository.add_income(101, 1000, 0)
+        repository.add_expense(101, 125, "Кафе")
+
+        repository.set_financial_day(101, 10)
+
+        self.assertEqual(repository.get_financial_day(101), 10)
+        self.assertEqual(repository.get_financial_day(202), 20)
+        month = repository.get_month(101)
+        self.assertEqual(float(month["budget"]), 1000)
+        self.assertEqual(float(month["spent"]), 125)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -24,10 +24,12 @@ from database.repository import (
     ensure_user,
     financial_period_end,
     financial_period_start,
+    get_financial_day,
     get_month,
     get_percent,
     get_savings,
     recent_transactions,
+    set_financial_day,
 )
 from services.analytics import current_period_stats
 
@@ -39,6 +41,10 @@ class Operation(BaseModel):
     amount: float = Field(gt=0, le=1_000_000_000)
     description: str = Field(default="", max_length=255)
     request_id: str = Field(min_length=8, max_length=100)
+
+
+class PeriodSettings(BaseModel):
+    financial_day: int = Field(ge=1, le=28)
 
 
 def verify_init_data(init_data: str) -> dict:
@@ -79,8 +85,8 @@ def current_user(x_telegram_init_data: str = Header(default="")) -> int:
 
 def state(user_id: int):
     month = get_month(user_id)
-    start = financial_period_start()
-    end = financial_period_end()
+    start = financial_period_start(user_id)
+    end = financial_period_end(user_id)
     remaining = (
         float(month["budget"])
         - float(month["spent"])
@@ -99,6 +105,7 @@ def state(user_id: int):
         "savings": round(get_savings(user_id), 2),
         "budget": round(float(month["budget"]), 2),
         "mandatory_percent": get_percent(user_id),
+        "financial_day": get_financial_day(user_id),
         "period_start": start.isoformat(),
         "period_end": (end - timedelta(days=1)).isoformat(),
     }
@@ -188,4 +195,10 @@ def api_rent(op: Operation, user_id: int = Depends(current_user)):
 def api_save(op: Operation, user_id: int = Depends(current_user)):
     if not add_to_savings(user_id, op.amount, op.description or "Накопления", op.request_id):
         raise HTTPException(409, "Недостаточно средств в доступном бюджете.")
+    return state(user_id)
+
+
+@app.post("/api/settings/period")
+def api_set_period(settings_data: PeriodSettings, user_id: int = Depends(current_user)):
+    set_financial_day(user_id, settings_data.financial_day)
     return state(user_id)

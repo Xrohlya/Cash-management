@@ -96,6 +96,7 @@ def _create_schema(conn):
         CREATE TABLE IF NOT EXISTS users (
             user_id BIGINT PRIMARY KEY,
             mandatory_percent DOUBLE PRECISION NOT NULL DEFAULT 6.0,
+            financial_day INTEGER NOT NULL DEFAULT 20,
             savings DOUBLE PRECISION NOT NULL DEFAULT 0,
             status_chat_id BIGINT,
             status_message_id BIGINT,
@@ -155,6 +156,7 @@ def init_db():
         if DATABASE_URL:
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT NOT NULL DEFAULT ''")
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT NOT NULL DEFAULT ''")
+            conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS financial_day INTEGER NOT NULL DEFAULT 20")
             return
 
         month_columns = {row["name"] for row in conn.execute("PRAGMA table_info(months)")}
@@ -169,6 +171,7 @@ def init_db():
             "status_message_id": "ALTER TABLE users ADD COLUMN status_message_id INTEGER",
             "first_name": "ALTER TABLE users ADD COLUMN first_name TEXT NOT NULL DEFAULT ''",
             "username": "ALTER TABLE users ADD COLUMN username TEXT NOT NULL DEFAULT ''",
+            "financial_day": "ALTER TABLE users ADD COLUMN financial_day INTEGER NOT NULL DEFAULT 20",
         }
         for column, statement in migrations.items():
             if column not in user_columns:

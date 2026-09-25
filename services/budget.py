@@ -3,9 +3,9 @@ from database.repository import get_month, get_percent, get_savings, financial_p
 from services.analytics import current_period_stats, get_goal
 
 
-def days_left_in_month():
+def days_left_in_month(user_id: int):
     today = date.today()
-    return max(0, (financial_period_end(today) - today).days)
+    return max(0, (financial_period_end(user_id, today) - today).days)
 
 
 def available_budget(user_id: int) -> float:
@@ -15,7 +15,7 @@ def available_budget(user_id: int) -> float:
 
 def daily_limit(user_id: int):
     remaining = available_budget(user_id)
-    days = days_left_in_month()
+    days = days_left_in_month(user_id)
     return remaining / days if days else remaining
 
 
@@ -28,8 +28,8 @@ def status(user_id: int) -> str:
     savings = get_savings(user_id)
     percent = get_percent(user_id)
     budget = float(month["budget"]); spent = float(month["spent"]); rent = float(month["rent"]); saved = float(month["saved"])
-    remaining = available_budget(user_id); days = days_left_in_month(); daily = daily_limit(user_id); spent_today = daily_expenses(user_id); left_today = daily - spent_today
-    start = financial_period_start(); end = financial_period_end()
+    remaining = available_budget(user_id); days = days_left_in_month(user_id); daily = daily_limit(user_id); spent_today = daily_expenses(user_id); left_today = daily - spent_today
+    start = financial_period_start(user_id); end = financial_period_end(user_id)
     stats = current_period_stats(user_id)
     goal = get_goal(user_id)
     goal_line = ""

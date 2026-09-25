@@ -21,7 +21,7 @@ body {
   letter-spacing: 0;
 }
 
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button { cursor: pointer; }
 
 .topbar {
@@ -74,7 +74,7 @@ main { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
 .metrics article:nth-child(2) b { color: var(--danger); }
 .metrics article:nth-child(4) b { color: var(--gold); }
 
-.operation-section, .history-section { padding: 22px 18px 0; }
+.operation-section, .history-section, .settings-section { padding: 22px 18px 0; }
 
 .segments {
   display: grid;
@@ -110,6 +110,15 @@ input {
   background: var(--surface);
   color: var(--text);
 }
+select {
+  width: 100%;
+  height: 46px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+}
 input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent); }
 .amount-input { position: relative; }
 .amount-input input { padding-right: 40px; font-size: 20px; font-weight: 650; }
@@ -124,6 +133,17 @@ input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in sr
   font-weight: 650;
 }
 .primary:disabled { cursor: wait; opacity: 0.6; }
+.period-form { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+.secondary {
+  min-height: 46px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 650;
+}
+.secondary:disabled { cursor: wait; opacity: 0.6; }
 
 .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .section-heading span { color: var(--muted); font-size: 12px; }

@@ -19,6 +19,14 @@ const kindLabels = {
 let operationKind = "expense";
 let toastTimer;
 
+const financialDay = document.getElementById("financial-day");
+for (let day = 1; day <= 28; day += 1) {
+  const option = document.createElement("option");
+  option.value = String(day);
+  option.textContent = `${day}-го числа`;
+  financialDay.append(option);
+}
+
 function money(value) {
   return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 }).format(Number(value || 0)) + " ₽";
 }
@@ -61,6 +69,7 @@ function renderState(state) {
   document.getElementById("savings").textContent = money(state.savings);
   document.getElementById("period").textContent = `${state.period_start.split("-").reverse().join(".")} — ${state.period_end.split("-").reverse().join(".")}`;
   document.getElementById("days-left").textContent = `${state.days_left} дн. до конца периода`;
+  financialDay.value = String(state.financial_day || 20);
 }
 
 function renderHistory(items) {
@@ -125,6 +134,27 @@ document.getElementById("operation-form").addEventListener("submit", async (even
 });
 
 document.getElementById("refresh").addEventListener("click", () => load().catch((error) => showToast(error.message)));
+
+document.getElementById("period-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const button = document.getElementById("save-period");
+  button.disabled = true;
+  try {
+    const state = await api("/api/settings/period", {
+      method: "POST",
+      body: JSON.stringify({ financial_day: Number(financialDay.value) }),
+    });
+    renderState(state);
+    renderHistory(await api("/api/transactions?limit=30"));
+    telegram?.HapticFeedback?.notificationOccurred("success");
+    showToast("Период обновлён");
+  } catch (error) {
+    telegram?.HapticFeedback?.notificationOccurred("error");
+    showToast(error.message);
+  } finally {
+    button.disabled = false;
+  }
+});
 
 if (!initData) {
   document.getElementById("blocking-message").hidden = false;

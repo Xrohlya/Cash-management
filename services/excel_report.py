@@ -10,8 +10,8 @@ REPORT_DIR = BASE_DIR / "data" / "reports"
 
 
 def build_excel_report(user_id: int, start=None, end=None):
-    start = start or financial_period_start()
-    end = end or financial_period_end()
+    start = start or financial_period_start(user_id)
+    end = end or financial_period_end(user_id)
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     path = REPORT_DIR / f"budget_{user_id}_{start.isoformat()}_report.xlsx"
     wb = Workbook(); ws = wb.active; ws.title = "Операции"

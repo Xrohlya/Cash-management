@@ -62,6 +62,17 @@
       </div>
       <div id="history" class="history" aria-live="polite"></div>
     </section>
+
+    <section class="settings-section" aria-labelledby="period-settings-title">
+      <h2 id="period-settings-title">Период бюджета</h2>
+      <form id="period-form" class="period-form">
+        <label for="financial-day">
+          <span>Начинать каждый месяц</span>
+          <select id="financial-day" name="financial-day" aria-label="День начала периода"></select>
+        </label>
+        <button class="secondary" id="save-period" type="submit">Сохранить</button>
+      </form>
+    </section>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>

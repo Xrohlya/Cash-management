@@ -27,6 +27,7 @@ from database.db import get_connection
 from database.repository import (
     financial_period_end,
     financial_period_start,
+    get_financial_day,
     get_month,
     get_savings,
 )
@@ -41,24 +42,24 @@ if FONT_NAME not in pdfmetrics.getRegisteredFontNames():
     pdfmetrics.registerFont(TTFont(FONT_NAME, str(FONT_PATH)))
 
 
-def parse_report_period(value: str | None = None):
+def parse_report_period(user_id: int, value: str | None = None):
     """Return financial period dates from YYYY-MM or YYYY-MM-DD/20 input."""
     if not value:
         today = date.today()
-        return financial_period_start(today), financial_period_end(today)
+        return financial_period_start(user_id, today), financial_period_end(user_id, today)
 
     value = value.strip()
     if len(value) == 7:
-        start = datetime.strptime(value, "%Y-%m").date().replace(day=20)
+        start = datetime.strptime(value, "%Y-%m").date().replace(day=get_financial_day(user_id))
     else:
         start = datetime.strptime(value, "%Y-%m-%d").date()
-        if start.day != 20:
-            raise ValueError("Дата периода должна быть 20-го числа")
+        if start.day != get_financial_day(user_id):
+            raise ValueError("Дата периода должна начинаться в выбранный день")
 
     if start.month == 12:
-        end = date(start.year + 1, 1, 20)
+        end = date(start.year + 1, 1, start.day)
     else:
-        end = date(start.year, start.month + 1, 20)
+        end = date(start.year, start.month + 1, start.day)
     return start, end
 
 

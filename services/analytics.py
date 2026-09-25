@@ -31,8 +31,8 @@ def clear_goal(user_id: int):
 
 
 def current_period_stats(user_id: int):
-    start = financial_period_start()
-    end = financial_period_end()
+    start = financial_period_start(user_id)
+    end = financial_period_end(user_id)
     month = get_month(user_id)
     with get_connection() as conn:
         rows = conn.execute(
@@ -70,13 +70,9 @@ def current_period_stats(user_id: int):
 
 def comparison(user_id: int):
     current = current_period_stats(user_id)
-    prev_start = current["start"] - timedelta(days=31)
-    while prev_start.day != 20:
-        prev_start -= timedelta(days=1)
-    if prev_start.month == 12:
-        prev_end = date(prev_start.year + 1, 1, 20)
-    else:
-        prev_end = date(prev_start.year, prev_start.month + 1, 20)
+    previous_day = current["start"] - timedelta(days=1)
+    prev_start = financial_period_start(user_id, previous_day)
+    prev_end = current["start"]
     with get_connection() as conn:
         row = conn.execute(
             "SELECT COALESCE(SUM(amount),0) total FROM transactions "

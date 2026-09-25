@@ -133,6 +133,13 @@ async def update_status(message_or_callback, user_id: int):
                 parse_mode="HTML",
                 reply_markup=markup,
             )
+            if isinstance(message_or_callback, CallbackQuery):
+                source = message_or_callback.message
+                if source and (source.chat.id, source.message_id) != saved:
+                    try:
+                        await source.delete()
+                    except Exception:
+                        pass
             return
         except Exception:
             # Сообщение могли удалить вручную или Telegram больше не даёт его редактировать.
@@ -142,6 +149,33 @@ async def update_status(message_or_callback, user_id: int):
         sent = await message_or_callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
     else:
         sent = await message_or_callback.answer(text, parse_mode="HTML", reply_markup=markup)
+    set_status_message(user_id, sent.chat.id, sent.message_id)
+
+
+async def edit_interface(callback: CallbackQuery, text: str, reply_markup=None):
+    """Edit the user's one persistent interface message, even from an old button."""
+    user_id = callback.from_user.id
+    ensure_user(user_id)
+    markup = reply_markup or main_menu()
+    saved = get_status_message(user_id)
+    if saved:
+        try:
+            await callback.bot.edit_message_text(
+                chat_id=saved[0], message_id=saved[1], text=text,
+                parse_mode="HTML", reply_markup=markup,
+            )
+            if callback.message and (callback.message.chat.id, callback.message.message_id) != saved:
+                try:
+                    await callback.message.delete()
+                except Exception:
+                    pass
+            return
+        except TelegramBadRequest as exc:
+            if "message is not modified" in str(exc).casefold():
+                return
+        except Exception:
+            clear_status_message(user_id)
+    sent = await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
     set_status_message(user_id, sent.chat.id, sent.message_id)
 
 
@@ -355,7 +389,7 @@ async def cmd_excel(message: Message):
     user_id = message.from_user.id
     raw = message.text.removeprefix("/excel").strip()
     try:
-        start, end = parse_report_period(raw or None)
+        start, end = parse_report_period(user_id, raw or None)
     except ValueError:
         await delete_user_message(message); await send_transient(message, "Пример: <code>/excel 2026-09</code>", parse_mode="HTML"); return
     await delete_user_message(message)
@@ -371,7 +405,7 @@ async def cmd_report(message: Message):
     user_id = message.from_user.id
     raw = message.text.removeprefix("/report").strip()
     try:
-        start, end = parse_report_period(raw or None)
+        start, end = parse_report_period(user_id, raw or None)
     except ValueError:
         await delete_user_message(message)
         await send_transient(
@@ -412,7 +446,7 @@ async def finish_callback(callback: CallbackQuery, text=None):
     user_id = callback.from_user.id
     if text is not None:
         try:
-            await callback.message.edit_text(text, parse_mode="HTML", reply_markup=main_menu())
+            await edit_interface(callback, text)
         except Exception:
             pass
     await update_status(callback, user_id)
@@ -428,11 +462,11 @@ async def cb_confirm_rent(callback: CallbackQuery):
         return
     amount = operation["amount"]
     if amount > available_budget(user_id):
-        await callback.message.edit_text("⚠️ К моменту подтверждения доступного бюджета уже недостаточно.")
+        await edit_interface(callback, "⚠️ К моменту подтверждения доступного бюджета уже недостаточно.")
         await answer_callback(callback)
         return
     if not add_rent(user_id, amount):
-        await callback.message.edit_text("⚠️ К моменту подтверждения доступного бюджета уже недостаточно.")
+        await edit_interface(callback, "⚠️ К моменту подтверждения доступного бюджета уже недостаточно.")
         await answer_callback(callback)
         return
     await update_status(callback, user_id)
@@ -448,11 +482,11 @@ async def cb_confirm_save(callback: CallbackQuery):
         return
     amount = operation["amount"]
     if amount > available_budget(user_id):
-        await callback.message.edit_text("⚠️ К моменту подтверждения доступного бюджета уже недостаточно.")
+        await edit_interface(callback, "⚠️ К моменту подтверждения доступного бюджета уже недостаточно.")
         await answer_callback(callback)
         return
     if not add_to_savings(user_id, amount):
-        await callback.message.edit_text("⚠️ К моменту подтверждения доступного бюджета уже недостаточно.")
+        await edit_interface(callback, "⚠️ К моменту подтверждения доступного бюджета уже недостаточно.")
         await answer_callback(callback)
         return
     await update_status(callback, user_id)
@@ -470,11 +504,11 @@ async def cb_confirm_bulk_expense(callback: CallbackQuery):
     total = round(sum(amount for amount, _ in items), 2)
     available = available_budget(user_id)
     if total > available:
-        await callback.message.edit_text(f"⚠️ К моменту подтверждения доступно только {money(available)} ₽, а нужно {money(total)} ₽.")
+        await edit_interface(callback, f"⚠️ К моменту подтверждения доступно только {money(available)} ₽, а нужно {money(total)} ₽.")
         await answer_callback(callback)
         return
     if not add_bulk_expenses(user_id, items):
-        await callback.message.edit_text("⚠️ К моменту подтверждения доступного бюджета уже недостаточно.")
+        await edit_interface(callback, "⚠️ К моменту подтверждения доступного бюджета уже недостаточно.")
         await answer_callback(callback)
         return
     await update_status(callback, user_id)
@@ -512,7 +546,7 @@ async def cb_report(callback: CallbackQuery):
     user_id = callback.from_user.id
     await answer_callback(callback, "Готовлю PDF…")
     try:
-        start, end = parse_report_period(None)
+        start, end = parse_report_period(user_id)
         report_path = build_monthly_report(user_id, start, end)
         await callback.bot.send_document(
             chat_id=callback.message.chat.id,
@@ -523,10 +557,9 @@ async def cb_report(callback: CallbackQuery):
         # Не создаём ещё одно сообщение: показываем ошибку в единственном
         # постоянном сообщении интерфейса и даём возможность вернуться к меню.
         try:
-            await callback.message.edit_text(
+            await edit_interface(
+                callback,
                 f"⚠️ <b>Не удалось создать отчёт</b>\n\n<code>{str(exc)[:300].replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')}</code>",
-                parse_mode="HTML",
-                reply_markup=main_menu(),
             )
         except Exception:
             pass
@@ -560,7 +593,7 @@ async def cb_today(callback: CallbackQuery):
     ])
 
     try:
-        await callback.message.edit_text("\n".join(lines), parse_mode="HTML", reply_markup=main_menu())
+        await edit_interface(callback, "\n".join(lines))
     except Exception:
         pass
     await answer_callback(callback)
@@ -581,7 +614,7 @@ async def cb_savings(callback: CallbackQuery):
 @router.callback_query(F.data == "help")
 async def cb_help(callback: CallbackQuery):
     try:
-        await callback.message.edit_text(HELP, parse_mode="HTML", reply_markup=main_menu())
+        await edit_interface(callback, HELP)
     except Exception:
         pass
     await answer_callback(callback)
@@ -599,7 +632,7 @@ async def cb_history(callback: CallbackQuery):
             lines.append(f"{labels.get(row['kind'], row['kind'])}: {money(row['amount'])} ₽ — {row['description']}")
         text = "\n".join(lines)
     try:
-        await callback.message.edit_text(text, parse_mode="HTML", reply_markup=main_menu())
+        await edit_interface(callback, text)
     except Exception:
         pass
     await answer_callback(callback)
@@ -617,7 +650,7 @@ async def cb_analytics(callback: CallbackQuery):
             lines.append(f"• {name}: {money(value)} ₽ ({pct:.0f}%)")
     else:
         lines.append("Расходов пока нет.")
-    await callback.message.edit_text("\n".join(lines), parse_mode="HTML", reply_markup=main_menu())
+    await edit_interface(callback, "\n".join(lines))
     await answer_callback(callback)
 
 
@@ -631,7 +664,7 @@ async def cb_forecast(callback: CallbackQuery):
             f"Дней осталось: <b>{remaining_days}</b>\n\n"
             f"Доступно сейчас: <b>{money(stats['remaining'])} ₽</b>\n"
             f"Прогноз остатка к 19-му: <b>{money(max(0, stats['forecast']))} ₽</b>")
-    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=main_menu())
+    await edit_interface(callback, text)
     await answer_callback(callback)
 
 
@@ -643,7 +676,7 @@ async def cb_compare(callback: CallbackQuery):
             f"Текущий период: <b>{money(current)} ₽</b>\n"
             f"Предыдущий: <b>{money(previous)} ₽</b>\n"
             f"Разница: <b>{'+' if delta >= 0 else ''}{money(delta)} ₽</b>")
-    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=main_menu())
+    await edit_interface(callback, text)
     await answer_callback(callback)
 
 
@@ -655,7 +688,7 @@ async def cb_goal(callback: CallbackQuery):
     else:
         target, target_date = goal
         text = f"🎯 <b>ЦЕЛЬ</b>\n\n{money(target)} ₽ к {target_date:%d.%m.%Y}\n\nИзменить: <code>/goal 300000 01.06.2027</code>"
-    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=main_menu())
+    await edit_interface(callback, text)
     await answer_callback(callback)
 
 
