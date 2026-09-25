@@ -1,4 +1,7 @@
+from collections import OrderedDict
+
 from aiogram import F, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, FSInputFile
 from datetime import datetime, timedelta, date
@@ -24,6 +27,35 @@ pending = {}
 
 # Сообщения бота, которые можно удалить командой /clear в текущем запуске.
 transient_messages = {}
+answered_callbacks = OrderedDict()
+
+
+async def answer_callback(callback: CallbackQuery, text=None, **kwargs):
+    """Acknowledge a button press without failing on an expired Telegram query."""
+    if callback.id in answered_callbacks:
+        return None
+
+    try:
+        if text is None:
+            result = await callback.answer(**kwargs)
+        else:
+            result = await callback.answer(text, **kwargs)
+    except TelegramBadRequest as exc:
+        error = str(exc).casefold()
+        if "query is too old" not in error and "query id is invalid" not in error:
+            raise
+        result = None
+
+    answered_callbacks[callback.id] = None
+    if len(answered_callbacks) > 2048:
+        answered_callbacks.popitem(last=False)
+    return result
+
+
+@router.callback_query.middleware()
+async def acknowledge_callback(handler, event: CallbackQuery, data):
+    await answer_callback(event)
+    return await handler(event, data)
 
 
 def set_pending(user_id: int, kind: str, amount=None, items=None):
@@ -384,7 +416,7 @@ async def finish_callback(callback: CallbackQuery, text=None):
         except Exception:
             pass
     await update_status(callback, user_id)
-    await callback.answer()
+    await answer_callback(callback)
 
 
 @router.callback_query(F.data == "confirm_rent")
@@ -392,19 +424,19 @@ async def cb_confirm_rent(callback: CallbackQuery):
     user_id = callback.from_user.id
     operation = clear_pending(user_id)
     if not operation or operation["kind"] != "rent":
-        await callback.answer("Операция уже отменена или выполнена.", show_alert=True)
+        await answer_callback(callback, "Операция уже отменена или выполнена.", show_alert=True)
         return
     amount = operation["amount"]
     if amount > available_budget(user_id):
         await callback.message.edit_text("⚠️ К моменту подтверждения доступного бюджета уже недостаточно.")
-        await callback.answer()
+        await answer_callback(callback)
         return
     if not add_rent(user_id, amount):
         await callback.message.edit_text("⚠️ К моменту подтверждения доступного бюджета уже недостаточно.")
-        await callback.answer()
+        await answer_callback(callback)
         return
     await update_status(callback, user_id)
-    await callback.answer("Квартира учтена")
+    await answer_callback(callback, "Квартира учтена")
 
 
 @router.callback_query(F.data == "confirm_save")
@@ -412,19 +444,19 @@ async def cb_confirm_save(callback: CallbackQuery):
     user_id = callback.from_user.id
     operation = clear_pending(user_id)
     if not operation or operation["kind"] != "save":
-        await callback.answer("Операция уже отменена или выполнена.", show_alert=True)
+        await answer_callback(callback, "Операция уже отменена или выполнена.", show_alert=True)
         return
     amount = operation["amount"]
     if amount > available_budget(user_id):
         await callback.message.edit_text("⚠️ К моменту подтверждения доступного бюджета уже недостаточно.")
-        await callback.answer()
+        await answer_callback(callback)
         return
     if not add_to_savings(user_id, amount):
         await callback.message.edit_text("⚠️ К моменту подтверждения доступного бюджета уже недостаточно.")
-        await callback.answer()
+        await answer_callback(callback)
         return
     await update_status(callback, user_id)
-    await callback.answer("Сбережения обновлены")
+    await answer_callback(callback, "Сбережения обновлены")
 
 
 @router.callback_query(F.data == "confirm_bulk_expense")
@@ -432,28 +464,28 @@ async def cb_confirm_bulk_expense(callback: CallbackQuery):
     user_id = callback.from_user.id
     operation = clear_pending(user_id)
     if not operation or operation["kind"] != "bulk_expense":
-        await callback.answer("Операция уже отменена или выполнена.", show_alert=True)
+        await answer_callback(callback, "Операция уже отменена или выполнена.", show_alert=True)
         return
     items = operation["items"]
     total = round(sum(amount for amount, _ in items), 2)
     available = available_budget(user_id)
     if total > available:
         await callback.message.edit_text(f"⚠️ К моменту подтверждения доступно только {money(available)} ₽, а нужно {money(total)} ₽.")
-        await callback.answer()
+        await answer_callback(callback)
         return
     if not add_bulk_expenses(user_id, items):
         await callback.message.edit_text("⚠️ К моменту подтверждения доступного бюджета уже недостаточно.")
-        await callback.answer()
+        await answer_callback(callback)
         return
     await update_status(callback, user_id)
-    await callback.answer(f"Записано {len(items)} расходов")
+    await answer_callback(callback, f"Записано {len(items)} расходов")
 
 
 @router.callback_query(F.data == "cancel")
 async def cb_cancel(callback: CallbackQuery):
     clear_pending(callback.from_user.id)
     await update_status(callback, callback.from_user.id)
-    await callback.answer("Операция отменена")
+    await answer_callback(callback, "Операция отменена")
 
 
 @router.callback_query(F.data == "clear_chat")
@@ -472,13 +504,13 @@ async def cb_clear_chat(callback: CallbackQuery):
             pass
     transient_messages.pop(chat_id, None)
     await update_status(callback, user_id)
-    await callback.answer("Чат очищен")
+    await answer_callback(callback, "Чат очищен")
 
 
 @router.callback_query(F.data == "report")
 async def cb_report(callback: CallbackQuery):
     user_id = callback.from_user.id
-    await callback.answer("Готовлю PDF…")
+    await answer_callback(callback, "Готовлю PDF…")
     try:
         start, end = parse_report_period(None)
         report_path = build_monthly_report(user_id, start, end)
@@ -531,19 +563,19 @@ async def cb_today(callback: CallbackQuery):
         await callback.message.edit_text("\n".join(lines), parse_mode="HTML", reply_markup=main_menu())
     except Exception:
         pass
-    await callback.answer()
+    await answer_callback(callback)
 
 
 @router.callback_query(F.data == "status")
 async def cb_status(callback: CallbackQuery):
     await update_status(callback, callback.from_user.id)
-    await callback.answer()
+    await answer_callback(callback)
 
 
 @router.callback_query(F.data == "savings")
 async def cb_savings(callback: CallbackQuery):
     await update_status(callback, callback.from_user.id)
-    await callback.answer()
+    await answer_callback(callback)
 
 
 @router.callback_query(F.data == "help")
@@ -552,7 +584,7 @@ async def cb_help(callback: CallbackQuery):
         await callback.message.edit_text(HELP, parse_mode="HTML", reply_markup=main_menu())
     except Exception:
         pass
-    await callback.answer()
+    await answer_callback(callback)
 
 
 @router.callback_query(F.data == "history")
@@ -570,7 +602,7 @@ async def cb_history(callback: CallbackQuery):
         await callback.message.edit_text(text, parse_mode="HTML", reply_markup=main_menu())
     except Exception:
         pass
-    await callback.answer()
+    await answer_callback(callback)
 
 
 
@@ -586,7 +618,7 @@ async def cb_analytics(callback: CallbackQuery):
     else:
         lines.append("Расходов пока нет.")
     await callback.message.edit_text("\n".join(lines), parse_mode="HTML", reply_markup=main_menu())
-    await callback.answer()
+    await answer_callback(callback)
 
 
 @router.callback_query(F.data == "forecast")
@@ -600,7 +632,7 @@ async def cb_forecast(callback: CallbackQuery):
             f"Доступно сейчас: <b>{money(stats['remaining'])} ₽</b>\n"
             f"Прогноз остатка к 19-му: <b>{money(max(0, stats['forecast']))} ₽</b>")
     await callback.message.edit_text(text, parse_mode="HTML", reply_markup=main_menu())
-    await callback.answer()
+    await answer_callback(callback)
 
 
 @router.callback_query(F.data == "compare")
@@ -612,7 +644,7 @@ async def cb_compare(callback: CallbackQuery):
             f"Предыдущий: <b>{money(previous)} ₽</b>\n"
             f"Разница: <b>{'+' if delta >= 0 else ''}{money(delta)} ₽</b>")
     await callback.message.edit_text(text, parse_mode="HTML", reply_markup=main_menu())
-    await callback.answer()
+    await answer_callback(callback)
 
 
 @router.callback_query(F.data == "goal")
@@ -624,7 +656,7 @@ async def cb_goal(callback: CallbackQuery):
         target, target_date = goal
         text = f"🎯 <b>ЦЕЛЬ</b>\n\n{money(target)} ₽ к {target_date:%d.%m.%Y}\n\nИзменить: <code>/goal 300000 01.06.2027</code>"
     await callback.message.edit_text(text, parse_mode="HTML", reply_markup=main_menu())
-    await callback.answer()
+    await answer_callback(callback)
 
 
 @router.message(Command("goal"))
