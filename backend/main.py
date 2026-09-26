@@ -4,7 +4,7 @@ import json
 import time
 import uuid
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from urllib.parse import parse_qsl
 
@@ -17,17 +17,21 @@ from pydantic import BaseModel, Field
 from config import settings
 from database.db import init_db
 from database.repository import (
+    add_recurring_payment,
     add_expense,
     add_income,
     add_rent,
     add_to_savings,
+    apply_due_recurring_payments,
+    delete_recurring_payment,
     ensure_user,
     get_percent,
     get_status_snapshot,
+    list_recurring_payments,
     recent_transactions,
     set_financial_day,
 )
-from services.analytics import current_period_stats
+from services.analytics import clear_goal, current_period_stats, set_goal
 from services.parser import extract_date, parse_expense, strip_date_words
 
 
@@ -46,6 +50,18 @@ class PeriodSettings(BaseModel):
 
 class SiriExpense(BaseModel):
     text: str = Field(min_length=1, max_length=255)
+
+
+class GoalSettings(BaseModel):
+    target: float = Field(gt=0, le=1_000_000_000)
+    target_date: date
+
+
+class RecurringPayment(BaseModel):
+    title: str = Field(min_length=1, max_length=255)
+    amount: float = Field(gt=0, le=1_000_000_000)
+    kind: str = Field(pattern="^(expense|rent)$")
+    day_of_month: int = Field(ge=1, le=28)
 
 
 def verify_init_data(init_data: str) -> dict:
@@ -94,8 +110,10 @@ def siri_user(x_siri_token: str = Header(default="")) -> int:
 
 
 def state(user_id: int):
+    apply_due_recurring_payments(user_id)
     snapshot = get_status_snapshot(user_id)
     end = snapshot["end"]
+    goal = snapshot.get("goal")
     return {
         "available": round(snapshot["remaining"], 2),
         "today": round(snapshot["spent_today"], 2),
@@ -110,6 +128,16 @@ def state(user_id: int):
         "financial_day": snapshot["financial_day"],
         "period_start": snapshot["start"].isoformat(),
         "period_end": (end - timedelta(days=1)).isoformat(),
+        "goal": (
+            {
+                "target": float(goal["target"]),
+                "target_date": goal["target_date"],
+                "current": round(snapshot["savings"], 2),
+                "progress": min(100, round(snapshot["savings"] / float(goal["target"]) * 100, 1)),
+            }
+            if goal and float(goal["target"]) > 0
+            else None
+        ),
     }
 
 
@@ -168,11 +196,27 @@ def api_analytics(user_id: int = Depends(current_user)):
             }
             for name, amount in sorted(stats["categories"].items(), key=lambda item: item[1], reverse=True)
         ],
+        "daily": [
+            {"date": day, "amount": round(amount, 2)}
+            for day, amount in sorted(stats["daily"].items())
+        ],
     }
 
 
 @app.post("/api/siri/expense", response_class=PlainTextResponse)
 def api_siri_expense(op: SiriExpense, user_id: int = Depends(siri_user)):
+    query = op.text.casefold().strip()
+    snapshot = get_status_snapshot(user_id)
+    if "остат" in query:
+        return (
+            f"Осталось {snapshot['remaining']:.0f} рублей. "
+            f"Лимит на день {snapshot['daily_limit']:.0f} рублей."
+        )
+    if "сегодня" in query and ("потрат" in query or "расход" in query):
+        return f"Сегодня потрачено {snapshot['spent_today']:.0f} рублей."
+    if "потрат" in query or "расходы за месяц" in query:
+        return f"За текущий период потрачено {snapshot['spent']:.0f} рублей."
+
     amount, description = parse_expense(strip_date_words(op.text))
     if amount is None or amount <= 0:
         raise HTTPException(422, "Назовите сумму цифрами, например: 500 рублей еда.")
@@ -191,6 +235,43 @@ def api_siri_expense(op: SiriExpense, user_id: int = Depends(siri_user)):
         f"Записано: {amount:g} рублей, {description}. "
         f"Осталось {snapshot['remaining']:.0f} рублей."
     )
+
+
+@app.post("/api/goal")
+def api_set_goal(goal: GoalSettings, user_id: int = Depends(current_user)):
+    set_goal(user_id, goal.target, goal.target_date)
+    return state(user_id)
+
+
+@app.post("/api/goal/clear")
+def api_clear_goal(user_id: int = Depends(current_user)):
+    clear_goal(user_id)
+    return state(user_id)
+
+
+@app.get("/api/recurring")
+def api_recurring(user_id: int = Depends(current_user)):
+    apply_due_recurring_payments(user_id)
+    return [dict(row) for row in list_recurring_payments(user_id)]
+
+
+@app.post("/api/recurring")
+def api_add_recurring(payment: RecurringPayment, user_id: int = Depends(current_user)):
+    add_recurring_payment(
+        user_id,
+        payment.title,
+        payment.amount,
+        payment.kind,
+        payment.day_of_month,
+    )
+    apply_due_recurring_payments(user_id)
+    return [dict(row) for row in list_recurring_payments(user_id)]
+
+
+@app.post("/api/recurring/{payment_id}/delete")
+def api_delete_recurring(payment_id: int, user_id: int = Depends(current_user)):
+    delete_recurring_payment(user_id, payment_id)
+    return [dict(row) for row in list_recurring_payments(user_id)]
 
 
 @app.post("/api/expense")

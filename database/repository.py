@@ -1,4 +1,5 @@
 import re
+from calendar import monthrange
 from datetime import date, datetime, timedelta
 
 from config.settings import DATABASE_URL, DEFAULT_MANDATORY_PERCENT
@@ -34,6 +35,14 @@ CATEGORY_ALIASES = {
     "подписка": "Подписки",
     "подписки": "Подписки",
     "ai": "Подписки",
+    "кредит": "Кредиты",
+    "ипотека": "Кредиты",
+    "жкх": "Дом и связь",
+    "коммуналка": "Дом и связь",
+    "интернет": "Дом и связь",
+    "телефон": "Дом и связь",
+    "одежда": "Одежда",
+    "развлечения": "Развлечения",
     "расход": "Разное",
     "разное": "Разное",
     "прочее": "Разное",
@@ -63,6 +72,10 @@ def normalize_expense_category(description: str) -> str:
         "Здоровье": ("аптек", "лекар", "врач", "анализ", "стоматолог"),
         "Транспорт": ("метро", "автобус", "проезд", "транспорт", "электричк"),
         "Подписки": ("подписк", "яндекс плюс", "icloud", "netflix", "spotify", "оплата ai", "openai", "chatgpt"),
+        "Кредиты": ("кредит", "ипотек", "рассрочк", "заём", "займ"),
+        "Дом и связь": ("жкх", "коммунал", "электричеств", "квартплат", "интернет", "мобильн", "телефон"),
+        "Одежда": ("одежд", "обув", "куртк", "футболк", "брюк", "джинс"),
+        "Развлечения": ("кино", "театр", "игр", "концерт", "развлеч"),
     }
     for category, keywords in keyword_categories.items():
         if any(keyword in key for keyword in keywords):
@@ -556,3 +569,62 @@ def recent_transactions(user_id: int, limit=15):
             "WHERE user_id=? ORDER BY id DESC LIMIT ?",
             (user_id, safe_limit),
         ).fetchall()
+
+
+def list_recurring_payments(user_id: int):
+    ensure_user(user_id)
+    with get_connection() as conn:
+        return conn.execute(
+            "SELECT id, title, amount, kind, day_of_month, active, last_run "
+            "FROM recurring_payments WHERE user_id=? ORDER BY day_of_month, id",
+            (user_id,),
+        ).fetchall()
+
+
+def add_recurring_payment(user_id: int, title: str, amount: float, kind: str, day_of_month: int):
+    if kind not in {"expense", "rent"}:
+        raise ValueError("Некорректный тип регулярного платежа")
+    if not 1 <= day_of_month <= 28:
+        raise ValueError("День платежа должен быть от 1 до 28")
+    ensure_user(user_id)
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT INTO recurring_payments(user_id, title, amount, kind, day_of_month) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (user_id, title[:255], round(amount, 2), kind, day_of_month),
+        )
+
+
+def delete_recurring_payment(user_id: int, payment_id: int):
+    with get_connection() as conn:
+        conn.execute(
+            "DELETE FROM recurring_payments WHERE user_id=? AND id=?",
+            (user_id, payment_id),
+        )
+
+
+def apply_due_recurring_payments(user_id: int, today: date | None = None):
+    today = today or date.today()
+    period_key = today.strftime("%Y-%m")
+    payments = list_recurring_payments(user_id)
+    applied = []
+    for payment in payments:
+        if not int(payment["active"]):
+            continue
+        due_day = min(int(payment["day_of_month"]), monthrange(today.year, today.month)[1])
+        if today.day < due_day or (payment["last_run"] or "").startswith(period_key):
+            continue
+        request_id = f"recurring-{payment['id']}-{period_key}"
+        if payment["kind"] == "rent":
+            success = add_rent(user_id, float(payment["amount"]), payment["title"], request_id)
+        else:
+            success = add_expense(user_id, float(payment["amount"]), payment["title"], request_id)
+        if not success:
+            continue
+        with get_connection() as conn:
+            conn.execute(
+                "UPDATE recurring_payments SET last_run=? WHERE user_id=? AND id=?",
+                (today.isoformat(), user_id, payment["id"]),
+            )
+        applied.append(int(payment["id"]))
+    return applied

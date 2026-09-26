@@ -142,6 +142,18 @@ def _create_schema(conn):
             PRIMARY KEY (user_id, request_id)
         )
     """)
+    conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS recurring_payments (
+            id {id_type} PRIMARY KEY{id_suffix},
+            user_id BIGINT NOT NULL,
+            title TEXT NOT NULL,
+            amount DOUBLE PRECISION NOT NULL,
+            kind TEXT NOT NULL DEFAULT 'expense',
+            day_of_month INTEGER NOT NULL,
+            active INTEGER NOT NULL DEFAULT 1,
+            last_run TEXT
+        )
+    """)
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_transactions_user_created "
         "ON transactions(user_id, created_at DESC)"

@@ -40,12 +40,15 @@ function selectTab(tabName, remember = true) {
 }
 
 const financialDay = document.getElementById("financial-day");
+const recurringDay = document.getElementById("recurring-day");
 for (let day = 1; day <= 28; day += 1) {
   const option = document.createElement("option");
   option.value = String(day);
   option.textContent = `${day}-го числа`;
   financialDay.append(option);
+  recurringDay.append(option.cloneNode(true));
 }
+recurringDay.value = String(Math.min(new Date().getDate(), 28));
 
 function money(value) {
   return new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 }).format(Number(value || 0)) + " ₽";
@@ -98,6 +101,25 @@ function renderState(state) {
   document.getElementById("period").textContent = `${state.period_start.split("-").reverse().join(".")} — ${state.period_end.split("-").reverse().join(".")}`;
   document.getElementById("days-left").textContent = `${state.days_left} дн. до конца периода`;
   financialDay.value = String(state.financial_day || 20);
+  renderGoal(state.goal);
+}
+
+function renderGoal(goal) {
+  const root = document.getElementById("goal-summary");
+  const clear = document.getElementById("clear-goal");
+  clear.hidden = !goal;
+  if (!goal) {
+    root.className = "goal-summary empty-goal";
+    root.textContent = "Цель пока не задана";
+    return;
+  }
+  root.className = "goal-summary";
+  root.innerHTML = `
+    <div><strong>${money(goal.current)} из ${money(goal.target)}</strong><b>${goal.progress}%</b></div>
+    <span class="goal-track"><i style="width:${Math.max(2, goal.progress)}%"></i></span>
+    <small>Срок: ${goal.target_date.split("-").reverse().join(".")}</small>`;
+  document.getElementById("goal-target").value = goal.target;
+  document.getElementById("goal-date").value = goal.target_date;
 }
 
 function renderHistory(items) {
@@ -146,16 +168,77 @@ function renderCategories(items) {
   }));
 }
 
+function renderDaily(items) {
+  const root = document.getElementById("daily-chart");
+  if (!items.length) {
+    root.innerHTML = '<p class="empty">Данных для графика пока нет</p>';
+    return;
+  }
+  const max = Math.max(...items.map((item) => Number(item.amount || 0)), 1);
+  root.replaceChildren(...items.slice(-14).map((item) => {
+    const column = document.createElement("div");
+    column.className = "day-column";
+    column.title = `${item.date.split("-").reverse().join(".")}: ${money(item.amount)}`;
+    const amount = document.createElement("small");
+    amount.textContent = Math.round(item.amount).toLocaleString("ru-RU");
+    const bar = document.createElement("i");
+    bar.style.height = `${Math.max(5, Number(item.amount || 0) / max * 100)}%`;
+    const label = document.createElement("span");
+    label.textContent = item.date.slice(8, 10);
+    column.append(amount, bar, label);
+    return column;
+  }));
+}
+
+function renderRecurring(items) {
+  const root = document.getElementById("recurring-list");
+  if (!items.length) {
+    root.innerHTML = '<p class="empty">Регулярных платежей пока нет</p>';
+    return;
+  }
+  root.replaceChildren(...items.map((item) => {
+    const row = document.createElement("article");
+    row.className = "recurring-item";
+    row.innerHTML = `<div><strong></strong><small></small></div><b></b>`;
+    row.querySelector("strong").textContent = item.title;
+    row.querySelector("small").textContent = `${item.day_of_month}-го числа · ${item.kind === "rent" ? "Квартира" : "Расход"}`;
+    row.querySelector("b").textContent = money(item.amount);
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "delete-button";
+    remove.dataset.recurringDelete = item.id;
+    remove.setAttribute("aria-label", `Удалить ${item.title}`);
+    remove.title = "Удалить";
+    remove.textContent = "×";
+    row.append(remove);
+    return row;
+  }));
+}
+
 async function load() {
-  const [state, history, analytics] = await Promise.all([
+  const [state, history, analytics, recurring] = await Promise.all([
     api("/api/state"),
     api("/api/transactions?limit=30"),
     api("/api/analytics"),
+    api("/api/recurring"),
   ]);
   renderState(state);
   renderHistory(history);
   renderCategories(analytics.categories);
+  renderDaily(analytics.daily);
+  renderRecurring(recurring);
 }
+
+document.querySelectorAll("[data-quick-expense]").forEach((button) => {
+  button.addEventListener("click", () => {
+    operationKind = "expense";
+    document.querySelectorAll("#operation-kind button").forEach((item) => item.classList.toggle("active", item.dataset.kind === "expense"));
+    document.getElementById("description").value = button.dataset.quickExpense;
+    document.getElementById("submit").textContent = operationLabels.expense[0];
+    document.getElementById("amount").focus();
+    telegram?.HapticFeedback?.selectionChanged?.();
+  });
+});
 
 document.getElementById("operation-kind").addEventListener("click", (event) => {
   const button = event.target.closest("button[data-kind]");
@@ -191,6 +274,7 @@ document.getElementById("operation-form").addEventListener("submit", async (even
     ]);
     renderHistory(history);
     renderCategories(analytics.categories);
+    renderDaily(analytics.daily);
     event.target.reset();
     telegram?.HapticFeedback?.notificationOccurred("success");
     showToast("Операция сохранена");
@@ -220,6 +304,7 @@ document.getElementById("period-form").addEventListener("submit", async (event) 
     ]);
     renderHistory(history);
     renderCategories(analytics.categories);
+    renderDaily(analytics.daily);
     telegram?.HapticFeedback?.notificationOccurred("success");
     showToast("Период обновлён");
   } catch (error) {
@@ -227,6 +312,75 @@ document.getElementById("period-form").addEventListener("submit", async (event) 
     showToast(error.message);
   } finally {
     button.disabled = false;
+  }
+});
+
+document.getElementById("goal-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const button = event.submitter;
+  button.disabled = true;
+  try {
+    const state = await api("/api/goal", {
+      method: "POST",
+      body: JSON.stringify({
+        target: Number(document.getElementById("goal-target").value),
+        target_date: document.getElementById("goal-date").value,
+      }),
+    });
+    renderState(state);
+    showToast("Цель сохранена");
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.getElementById("clear-goal").addEventListener("click", async () => {
+  try {
+    renderState(await api("/api/goal/clear", { method: "POST" }));
+    document.getElementById("goal-form").reset();
+    showToast("Цель удалена");
+  } catch (error) {
+    showToast(error.message);
+  }
+});
+
+document.getElementById("recurring-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const button = event.submitter;
+  button.disabled = true;
+  try {
+    const items = await api("/api/recurring", {
+      method: "POST",
+      body: JSON.stringify({
+        title: document.getElementById("recurring-title").value.trim(),
+        amount: Number(document.getElementById("recurring-amount").value),
+        kind: document.getElementById("recurring-kind").value,
+        day_of_month: Number(recurringDay.value),
+      }),
+    });
+    renderRecurring(items);
+    event.target.reset();
+    recurringDay.value = String(Math.min(new Date().getDate(), 28));
+    await load();
+    showToast("Регулярный платёж добавлен");
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.getElementById("recurring-list").addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-recurring-delete]");
+  if (!button || !window.confirm("Удалить регулярный платёж?")) return;
+  try {
+    const items = await api(`/api/recurring/${button.dataset.recurringDelete}/delete`, { method: "POST" });
+    renderRecurring(items);
+    showToast("Платёж удалён");
+  } catch (error) {
+    showToast(error.message);
   }
 });
 

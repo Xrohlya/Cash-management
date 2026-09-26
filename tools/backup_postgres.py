@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -18,6 +19,7 @@ TABLES = {
     "transactions": "id, user_id, created_at, kind, amount, description",
     "goals": "user_id, target, target_date",
     "operation_requests": "user_id, request_id, created_at",
+    "recurring_payments": "id, user_id, title, amount, kind, day_of_month, active, last_run",
 }
 
 
@@ -44,6 +46,10 @@ def main():
     path = backup_dir / f"postgres_backup_{datetime.now():%Y%m%d_%H%M%S}.json"
     payload = {"created_at": datetime.now().isoformat(timespec="seconds"), "tables": data}
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    os.chmod(path, 0o600)
+    backups = sorted(backup_dir.glob("postgres_backup_*.json"), reverse=True)
+    for old_backup in backups[30:]:
+        old_backup.unlink()
     print(f"Backup создан: {path}")
     print(", ".join(f"{table}={len(rows)}" for table, rows in data.items()))
 

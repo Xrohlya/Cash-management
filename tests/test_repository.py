@@ -68,6 +68,22 @@ class RepositoryTest(unittest.TestCase):
         self.assertEqual(get_goal(101), (5000.0, date(2027, 1, 1)))
         self.assertIsNone(get_goal(202))
 
+    def test_recurring_payment_runs_once_per_calendar_month(self):
+        from datetime import date
+
+        repository.add_income(101, 1000, 0)
+        repository.add_recurring_payment(101, "Кофе", 120, "expense", 1)
+
+        self.assertEqual(len(repository.apply_due_recurring_payments(101, date(2026, 9, 26))), 1)
+        self.assertEqual(repository.apply_due_recurring_payments(101, date(2026, 9, 27)), [])
+        self.assertEqual(float(repository.get_month(101)["spent"]), 120)
+        expenses = [row for row in repository.recent_transactions(101) if row["kind"] == "expense"]
+        self.assertEqual(len(expenses), 1)
+
+    def test_smart_categories_cover_common_household_expenses(self):
+        self.assertEqual(repository.normalize_expense_category("платёж по кредиту"), "Кредиты")
+        self.assertEqual(repository.normalize_expense_category("домашний интернет"), "Дом и связь")
+
     def test_financial_day_is_per_user_and_rebuilds_current_summary(self):
         repository.add_income(101, 1000, 0)
         repository.add_expense(101, 125, "Кафе")

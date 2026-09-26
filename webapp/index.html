@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <title>Мой бюджет</title>
-  <link rel="stylesheet" href="/static/app.css?v=20260926-2">
+  <link rel="stylesheet" href="/static/app.css?v=20260926-3">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -43,6 +43,11 @@
 
       <section class="operation-section">
         <h2>Новая операция</h2>
+        <div class="quick-expenses" aria-label="Частые расходы">
+          <button type="button" data-quick-expense="Кафе">Кофе</button>
+          <button type="button" data-quick-expense="Еда">Продукты</button>
+          <button type="button" data-quick-expense="Такси">Такси</button>
+        </div>
         <div class="segments" id="operation-kind" role="tablist" aria-label="Тип операции">
           <button class="active" type="button" data-kind="expense">Расход</button>
           <button type="button" data-kind="income">Доход</button>
@@ -61,6 +66,19 @@
           <button class="primary" id="submit" type="submit">Записать расход</button>
         </form>
       </section>
+
+      <section class="goal-section">
+        <div class="section-heading">
+          <h2>Финансовая цель</h2>
+          <button class="text-button" id="clear-goal" type="button" hidden>Удалить</button>
+        </div>
+        <div id="goal-summary" class="goal-summary empty-goal">Цель пока не задана</div>
+        <form id="goal-form" class="goal-form">
+          <label><span>Сумма цели</span><input id="goal-target" type="number" min="1" step="1" inputmode="decimal" required></label>
+          <label><span>Срок</span><input id="goal-date" type="date" required></label>
+          <button class="secondary" type="submit">Сохранить цель</button>
+        </form>
+      </section>
     </div>
 
     <div class="tab-panel" id="tab-expenses" data-tab-panel="expenses" role="tabpanel" aria-labelledby="nav-expenses" hidden>
@@ -70,6 +88,11 @@
           <span id="days-left"></span>
         </div>
         <div id="categories" class="categories" aria-live="polite"></div>
+      </section>
+
+      <section class="chart-section">
+        <h2>Расходы по дням</h2>
+        <div id="daily-chart" class="daily-chart" aria-label="График расходов по дням"></div>
       </section>
 
       <details class="history-section history-details">
@@ -89,6 +112,19 @@
           <button class="secondary" id="save-period" type="submit">Сохранить</button>
         </form>
       </section>
+      <section class="recurring-section">
+        <h2>Регулярные платежи</h2>
+        <form id="recurring-form" class="recurring-form">
+          <label><span>Название</span><input id="recurring-title" maxlength="255" placeholder="Например, аренда" required></label>
+          <div class="form-row">
+            <label><span>Сумма</span><input id="recurring-amount" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
+            <label><span>Тип</span><select id="recurring-kind"><option value="expense">Расход</option><option value="rent">Квартира</option></select></label>
+          </div>
+          <label><span>Списывать каждого месяца</span><select id="recurring-day"></select></label>
+          <button class="secondary" type="submit">Добавить платёж</button>
+        </form>
+        <div id="recurring-list" class="recurring-list"></div>
+      </section>
     </div>
   </main>
 
@@ -97,6 +133,6 @@
     <h2>Откройте приложение из Telegram</h2>
     <p>Авторизация доступна через кнопку меню вашего бота.</p>
   </div>
-  <script src="/static/app.js?v=20260926-2" defer></script>
+  <script src="/static/app.js?v=20260926-3" defer></script>
 </body>
 </html>
