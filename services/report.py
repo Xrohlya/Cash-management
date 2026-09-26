@@ -74,6 +74,7 @@ def get_report_data(user_id: int, start: date, end: date):
         ).fetchall()
 
     expenses = [r for r in rows if r["kind"] == "expense"]
+    recurring = [r for r in rows if r["kind"] == "recurring"]
     incomes = [r for r in rows if r["kind"] == "income"]
     mandatory = [r for r in rows if r["kind"] == "mandatory"]
     rents = [r for r in rows if r["kind"] == "rent"]
@@ -97,6 +98,7 @@ def get_report_data(user_id: int, start: date, end: date):
         "month": month,
         "rows": rows,
         "expenses": expenses,
+        "recurring": recurring,
         "incomes": incomes,
         "mandatory": mandatory,
         "rents": rents,
@@ -108,6 +110,7 @@ def get_report_data(user_id: int, start: date, end: date):
         "rent_total": sum(float(r["amount"]) for r in rents),
         "saved_total": sum(float(r["amount"]) for r in saved_rows),
         "expense_total": sum(float(r["amount"]) for r in expenses),
+        "recurring_total": sum(float(r["amount"]) for r in recurring),
         "savings_total": get_savings(user_id),
     }
 
@@ -148,6 +151,7 @@ def _summary_table(data, styles):
         ("Обязательный вычет", money(data["mandatory_total"])),
         ("Бюджет после вычета", money(net_income)),
         ("Обычные расходы", money(data["expense_total"])),
+        ("Регулярные платежи", money(data["recurring_total"])),
         ("Квартира", money(data["rent_total"])),
         ("Отложено в накопления", money(data["saved_total"])),
         ("Осталось доступно", money(available)),

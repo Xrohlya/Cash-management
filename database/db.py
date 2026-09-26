@@ -151,7 +151,8 @@ def _create_schema(conn):
             kind TEXT NOT NULL DEFAULT 'expense',
             day_of_month INTEGER NOT NULL,
             active INTEGER NOT NULL DEFAULT 1,
-            last_run TEXT
+            last_run TEXT,
+            last_notified TEXT
         )
     """)
     conn.execute(
@@ -169,6 +170,7 @@ def init_db():
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT NOT NULL DEFAULT ''")
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT NOT NULL DEFAULT ''")
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS financial_day INTEGER NOT NULL DEFAULT 20")
+            conn.execute("ALTER TABLE recurring_payments ADD COLUMN IF NOT EXISTS last_notified TEXT")
             return
 
         month_columns = {row["name"] for row in conn.execute("PRAGMA table_info(months)")}
@@ -188,3 +190,6 @@ def init_db():
         for column, statement in migrations.items():
             if column not in user_columns:
                 conn.execute(statement)
+        recurring_columns = {row["name"] for row in conn.execute("PRAGMA table_info(recurring_payments)")}
+        if "last_notified" not in recurring_columns:
+            conn.execute("ALTER TABLE recurring_payments ADD COLUMN last_notified TEXT")

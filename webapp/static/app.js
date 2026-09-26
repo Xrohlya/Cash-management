@@ -15,6 +15,7 @@ const kindLabels = {
   income: "Доход",
   mandatory: "Обязательный вычет",
   expense: "Расход",
+  recurring: "Регулярный платёж",
   rent: "Квартира",
   save: "Накопления",
 };
@@ -96,6 +97,7 @@ function renderState(state) {
   document.getElementById("today").textContent = money(state.today);
   document.getElementById("budget").textContent = money(state.budget);
   document.getElementById("spent").textContent = money(state.spent);
+  document.getElementById("recurring").textContent = money(state.recurring);
   document.getElementById("rent").textContent = money(state.rent);
   document.getElementById("savings").textContent = money(state.savings);
   document.getElementById("period").textContent = `${state.period_start.split("-").reverse().join(".")} — ${state.period_end.split("-").reverse().join(".")}`;

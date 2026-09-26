@@ -19,7 +19,7 @@ TABLES = {
     "transactions": "id, user_id, created_at, kind, amount, description",
     "goals": "user_id, target, target_date",
     "operation_requests": "user_id, request_id, created_at",
-    "recurring_payments": "id, user_id, title, amount, kind, day_of_month, active, last_run",
+    "recurring_payments": "id, user_id, title, amount, kind, day_of_month, active, last_run, last_notified",
 }
 
 

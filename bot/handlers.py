@@ -438,7 +438,7 @@ async def cmd_history(message: Message):
     if not rows:
         await send_transient(message, "История пока пустая.")
         return
-    labels = {"income": "+ ДОХОД", "mandatory": "− 6%", "expense": "− РАСХОД", "rent": "🏠 КВАРТИРА", "save": "🔒 НАКОПЛЕНИЯ"}
+    labels = {"income": "+ ДОХОД", "mandatory": "− 6%", "expense": "− РАСХОД", "recurring": "🔁 РЕГУЛЯРНЫЙ", "rent": "🏠 КВАРТИРА", "save": "🔒 НАКОПЛЕНИЯ"}
     lines = ["📋 <b>Последние операции</b>\n"]
     for row in rows:
         lines.append(f"{labels.get(row['kind'], row['kind'])}: {money(row['amount'])} ₽ — {row['description']}")
@@ -629,7 +629,7 @@ async def cb_history(callback: CallbackQuery):
     if not rows:
         text = "📋 История пока пустая."
     else:
-        labels = {"income": "+ ДОХОД", "mandatory": "− 6%", "expense": "− РАСХОД", "rent": "🏠 КВАРТИРА", "save": "🔒 НАКОПЛЕНИЯ"}
+        labels = {"income": "+ ДОХОД", "mandatory": "− 6%", "expense": "− РАСХОД", "recurring": "🔁 РЕГУЛЯРНЫЙ", "rent": "🏠 КВАРТИРА", "save": "🔒 НАКОПЛЕНИЯ"}
         lines = ["📋 <b>Последние операции</b>\n"]
         for row in rows:
             lines.append(f"{labels.get(row['kind'], row['kind'])}: {money(row['amount'])} ₽ — {row['description']}")

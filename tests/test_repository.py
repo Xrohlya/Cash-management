@@ -83,8 +83,11 @@ class RepositoryTest(unittest.TestCase):
         self.assertEqual(len(repository.apply_due_recurring_payments(101, next_month)), 1)
         self.assertEqual(repository.apply_due_recurring_payments(101, next_month), [])
         self.assertEqual(float(repository.get_month(101)["spent"]), 120)
-        expenses = [row for row in repository.recent_transactions(101) if row["kind"] == "expense"]
-        self.assertEqual(len(expenses), 1)
+        recurring = [row for row in repository.recent_transactions(101) if row["kind"] == "recurring"]
+        self.assertEqual(len(recurring), 1)
+        stats = current_period_stats(101)
+        self.assertEqual(stats["expenses"], 0)
+        self.assertEqual(stats["recurring"], 120)
 
     def test_smart_categories_cover_common_household_expenses(self):
         self.assertEqual(repository.normalize_expense_category("платёж по кредиту"), "Кредиты")

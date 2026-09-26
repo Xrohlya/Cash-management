@@ -86,8 +86,9 @@ main { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
 .metrics span { display: block; color: var(--muted); font-size: 12px; }
 .metrics b { display: block; overflow: hidden; margin-top: 3px; color: #b9dcff; text-overflow: ellipsis; white-space: nowrap; }
 .metrics article:nth-child(2) b { color: var(--danger); text-shadow: 0 0 14px rgba(255, 95, 127, 0.2); }
-.metrics article:nth-child(3) b { color: var(--positive); }
-.metrics article:nth-child(4) b { color: var(--gold); text-shadow: 0 0 14px rgba(255, 209, 102, 0.15); }
+.metrics article:nth-child(3) b { color: var(--accent); }
+.metrics article:nth-child(4) b { color: var(--positive); }
+.metrics article:nth-child(5) b { color: var(--gold); text-shadow: 0 0 14px rgba(255, 209, 102, 0.15); }
 
 .operation-section, .goal-section, .category-section, .chart-section, .history-section, .settings-section, .recurring-section { padding: 22px 18px 0; }
 
@@ -302,5 +303,5 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px r
 
 @media (min-width: 620px) {
   body { max-width: 720px; margin: 0 auto; border-right: 1px solid var(--line); border-left: 1px solid var(--line); }
-  .metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .metrics { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }

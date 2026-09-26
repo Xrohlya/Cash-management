@@ -31,6 +31,7 @@ def status_from_snapshot(snapshot: dict) -> str:
     percent = snapshot["mandatory_percent"]
     budget = snapshot["budget"]
     spent = snapshot["spent"]
+    recurring = snapshot["recurring"]
     rent = snapshot["rent"]
     saved = snapshot["saved"]
     remaining = snapshot["remaining"]
@@ -59,6 +60,7 @@ def status_from_snapshot(snapshot: dict) -> str:
         f"🟢 Осталось сегодня: <b>{money(left_today)} ₽</b>\n\n"
         f"💰 Бюджет месяца: {money(budget)} ₽\n"
         f"💸 Потрачено: {money(spent)} ₽\n"
+        f"🔁 Регулярные платежи: {money(recurring)} ₽ <i>(отдельно)</i>\n"
         f"🏠 Квартира: {money(rent)} ₽ <i>(отдельно)</i>\n"
         f"🔒 Отложено: {money(saved)} ₽ <i>(накопления)</i>\n"
         f"📉 Обязательный вычет: {percent:g}%\n"

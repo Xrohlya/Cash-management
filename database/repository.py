@@ -269,11 +269,19 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
         start = date.fromisoformat(row["start_date"])
         end = financial_period_end_for_start(start)
         budget = float(row["budget"])
-        spent = float(row["spent"])
+        total_spent = float(row["spent"])
+        with get_connection() as conn:
+            recurring_row = conn.execute(
+                "SELECT COALESCE(SUM(amount), 0) AS total FROM transactions "
+                "WHERE user_id=? AND kind='recurring' AND created_at>=? AND created_at<?",
+                (user_id, start.isoformat(), end.isoformat()),
+            ).fetchone()
+        recurring = float(recurring_row["total"] or 0)
+        spent = total_spent - recurring
         rent = float(row["rent"])
         saved = float(row["saved"])
         savings = float(row["savings"])
-        remaining = budget - spent - rent - saved
+        remaining = budget - total_spent - rent - saved
         days_left = max(0, (end - today).days)
         days_elapsed = max(1, (today - start).days + 1)
         avg = spent / days_elapsed
@@ -288,6 +296,7 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
             "mandatory_percent": float(row["mandatory_percent"]),
             "budget": budget,
             "spent": spent,
+            "recurring": recurring,
             "rent": rent,
             "saved": saved,
             "savings": savings,
@@ -325,17 +334,24 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
             "WHERE user_id=? AND kind='expense' AND created_at>=? AND created_at<?",
             (user_id, today.isoformat(), (today + timedelta(days=1)).isoformat()),
         ).fetchone()
+        recurring_row = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) AS total FROM transactions "
+            "WHERE user_id=? AND kind='recurring' AND created_at>=? AND created_at<?",
+            (user_id, start.isoformat(), end.isoformat()),
+        ).fetchone()
         goal = conn.execute(
             "SELECT target, target_date FROM goals WHERE user_id=?",
             (user_id,),
         ).fetchone()
 
     budget = float(month["budget"])
-    spent = float(month["spent"])
+    total_spent = float(month["spent"])
+    recurring = float(recurring_row["total"] or 0)
+    spent = total_spent - recurring
     rent = float(month["rent"])
     saved = float(month["saved"])
     savings = float(user["savings"])
-    remaining = budget - spent - rent - saved
+    remaining = budget - total_spent - rent - saved
     days_left = max(0, (end - today).days)
     days_elapsed = max(1, (today - start).days + 1)
     avg = spent / days_elapsed
@@ -347,6 +363,7 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
         "mandatory_percent": float(user["mandatory_percent"]),
         "budget": budget,
         "spent": spent,
+        "recurring": recurring,
         "rent": rent,
         "saved": saved,
         "savings": savings,
@@ -371,7 +388,7 @@ def rebuild_month_from_transactions(user_id: int, start: date):
             "SELECT kind, amount FROM transactions WHERE user_id=? AND created_at>=? AND created_at<?",
             (user_id, start.isoformat(), end.isoformat()),
         ).fetchall()
-        totals = {"income": 0.0, "mandatory": 0.0, "expense": 0.0, "rent": 0.0, "save": 0.0}
+        totals = {"income": 0.0, "mandatory": 0.0, "expense": 0.0, "recurring": 0.0, "rent": 0.0, "save": 0.0}
         for row in rows:
             if row["kind"] in totals:
                 totals[row["kind"]] += float(row["amount"])
@@ -380,7 +397,7 @@ def rebuild_month_from_transactions(user_id: int, start: date):
             "UPDATE months SET budget=?, spent=?, rent=?, saved=? WHERE user_id=? AND month=?",
             (
                 round(totals["income"] - totals["mandatory"], 2),
-                round(totals["expense"], 2),
+                round(totals["expense"] + totals["recurring"], 2),
                 round(totals["rent"], 2),
                 round(totals["save"], 2),
                 user_id,
@@ -459,6 +476,12 @@ def add_expense(user_id: int, amount: float, description: str, request_id=None, 
         normalize_expense_category(description),
         request_id,
         created_at,
+    )
+
+
+def add_recurring_charge(user_id: int, amount: float, description: str, request_id=None):
+    return _add_budget_reduction(
+        user_id, "recurring", "spent", amount, description, request_id
     )
 
 
@@ -576,7 +599,7 @@ def list_recurring_payments(user_id: int):
     ensure_user(user_id)
     with get_connection() as conn:
         return conn.execute(
-            "SELECT id, title, amount, kind, day_of_month, active, last_run "
+            "SELECT id, title, amount, kind, day_of_month, active, last_run, last_notified "
             "FROM recurring_payments WHERE user_id=? ORDER BY day_of_month, id",
             (user_id,),
         ).fetchall()
@@ -608,6 +631,27 @@ def delete_recurring_payment(user_id: int, payment_id: int):
         )
 
 
+def due_recurring_notifications(today: date | None = None):
+    today = today or date.today()
+    period_key = today.strftime("%Y-%m")
+    with get_connection() as conn:
+        return conn.execute(
+            "SELECT id, user_id, title, amount, kind, day_of_month, last_run "
+            "FROM recurring_payments WHERE active=1 AND day_of_month=? "
+            "AND (last_notified IS NULL OR last_notified NOT LIKE ?)",
+            (today.day, f"{period_key}%"),
+        ).fetchall()
+
+
+def mark_recurring_notified(payment_id: int, today: date | None = None):
+    today = today or date.today()
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE recurring_payments SET last_notified=? WHERE id=?",
+            (today.isoformat(), payment_id),
+        )
+
+
 def apply_due_recurring_payments(user_id: int, today: date | None = None):
     today = today or date.today()
     period_key = today.strftime("%Y-%m")
@@ -620,10 +664,9 @@ def apply_due_recurring_payments(user_id: int, today: date | None = None):
         if today.day < due_day or (payment["last_run"] or "").startswith(period_key):
             continue
         request_id = f"recurring-{payment['id']}-{period_key}"
-        if payment["kind"] == "rent":
-            success = add_rent(user_id, float(payment["amount"]), payment["title"], request_id)
-        else:
-            success = add_expense(user_id, float(payment["amount"]), payment["title"], request_id)
+        success = add_recurring_charge(
+            user_id, float(payment["amount"]), payment["title"], request_id
+        )
         if not success:
             continue
         with get_connection() as conn:

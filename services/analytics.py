@@ -49,7 +49,7 @@ def current_period_stats(user_id: int):
     categories = defaultdict(float)
     category_counts = defaultdict(int)
     daily = defaultdict(float)
-    income = mandatory = rent = saved = expenses = 0.0
+    income = mandatory = rent = saved = expenses = recurring = 0.0
     for r in rows:
         amount = float(r["amount"])
         kind = r["kind"]
@@ -62,15 +62,16 @@ def current_period_stats(user_id: int):
         elif kind == "income": income += amount
         elif kind == "mandatory": mandatory += amount
         elif kind == "rent": rent += amount
+        elif kind == "recurring": recurring += amount
         elif kind == "save": saved += amount
     days_elapsed = max(1, (date.today() - start).days + 1)
     days_total = max(1, (end - start).days)
     avg = expenses / days_elapsed
-    remaining = float(month["budget"]) - expenses - rent - saved
+    remaining = float(month["budget"]) - expenses - recurring - rent - saved
     forecast = remaining - max(0, avg) * max(0, (end - date.today()).days)
     return {
         "start": start, "end": end, "income": income, "mandatory": mandatory,
-        "expenses": expenses, "rent": rent, "saved": saved, "remaining": remaining,
+        "expenses": expenses, "recurring": recurring, "rent": rent, "saved": saved, "remaining": remaining,
         "avg": avg, "forecast": forecast, "days_elapsed": days_elapsed,
         "days_total": days_total, "categories": dict(categories),
         "category_counts": dict(category_counts), "daily": dict(daily),

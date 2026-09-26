@@ -119,6 +119,7 @@ def state(user_id: int):
         "daily_limit": round(snapshot["daily_limit"], 2),
         "days_left": max(1, snapshot["days_left"]),
         "spent": round(snapshot["spent"], 2),
+        "recurring": round(snapshot["recurring"], 2),
         "rent": round(snapshot["rent"], 2),
         "saved_this_month": round(snapshot["saved"], 2),
         "savings": round(snapshot["savings"], 2),
