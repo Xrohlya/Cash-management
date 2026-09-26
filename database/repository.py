@@ -180,6 +180,7 @@ def get_month(user_id: int, key=None):
 
 def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
     today = today or date.today()
+    apply_due_recurring_payments(user_id, today)
     if DATABASE_URL:
         with get_connection() as conn:
             row = conn.execute(

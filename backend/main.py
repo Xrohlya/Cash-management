@@ -110,7 +110,6 @@ def siri_user(x_siri_token: str = Header(default="")) -> int:
 
 
 def state(user_id: int):
-    apply_due_recurring_payments(user_id)
     snapshot = get_status_snapshot(user_id)
     end = snapshot["end"]
     goal = snapshot.get("goal")
