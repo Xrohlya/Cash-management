@@ -13,6 +13,8 @@ def parse_expense(text: str):
     if amount is None:
         return None, None
     description = re.sub(r"\d+(?:[.,]\d{1,2})?", "", text, count=1).strip()
+    description = re.sub(r"(?:₽|\bруб(?:ль|ля|лей|\.)?\b)", " ", description, flags=re.I)
+    description = " ".join(description.split())
     return amount, description or "Расход"
 
 

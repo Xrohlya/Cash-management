@@ -2,14 +2,15 @@ import hashlib
 import hmac
 import json
 import time
+import uuid
 from contextlib import asynccontextmanager
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import parse_qsl
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -27,6 +28,7 @@ from database.repository import (
     set_financial_day,
 )
 from services.analytics import current_period_stats
+from services.parser import extract_date, parse_expense, strip_date_words
 
 
 WEBAPP_DIR = Path(__file__).resolve().parent.parent / "webapp"
@@ -40,6 +42,10 @@ class Operation(BaseModel):
 
 class PeriodSettings(BaseModel):
     financial_day: int = Field(ge=1, le=28)
+
+
+class SiriExpense(BaseModel):
+    text: str = Field(min_length=1, max_length=255)
 
 
 def verify_init_data(init_data: str) -> dict:
@@ -76,6 +82,15 @@ def current_user(x_telegram_init_data: str = Header(default="")) -> int:
     user = verify_init_data(x_telegram_init_data)
     ensure_user(user["id"], user.get("first_name", ""), user.get("username", ""))
     return user["id"]
+
+
+def siri_user(x_siri_token: str = Header(default="")) -> int:
+    if not settings.SIRI_API_TOKEN or not settings.SIRI_USER_ID:
+        raise HTTPException(503, "Siri integration is not configured")
+    if not hmac.compare_digest(x_siri_token, settings.SIRI_API_TOKEN):
+        raise HTTPException(401, "Invalid Siri token")
+    ensure_user(settings.SIRI_USER_ID)
+    return settings.SIRI_USER_ID
 
 
 def state(user_id: int):
@@ -150,6 +165,28 @@ def api_analytics(user_id: int = Depends(current_user)):
             for name, amount in sorted(stats["categories"].items(), key=lambda item: item[1], reverse=True)
         ],
     }
+
+
+@app.post("/api/siri/expense", response_class=PlainTextResponse)
+def api_siri_expense(op: SiriExpense, user_id: int = Depends(siri_user)):
+    amount, description = parse_expense(strip_date_words(op.text))
+    if amount is None or amount <= 0:
+        raise HTTPException(422, "Назовите сумму цифрами, например: 500 рублей еда.")
+
+    expense_date = extract_date(op.text)
+    created_at = None
+    if expense_date:
+        created_at = datetime.combine(expense_date, datetime.min.time()).replace(hour=12)
+
+    request_id = f"siri-{uuid.uuid4().hex}"
+    if not add_expense(user_id, amount, description, request_id, created_at):
+        raise HTTPException(409, "Недостаточно средств в доступном бюджете.")
+
+    snapshot = get_status_snapshot(user_id)
+    return (
+        f"Записано: {amount:g} рублей, {description}. "
+        f"Осталось {snapshot['remaining']:.0f} рублей."
+    )
 
 
 @app.post("/api/expense")

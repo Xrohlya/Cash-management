@@ -17,6 +17,8 @@ DEFAULT_MANDATORY_PERCENT = float(os.getenv("DEFAULT_MANDATORY_PERCENT", "6"))
 CURRENCY = "₽"
 INIT_DATA_TTL_SECONDS = int(os.getenv("INIT_DATA_TTL_SECONDS", "86400"))
 DB_POOL_MAX = int(os.getenv("DB_POOL_MAX", "10"))
+SIRI_API_TOKEN = os.getenv("SIRI_API_TOKEN", "").strip()
+SIRI_USER_ID = int(os.getenv("SIRI_USER_ID", "0") or "0")
 ALLOWED_ORIGINS = [
     value.strip().rstrip("/")
     for value in os.getenv("ALLOWED_ORIGINS", WEBAPP_URL).split(",")
