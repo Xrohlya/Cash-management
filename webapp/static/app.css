@@ -56,7 +56,7 @@ h2 { margin-bottom: 14px; font-size: 17px; }
 
 .icon-button:active { transform: scale(0.96); }
 
-main { padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
+main { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
 
 .tab-panel[hidden] { display: none; }
 
@@ -204,27 +204,26 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px r
 .empty { padding: 26px 0; color: var(--muted); text-align: center; }
 
 .tabbar {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  position: sticky;
+  top: 0;
   z-index: 4;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  min-height: calc(62px + env(safe-area-inset-bottom));
-  padding: 0 8px env(safe-area-inset-bottom);
-  border-top: 1px solid var(--line);
+  min-height: 50px;
+  padding: 0 8px;
+  border-top: 1px solid rgba(53, 169, 255, 0.12);
+  border-bottom: 1px solid var(--line);
   background: rgba(10, 15, 24, 0.96);
   backdrop-filter: blur(14px);
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.32);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.24);
 }
 
 .tabbar button {
   min-width: 0;
-  min-height: 62px;
+  min-height: 50px;
   padding: 8px 5px;
   border: 0;
-  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
   background: transparent;
   color: var(--muted);
   font-size: 12px;
@@ -232,7 +231,7 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px r
 }
 
 .tabbar button.active {
-  border-top-color: var(--accent);
+  border-bottom-color: var(--accent);
   color: var(--accent);
   font-weight: 650;
   text-shadow: 0 0 13px rgba(53, 169, 255, 0.55);
@@ -241,7 +240,7 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px r
 .toast {
   position: fixed;
   right: 16px;
-  bottom: calc(74px + env(safe-area-inset-bottom));
+  bottom: max(16px, env(safe-area-inset-bottom));
   left: 16px;
   z-index: 5;
   padding: 12px 14px;
@@ -271,5 +270,4 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px r
 @media (min-width: 620px) {
   body { max-width: 720px; margin: 0 auto; border-right: 1px solid var(--line); border-left: 1px solid var(--line); }
   .metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .tabbar { right: 50%; left: 50%; width: 720px; transform: translateX(-50%); }
 }
