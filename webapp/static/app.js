@@ -1,5 +1,8 @@
 const telegram = window.Telegram?.WebApp;
-const initData = telegram?.initData || "";
+const localInitData = ["127.0.0.1", "localhost"].includes(window.location.hostname)
+  ? new URLSearchParams(window.location.search).get("initData") || ""
+  : "";
+const initData = telegram?.initData || localInitData;
 
 const operationLabels = {
   expense: ["Записать расход", "Например, продукты"],
@@ -19,6 +22,23 @@ const kindLabels = {
 let operationKind = "expense";
 let toastTimer;
 
+const tabs = new Set(["budget", "expenses", "settings"]);
+
+function selectTab(tabName, remember = true) {
+  const selected = tabs.has(tabName) ? tabName : "budget";
+  document.querySelectorAll("[data-tab-panel]").forEach((panel) => {
+    const active = panel.dataset.tabPanel === selected;
+    panel.hidden = !active;
+    panel.classList.toggle("active", active);
+  });
+  document.querySelectorAll("[data-tab-target]").forEach((button) => {
+    const active = button.dataset.tabTarget === selected;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+  if (remember) sessionStorage.setItem("cash-management-tab", selected);
+}
+
 const financialDay = document.getElementById("financial-day");
 for (let day = 1; day <= 28; day += 1) {
   const option = document.createElement("option");
@@ -35,6 +55,14 @@ function shortDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value.slice(0, 10);
   return new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(date);
+}
+
+function operationWord(count) {
+  const lastTwo = count % 100;
+  if (lastTwo >= 11 && lastTwo <= 14) return "операций";
+  if (count % 10 === 1) return "операция";
+  if (count % 10 >= 2 && count % 10 <= 4) return "операции";
+  return "операций";
 }
 
 async function api(path, options = {}) {
@@ -94,10 +122,39 @@ function renderHistory(items) {
   }));
 }
 
+function renderCategories(items) {
+  const root = document.getElementById("categories");
+  if (!items.length) {
+    root.innerHTML = '<p class="empty">Расходов в этом периоде пока нет</p>';
+    return;
+  }
+  const maxAmount = Math.max(...items.map((item) => Number(item.amount || 0)), 1);
+  root.replaceChildren(...items.map((item) => {
+    const row = document.createElement("article");
+    row.className = "category-item";
+    const title = document.createElement("strong");
+    title.textContent = item.name;
+    const amount = document.createElement("b");
+    amount.textContent = money(item.amount);
+    const count = document.createElement("small");
+    count.textContent = `${item.count} ${operationWord(item.count)}`;
+    const bar = document.createElement("span");
+    bar.className = "category-bar";
+    bar.style.width = `${Math.max(4, Number(item.amount || 0) / maxAmount * 100)}%`;
+    row.append(title, amount, count, bar);
+    return row;
+  }));
+}
+
 async function load() {
-  const [state, history] = await Promise.all([api("/api/state"), api("/api/transactions?limit=30")]);
+  const [state, history, analytics] = await Promise.all([
+    api("/api/state"),
+    api("/api/transactions?limit=30"),
+    api("/api/analytics"),
+  ]);
   renderState(state);
   renderHistory(history);
+  renderCategories(analytics.categories);
 }
 
 document.getElementById("operation-kind").addEventListener("click", (event) => {
@@ -107,6 +164,13 @@ document.getElementById("operation-kind").addEventListener("click", (event) => {
   document.querySelectorAll("#operation-kind button").forEach((item) => item.classList.toggle("active", item === button));
   document.getElementById("submit").textContent = operationLabels[operationKind][0];
   document.getElementById("description").placeholder = operationLabels[operationKind][1];
+});
+
+document.querySelector(".tabbar").addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-tab-target]");
+  if (!button) return;
+  selectTab(button.dataset.tabTarget);
+  telegram?.HapticFeedback?.selectionChanged();
 });
 
 document.getElementById("operation-form").addEventListener("submit", async (event) => {
@@ -121,7 +185,12 @@ document.getElementById("operation-form").addEventListener("submit", async (even
     };
     const state = await api(`/api/${operationKind}`, { method: "POST", body: JSON.stringify(payload) });
     renderState(state);
-    renderHistory(await api("/api/transactions?limit=30"));
+    const [history, analytics] = await Promise.all([
+      api("/api/transactions?limit=30"),
+      api("/api/analytics"),
+    ]);
+    renderHistory(history);
+    renderCategories(analytics.categories);
     event.target.reset();
     telegram?.HapticFeedback?.notificationOccurred("success");
     showToast("Операция сохранена");
@@ -145,7 +214,12 @@ document.getElementById("period-form").addEventListener("submit", async (event) 
       body: JSON.stringify({ financial_day: Number(financialDay.value) }),
     });
     renderState(state);
-    renderHistory(await api("/api/transactions?limit=30"));
+    const [history, analytics] = await Promise.all([
+      api("/api/transactions?limit=30"),
+      api("/api/analytics"),
+    ]);
+    renderHistory(history);
+    renderCategories(analytics.categories);
     telegram?.HapticFeedback?.notificationOccurred("success");
     showToast("Период обновлён");
   } catch (error) {
@@ -161,5 +235,6 @@ if (!initData) {
 } else {
   telegram.ready();
   telegram.expand();
+  selectTab(sessionStorage.getItem("cash-management-tab") || "budget", false);
   load().catch((error) => showToast(error.message));
 }

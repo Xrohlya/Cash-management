@@ -1,3 +1,4 @@
+import re
 from datetime import date, datetime, timedelta
 
 from config.settings import DATABASE_URL, DEFAULT_MANDATORY_PERCENT
@@ -10,8 +11,14 @@ CATEGORY_ALIASES = {
     "еда": "Еда",
     "продукты": "Еда",
     "продукты питания": "Еда",
+    "питание": "Еда",
+    "обед": "Еда",
+    "ужин": "Еда",
+    "завтрак": "Еда",
     "кафе": "Кафе",
     "кофейня": "Кафе",
+    "ресторан": "Кафе",
+    "доставка": "Кафе",
     "сигареты": "Сигареты",
     "сигарета": "Сигареты",
     "сиги": "Сигареты",
@@ -20,6 +27,16 @@ CATEGORY_ALIASES = {
     "заправка": "Бензин",
     "такси": "Такси",
     "магазин": "Магазин",
+    "аптека": "Здоровье",
+    "лекарства": "Здоровье",
+    "транспорт": "Транспорт",
+    "метро": "Транспорт",
+    "подписка": "Подписки",
+    "подписки": "Подписки",
+    "ai": "Подписки",
+    "расход": "Разное",
+    "разное": "Разное",
+    "прочее": "Разное",
 }
 
 
@@ -27,15 +44,25 @@ def normalize_expense_category(description: str) -> str:
     value = " ".join((description or "").strip().split())
     if not value:
         return "Расход"
+    value = re.sub(r"^[\W_]+|[\W_]+$", "", value, flags=re.UNICODE).strip()
+    if not value:
+        return "Разное"
     key = value.casefold()
     if key in CATEGORY_ALIASES:
         return CATEGORY_ALIASES[key]
+    tokens = re.findall(r"[a-zа-яё0-9]+", key)
+    token_categories = {CATEGORY_ALIASES[token] for token in tokens if token in CATEGORY_ALIASES}
+    if tokens and len(token_categories) == 1 and all(token in CATEGORY_ALIASES for token in tokens):
+        return token_categories.pop()
     keyword_categories = {
         "Еда": ("пятероч", "перекрест", "магнит", "лента", "ашан", "вкусвилл", "дикси", "продукт"),
         "Кафе": ("кафе", "ресторан", "бар", "столов", "кофейн", "доставка еды"),
         "Бензин": ("бензин", "топливо", "заправ", "азс", "газпромнефть", "лукойл", "роснефть"),
         "Такси": ("такси", "яндекс го", "uber", "ситимобил"),
         "Сигареты": ("сигарет", "табак", "вейп", "vape"),
+        "Здоровье": ("аптек", "лекар", "врач", "анализ", "стоматолог"),
+        "Транспорт": ("метро", "автобус", "проезд", "транспорт", "электричк"),
+        "Подписки": ("подписк", "яндекс плюс", "icloud", "netflix", "spotify", "оплата ai", "openai", "chatgpt"),
     }
     for category, keywords in keyword_categories.items():
         if any(keyword in key for keyword in keywords):

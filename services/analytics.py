@@ -1,7 +1,13 @@
 from collections import defaultdict
 from datetime import date, timedelta
 from database.db import get_connection
-from database.repository import financial_period_start, financial_period_end, get_month, get_savings
+from database.repository import (
+    financial_period_end,
+    financial_period_start,
+    get_month,
+    get_savings,
+    normalize_expense_category,
+)
 
 def set_goal(user_id: int, target: float, target_date: date):
     with get_connection() as conn:
@@ -41,6 +47,7 @@ def current_period_stats(user_id: int):
             (user_id, start.isoformat(), end.isoformat()),
         ).fetchall()
     categories = defaultdict(float)
+    category_counts = defaultdict(int)
     daily = defaultdict(float)
     income = mandatory = rent = saved = expenses = 0.0
     for r in rows:
@@ -48,7 +55,9 @@ def current_period_stats(user_id: int):
         kind = r["kind"]
         if kind == "expense":
             expenses += amount
-            categories[r["description"]] += amount
+            category = normalize_expense_category(r["description"])
+            categories[category] += amount
+            category_counts[category] += 1
             daily[r["created_at"][:10]] += amount
         elif kind == "income": income += amount
         elif kind == "mandatory": mandatory += amount
@@ -63,7 +72,8 @@ def current_period_stats(user_id: int):
         "start": start, "end": end, "income": income, "mandatory": mandatory,
         "expenses": expenses, "rent": rent, "saved": saved, "remaining": remaining,
         "avg": avg, "forecast": forecast, "days_elapsed": days_elapsed,
-        "days_total": days_total, "categories": dict(categories), "daily": dict(daily),
+        "days_total": days_total, "categories": dict(categories),
+        "category_counts": dict(category_counts), "daily": dict(daily),
         "savings_total": get_savings(user_id),
     }
 

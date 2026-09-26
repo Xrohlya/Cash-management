@@ -30,6 +30,7 @@ from database.repository import (
     get_financial_day,
     get_month,
     get_savings,
+    normalize_expense_category,
 )
 
 
@@ -82,7 +83,7 @@ def get_report_data(user_id: int, start: date, end: date):
     daily_totals = defaultdict(float)
     for row in expenses:
         amount = float(row["amount"])
-        category_totals[row["description"]] += amount
+        category_totals[normalize_expense_category(row["description"])] += amount
         day = datetime.fromisoformat(row["created_at"]).date()
         daily_totals[day] += amount
 

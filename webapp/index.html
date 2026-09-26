@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="color-scheme" content="light dark">
+  <meta name="color-scheme" content="dark">
   <title>Мой бюджет</title>
   <link rel="stylesheet" href="/static/app.css">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -18,62 +18,79 @@
   </header>
 
   <main>
-    <section class="balance-band" aria-labelledby="available-label">
-      <p id="available-label">Доступно</p>
-      <strong id="available">—</strong>
-      <div class="limit-row">
-        <span>Лимит на день <b id="daily-limit">—</b></span>
-        <span>Сегодня <b id="today">—</b></span>
-      </div>
-    </section>
+    <div class="tab-panel active" id="tab-budget" data-tab-panel="budget" role="tabpanel" aria-labelledby="nav-budget">
+      <section class="balance-band" aria-labelledby="available-label">
+        <p id="available-label">Доступно</p>
+        <strong id="available">—</strong>
+        <div class="limit-row">
+          <span>Лимит на день <b id="daily-limit">—</b></span>
+          <span>Сегодня <b id="today">—</b></span>
+        </div>
+      </section>
 
-    <section class="metrics" aria-label="Сводка">
-      <article><span>Бюджет</span><b id="budget">—</b></article>
-      <article><span>Расходы</span><b id="spent">—</b></article>
-      <article><span>Квартира</span><b id="rent">—</b></article>
-      <article><span>Накопления</span><b id="savings">—</b></article>
-    </section>
+      <section class="metrics" aria-label="Сводка">
+        <article><span>Бюджет</span><b id="budget">—</b></article>
+        <article><span>Расходы</span><b id="spent">—</b></article>
+        <article><span>Квартира</span><b id="rent">—</b></article>
+        <article><span>Накопления</span><b id="savings">—</b></article>
+      </section>
+    </div>
 
-    <section class="operation-section">
-      <h2>Новая операция</h2>
-      <div class="segments" id="operation-kind" role="tablist" aria-label="Тип операции">
-        <button class="active" type="button" data-kind="expense">Расход</button>
-        <button type="button" data-kind="income">Доход</button>
-        <button type="button" data-kind="rent">Квартира</button>
-        <button type="button" data-kind="save">Отложить</button>
-      </div>
-      <form id="operation-form">
-        <label>
-          <span>Сумма</span>
-          <div class="amount-input"><input id="amount" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required><b>₽</b></div>
-        </label>
-        <label>
-          <span>Категория или комментарий</span>
-          <input id="description" name="description" maxlength="255" autocomplete="off" placeholder="Например, продукты">
-        </label>
-        <button class="primary" id="submit" type="submit">Записать расход</button>
-      </form>
-    </section>
+    <div class="tab-panel" id="tab-expenses" data-tab-panel="expenses" role="tabpanel" aria-labelledby="nav-expenses" hidden>
+      <section class="operation-section">
+        <h2>Новая операция</h2>
+        <div class="segments" id="operation-kind" role="tablist" aria-label="Тип операции">
+          <button class="active" type="button" data-kind="expense">Расход</button>
+          <button type="button" data-kind="income">Доход</button>
+          <button type="button" data-kind="rent">Квартира</button>
+          <button type="button" data-kind="save">Отложить</button>
+        </div>
+        <form id="operation-form">
+          <label>
+            <span>Сумма</span>
+            <div class="amount-input"><input id="amount" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required><b>₽</b></div>
+          </label>
+          <label>
+            <span>Категория или комментарий</span>
+            <input id="description" name="description" maxlength="255" autocomplete="off" placeholder="Например, продукты">
+          </label>
+          <button class="primary" id="submit" type="submit">Записать расход</button>
+        </form>
+      </section>
 
-    <section class="history-section">
-      <div class="section-heading">
-        <h2>Последние операции</h2>
-        <span id="days-left"></span>
-      </div>
-      <div id="history" class="history" aria-live="polite"></div>
-    </section>
+      <section class="category-section">
+        <div class="section-heading">
+          <h2>Расходы по категориям</h2>
+          <span id="days-left"></span>
+        </div>
+        <div id="categories" class="categories" aria-live="polite"></div>
+      </section>
 
-    <section class="settings-section" aria-labelledby="period-settings-title">
-      <h2 id="period-settings-title">Период бюджета</h2>
-      <form id="period-form" class="period-form">
-        <label for="financial-day">
-          <span>Начинать каждый месяц</span>
-          <select id="financial-day" name="financial-day" aria-label="День начала периода"></select>
-        </label>
-        <button class="secondary" id="save-period" type="submit">Сохранить</button>
-      </form>
-    </section>
+      <details class="history-section history-details">
+        <summary>Все операции</summary>
+        <div id="history" class="history" aria-live="polite"></div>
+      </details>
+    </div>
+
+    <div class="tab-panel" id="tab-settings" data-tab-panel="settings" role="tabpanel" aria-labelledby="nav-settings" hidden>
+      <section class="settings-section" aria-labelledby="period-settings-title">
+        <h2 id="period-settings-title">Период бюджета</h2>
+        <form id="period-form" class="period-form">
+          <label for="financial-day">
+            <span>Начинать каждый месяц</span>
+            <select id="financial-day" name="financial-day" aria-label="День начала периода"></select>
+          </label>
+          <button class="secondary" id="save-period" type="submit">Сохранить</button>
+        </form>
+      </section>
+    </div>
   </main>
+
+  <nav class="tabbar" role="tablist" aria-label="Разделы">
+    <button class="active" id="nav-budget" type="button" role="tab" data-tab-target="budget" aria-controls="tab-budget" aria-selected="true">Основной бюджет</button>
+    <button id="nav-expenses" type="button" role="tab" data-tab-target="expenses" aria-controls="tab-expenses" aria-selected="false">Расходы</button>
+    <button id="nav-settings" type="button" role="tab" data-tab-target="settings" aria-controls="tab-settings" aria-selected="false">Настройки</button>
+  </nav>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="blocking-message" id="blocking-message" hidden>

@@ -161,7 +161,11 @@ def api_analytics(user_id: int = Depends(current_user)):
         "average": round(stats["avg"], 2),
         "forecast": round(stats["forecast"], 2),
         "categories": [
-            {"name": name, "amount": round(amount, 2)}
+            {
+                "name": name,
+                "amount": round(amount, 2),
+                "count": stats["category_counts"].get(name, 0),
+            }
             for name, amount in sorted(stats["categories"].items(), key=lambda item: item[1], reverse=True)
         ],
     }

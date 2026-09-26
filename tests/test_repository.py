@@ -4,7 +4,7 @@ from pathlib import Path
 
 import database.db as db
 from database import repository
-from services.analytics import get_goal, set_goal
+from services.analytics import current_period_stats, get_goal, set_goal
 
 
 class RepositoryTest(unittest.TestCase):
@@ -44,6 +44,22 @@ class RepositoryTest(unittest.TestCase):
         repository.add_income(101, 100, 0)
         self.assertFalse(repository.add_expense(101, 101, "Еда", "request-0002"))
         self.assertEqual(float(repository.get_month(101)["spent"]), 0)
+
+    def test_expense_aliases_are_grouped_in_analytics(self):
+        repository.add_income(303, 1000, 0)
+        repository.add_expense(303, 100, "продукты")
+        repository.add_expense(303, 150, "обед")
+        repository.add_expense(303, 25, ". еда")
+        repository.add_expense(303, 75, "Еда . еда")
+
+        stats = current_period_stats(303)
+
+        self.assertEqual(stats["categories"], {"Еда": 350.0})
+        self.assertEqual(stats["category_counts"], {"Еда": 4})
+
+    def test_subscription_and_generic_expense_aliases(self):
+        self.assertEqual(repository.normalize_expense_category("- оплата Ai"), "Подписки")
+        self.assertEqual(repository.normalize_expense_category("расход"), "Разное")
 
     def test_goals_are_stored_per_user(self):
         from datetime import date
