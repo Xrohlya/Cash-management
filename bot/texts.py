@@ -45,6 +45,9 @@ HELP = """
 📋 История:
 <code>/history</code>
 
+🔁 Регулярные платежи:
+<code>/recurring</code>
+
 ❌ Отменить ожидающее подтверждение:
 <code>/cancel</code>
 

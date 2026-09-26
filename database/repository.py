@@ -588,11 +588,15 @@ def add_recurring_payment(user_id: int, title: str, amount: float, kind: str, da
     if not 1 <= day_of_month <= 28:
         raise ValueError("День платежа должен быть от 1 до 28")
     ensure_user(user_id)
+    today = date.today()
+    # A newly created rule starts from its next occurrence. Mark the current
+    # month handled when its configured day has already arrived.
+    last_run = today.isoformat() if day_of_month <= today.day else None
     with get_connection() as conn:
         conn.execute(
-            "INSERT INTO recurring_payments(user_id, title, amount, kind, day_of_month) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (user_id, title[:255], round(amount, 2), kind, day_of_month),
+            "INSERT INTO recurring_payments(user_id, title, amount, kind, day_of_month, last_run) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, title[:255], round(amount, 2), kind, day_of_month, last_run),
         )
 
 

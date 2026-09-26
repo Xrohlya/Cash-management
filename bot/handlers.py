@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from html import escape
 
 from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest
@@ -15,6 +16,7 @@ from database.repository import (
     recent_transactions, get_status_message, set_status_message,
     clear_status_message, daily_expense_transactions, average_daily_expense,
     get_status_snapshot,
+    list_recurring_payments,
 )
 from services.budget import status, money, available_budget
 from services.parser import parse_amount, parse_expense, looks_like_income, extract_date, strip_date_words
@@ -691,6 +693,34 @@ async def cb_goal(callback: CallbackQuery):
         text = f"🎯 <b>ЦЕЛЬ</b>\n\n{money(target)} ₽ к {target_date:%d.%m.%Y}\n\nИзменить: <code>/goal 300000 01.06.2027</code>"
     await edit_interface(callback, text)
     await answer_callback(callback)
+
+
+def recurring_payments_text(user_id: int) -> str:
+    payments = list_recurring_payments(user_id)
+    lines = ["🔁 <b>РЕГУЛЯРНЫЕ ПЛАТЕЖИ</b>", ""]
+    if not payments:
+        lines.append("Платежей пока нет. Добавьте их в Mini App → Настройки.")
+        return "\n".join(lines)
+    for payment in payments:
+        kind = "Квартира" if payment["kind"] == "rent" else "Расход"
+        lines.append(
+            f"• {escape(payment['title'])} — <b>{money(payment['amount'])} ₽</b> "
+            f"({payment['day_of_month']}-го, {kind})"
+        )
+    lines.extend(["", "Новый платёж начинает действовать со следующей назначенной даты."])
+    return "\n".join(lines)
+
+
+@router.callback_query(F.data == "recurring")
+async def cb_recurring(callback: CallbackQuery):
+    await edit_interface(callback, recurring_payments_text(callback.from_user.id))
+    await answer_callback(callback)
+
+
+@router.message(Command("recurring"))
+async def cmd_recurring(message: Message):
+    await delete_user_message(message)
+    await send_transient(message, recurring_payments_text(message.from_user.id))
 
 
 @router.message(Command("goal"))

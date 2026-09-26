@@ -74,8 +74,14 @@ class RepositoryTest(unittest.TestCase):
         repository.add_income(101, 1000, 0)
         repository.add_recurring_payment(101, "Кофе", 120, "expense", 1)
 
-        self.assertEqual(len(repository.apply_due_recurring_payments(101, date(2026, 9, 26))), 1)
-        self.assertEqual(repository.apply_due_recurring_payments(101, date(2026, 9, 27)), [])
+        today = date.today()
+        self.assertEqual(repository.apply_due_recurring_payments(101, today), [])
+        if today.month == 12:
+            next_month = date(today.year + 1, 1, 1)
+        else:
+            next_month = date(today.year, today.month + 1, 1)
+        self.assertEqual(len(repository.apply_due_recurring_payments(101, next_month)), 1)
+        self.assertEqual(repository.apply_due_recurring_payments(101, next_month), [])
         self.assertEqual(float(repository.get_month(101)["spent"]), 120)
         expenses = [row for row in repository.recent_transactions(101) if row["kind"] == "expense"]
         self.assertEqual(len(expenses), 1)

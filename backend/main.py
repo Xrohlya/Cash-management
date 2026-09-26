@@ -263,7 +263,6 @@ def api_add_recurring(payment: RecurringPayment, user_id: int = Depends(current_
         payment.kind,
         payment.day_of_month,
     )
-    apply_due_recurring_payments(user_id)
     return [dict(row) for row in list_recurring_payments(user_id)]
 
 

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <title>Мой бюджет</title>
-  <link rel="stylesheet" href="/static/app.css?v=20260926-3">
+  <link rel="stylesheet" href="/static/app.css?v=20260926-4">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -121,6 +121,7 @@
             <label><span>Тип</span><select id="recurring-kind"><option value="expense">Расход</option><option value="rent">Квартира</option></select></label>
           </div>
           <label><span>Списывать каждого месяца</span><select id="recurring-day"></select></label>
+          <p class="form-hint">Первое списание — в следующую назначенную дату.</p>
           <button class="secondary" type="submit">Добавить платёж</button>
         </form>
         <div id="recurring-list" class="recurring-list"></div>
@@ -133,6 +134,6 @@
     <h2>Откройте приложение из Telegram</h2>
     <p>Авторизация доступна через кнопку меню вашего бота.</p>
   </div>
-  <script src="/static/app.js?v=20260926-3" defer></script>
+  <script src="/static/app.js?v=20260926-4" defer></script>
 </body>
 </html>

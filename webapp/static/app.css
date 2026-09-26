@@ -227,6 +227,7 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px r
 .recurring-section { padding-bottom: 24px; }
 .form-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
 .recurring-list { margin-top: 18px; border-top: 1px solid var(--line); }
+.form-hint { margin: -3px 0 0; color: var(--muted); font-size: 12px; }
 .recurring-item { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto 34px; align-items: center; gap: 10px; padding: 13px 0; border-bottom: 1px solid var(--line); }
 .recurring-item div { min-width: 0; }
 .recurring-item strong, .recurring-item small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
