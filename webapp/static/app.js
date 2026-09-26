@@ -166,11 +166,11 @@ document.getElementById("operation-kind").addEventListener("click", (event) => {
   document.getElementById("description").placeholder = operationLabels[operationKind][1];
 });
 
-document.querySelector(".tabbar").addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-tab-target]");
-  if (!button) return;
-  selectTab(button.dataset.tabTarget);
-  telegram?.HapticFeedback?.selectionChanged();
+document.querySelectorAll("button[data-tab-target]").forEach((button) => {
+  button.addEventListener("click", () => {
+    selectTab(button.dataset.tabTarget);
+    telegram?.HapticFeedback?.selectionChanged?.();
+  });
 });
 
 document.getElementById("operation-form").addEventListener("submit", async (event) => {

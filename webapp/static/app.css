@@ -228,6 +228,7 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px r
   color: var(--muted);
   font-size: 12px;
   line-height: 1.2;
+  touch-action: manipulation;
 }
 
 .tabbar button.active {
