@@ -6,7 +6,7 @@ from aiogram.types import BotCommand, MenuButtonCommands, MenuButtonWebApp, WebA
 from bot.connection import create_bot, create_dispatcher
 from bot.handlers import router
 from config.settings import WEBAPP_URL
-from database.db import init_db
+from database.db import close_db_pool, init_db
 from database.repository import (
     apply_due_recurring_payments,
     due_recurring_notifications,
@@ -16,6 +16,7 @@ from database.repository import (
 
 async def recurring_notification_loop(bot):
     while True:
+        retry_delay = 3600
         try:
             for payment in due_recurring_notifications():
                 await bot.send_message(
@@ -30,7 +31,8 @@ async def recurring_notification_loop(bot):
                 apply_due_recurring_payments(payment["user_id"])
         except Exception:
             logging.exception("Recurring payment notification failed")
-        await asyncio.sleep(3600)
+            retry_delay = 60
+        await asyncio.sleep(retry_delay)
 
 
 async def configure_bot(bot):
@@ -61,6 +63,7 @@ async def main():
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
         notification_task.cancel()
+        close_db_pool()
 
 
 if __name__ == "__main__":

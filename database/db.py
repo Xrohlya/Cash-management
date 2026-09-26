@@ -1,10 +1,21 @@
 import re
 import sqlite3
+import atexit
 
 from config.settings import DATABASE_URL, DB_POOL_MAX, SQLITE_PATH
 
 
 _PG_POOL = None
+
+
+def close_db_pool():
+    global _PG_POOL
+    if _PG_POOL is not None:
+        pool, _PG_POOL = _PG_POOL, None
+        pool.close(timeout=10)
+
+
+atexit.register(close_db_pool)
 
 
 class _PGConnection:
@@ -23,14 +34,28 @@ class _PGConnection:
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        if exc_type:
-            self._conn.rollback()
-        else:
-            self._conn.commit()
-        if self._release:
-            self._release(self._conn)
-        else:
-            self._conn.close()
+        transaction_error = None
+        try:
+            if exc_type:
+                self._conn.rollback()
+            else:
+                self._conn.commit()
+        except Exception as error:
+            transaction_error = error
+            try:
+                self._conn.close()
+            except Exception:
+                pass
+        finally:
+            if self._release:
+                self._release(self._conn)
+            else:
+                self._conn.close()
+
+        # Preserve the original query error. A failed rollback on an already
+        # disconnected socket is cleanup noise, not the root cause.
+        if transaction_error is not None and exc_type is None:
+            raise transaction_error
 
     def execute(self, sql, params=()):
         from psycopg.rows import dict_row
@@ -79,6 +104,9 @@ def get_connection():
                 conninfo=DATABASE_URL,
                 min_size=1,
                 max_size=max(2, DB_POOL_MAX),
+                max_idle=300,
+                max_lifetime=1800,
+                check=ConnectionPool.check_connection,
                 open=True,
             )
         return _PGConnection(_PG_POOL.getconn(), release=_PG_POOL.putconn)
