@@ -40,6 +40,7 @@ async def configure_bot(bot):
         BotCommand(command="start", description="Открыть бюджет"),
         BotCommand(command="status", description="Текущее состояние"),
         BotCommand(command="history", description="Последние операции"),
+        BotCommand(command="sources", description="Источники дохода"),
         BotCommand(command="help", description="Помощь"),
     ])
     if WEBAPP_URL:

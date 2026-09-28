@@ -16,10 +16,11 @@ from config.settings import DATABASE_URL
 TABLES = {
     "users": "user_id, mandatory_percent, financial_day, savings, status_chat_id, status_message_id, first_name, username",
     "months": "user_id, month, budget, spent, rent, saved",
-    "transactions": "id, user_id, created_at, kind, amount, description",
+    "transactions": "id, user_id, created_at, kind, amount, description, income_source_id",
     "goals": "user_id, target, target_date",
     "operation_requests": "user_id, request_id, created_at",
     "recurring_payments": "id, user_id, title, amount, kind, day_of_month, active, last_run, last_notified",
+    "income_sources": "id, user_id, name, withholding_percent, active",
 }
 
 

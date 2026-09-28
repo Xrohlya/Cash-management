@@ -28,8 +28,46 @@ class RepositoryTest(unittest.TestCase):
 
         self.assertEqual(float(repository.get_month(101)["spent"]), 125)
         self.assertEqual(float(repository.get_month(202)["spent"]), 0)
-        self.assertEqual(len(repository.recent_transactions(101)), 3)
-        self.assertEqual(len(repository.recent_transactions(202)), 2)
+        self.assertEqual(len(repository.recent_transactions(101)), 2)
+        self.assertEqual(len(repository.recent_transactions(202)), 1)
+
+    def test_main_income_has_no_withholding(self):
+        fee, net, created = repository.add_income(101, 1000, 25)
+        self.assertTrue(created)
+        self.assertEqual(fee, 0)
+        self.assertEqual(net, 1000)
+        self.assertEqual(float(repository.get_month(101)["budget"]), 1000)
+
+    def test_income_source_applies_its_own_percentage(self):
+        repository.create_income_source(101, "Кафе", 6)
+        source = repository.find_income_source(101, "получил 30000 кафе")
+        self.assertIsNotNone(source)
+        fee, net, created = repository.add_income_from_source(101, 30000, source["id"], "Кафе")
+        self.assertTrue(created)
+        self.assertEqual(fee, 1800)
+        self.assertEqual(net, 28200)
+        self.assertEqual(float(repository.get_month(101)["budget"]), 28200)
+        stats = repository.list_income_sources(101)[0]
+        self.assertEqual(float(stats["gross_total"]), 30000)
+        self.assertEqual(float(stats["withheld_total"]), 1800)
+
+    def test_expense_can_be_corrected_and_month_is_rebuilt(self):
+        repository.add_income(101, 1000, 0)
+        repository.add_expense(101, 100, "Кафе")
+        expense = next(row for row in repository.recent_transactions(101) if row["kind"] == "expense")
+        repository.update_expense(101, expense["id"], 75, "Продукты")
+        self.assertEqual(float(repository.get_month(101)["spent"]), 75)
+        corrected = next(row for row in repository.recent_transactions(101) if row["kind"] == "expense")
+        self.assertEqual(corrected["description"], "Еда")
+
+    def test_reset_only_removes_selected_user_data(self):
+        repository.add_income(101, 1000, 0)
+        repository.add_income(202, 500, 0)
+        repository.create_income_source(101, "Кафе", 6)
+        repository.reset_user_data(101)
+        self.assertEqual(repository.recent_transactions(101), [])
+        self.assertEqual(len(repository.recent_transactions(202)), 1)
+        self.assertEqual(repository.list_income_sources(101), [])
 
     def test_request_id_prevents_duplicate_operation(self):
         repository.add_income(101, 1000, 0)

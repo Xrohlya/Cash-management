@@ -17,6 +17,7 @@ from database.repository import (
     clear_status_message, daily_expense_transactions, average_daily_expense,
     get_status_snapshot,
     list_recurring_payments,
+    list_income_sources, find_income_source, add_income_from_source,
 )
 from services.budget import status, money, available_budget
 from services.parser import parse_amount, parse_expense, looks_like_income, extract_date, strip_date_words
@@ -239,14 +240,8 @@ async def cmd_savings(message: Message):
 
 @router.message(Command("setpercent"))
 async def cmd_setpercent(message: Message):
-    amount = parse_amount(message.text)
-    if amount is None or not 0 <= amount <= 100:
-        await delete_user_message(message)
-        await send_transient(message, "Пример: <code>/setpercent 6</code>", parse_mode="HTML")
-        return
-    set_percent(message.from_user.id, amount)
     await delete_user_message(message)
-    await update_status(message, message.from_user.id)
+    await send_transient(message, "Проценты источников дохода меняются только в Mini App → Настройки.")
 
 
 @router.message(Command("income"))
@@ -259,8 +254,11 @@ async def cmd_income(message: Message):
 
     user_id = message.from_user.id
     ensure_user(user_id)
-    percent = get_percent(user_id)
-    add_income(user_id, amount, percent)
+    source = find_income_source(user_id, message.text)
+    if source:
+        add_income_from_source(user_id, amount, source["id"], source["name"])
+    else:
+        add_income(user_id, amount, 0)
     await delete_user_message(message)
     await update_status(message, user_id)
 
@@ -717,6 +715,34 @@ async def cb_recurring(callback: CallbackQuery):
     await answer_callback(callback)
 
 
+def income_sources_text(user_id: int) -> str:
+    sources = list_income_sources(user_id)
+    lines = ["💼 <b>ИСТОЧНИКИ ДОХОДА</b>", ""]
+    active = [source for source in sources if int(source["active"])]
+    if not active:
+        lines.append("Источников пока нет. Создайте их в Mini App → Настройки.")
+    for source in active:
+        lines.extend([
+            f"• <b>{escape(source['name'])}</b> · удержание {float(source['withholding_percent']):g}%",
+            f"  Доход: {money(source['gross_total'])} ₽ · удержано: {money(source['withheld_total'])} ₽",
+            f"  <code>получил 30000 {escape(source['name'].casefold())}</code>",
+        ])
+    lines.extend(["", "Без названия источника доход полностью поступает на основной счёт."])
+    return "\n".join(lines)
+
+
+@router.callback_query(F.data == "income_sources")
+async def cb_income_sources(callback: CallbackQuery):
+    await edit_interface(callback, income_sources_text(callback.from_user.id))
+    await answer_callback(callback)
+
+
+@router.message(Command("sources"))
+async def cmd_income_sources(message: Message):
+    await delete_user_message(message)
+    await send_transient(message, income_sources_text(message.from_user.id))
+
+
 @router.message(Command("recurring"))
 async def cmd_recurring(message: Message):
     await delete_user_message(message)
@@ -770,8 +796,11 @@ async def plain_text(message: Message):
     if looks_like_income(text):
         amount = parse_amount(text)
         if amount:
-            percent = get_percent(user_id)
-            add_income(user_id, amount, percent)
+            source = find_income_source(user_id, text)
+            if source:
+                add_income_from_source(user_id, amount, source["id"], source["name"])
+            else:
+                add_income(user_id, amount, 0)
             await delete_user_message(message)
             await update_status(message, user_id)
             return

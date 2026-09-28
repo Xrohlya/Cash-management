@@ -420,8 +420,8 @@ def _claim_request(conn, user_id: int, request_id: str | None) -> bool:
 
 def add_income(user_id: int, gross: float, percent: float, description="Доход", request_id=None):
     ensure_month(user_id)
-    fee = round(gross * percent / 100, 2)
-    net = round(gross - fee, 2)
+    fee = 0.0
+    net = round(gross, 2)
     key = month_key(user_id)
     now = datetime.now().isoformat(timespec="seconds")
     with get_connection() as conn:
@@ -431,10 +431,102 @@ def add_income(user_id: int, gross: float, percent: float, description="Дохо
             "INSERT INTO transactions(user_id, created_at, kind, amount, description) VALUES (?, ?, 'income', ?, ?)",
             (user_id, now, gross, description),
         )
+        conn.execute("UPDATE months SET budget=budget+? WHERE user_id=? AND month=?", (net, user_id, key))
+    return fee, net, True
+
+
+def list_income_sources(user_id: int):
+    ensure_user(user_id)
+    with get_connection() as conn:
+        return conn.execute(
+            "SELECT s.id,s.name,s.withholding_percent,s.active,"
+            "COALESCE(SUM(CASE WHEN t.kind='income' THEN t.amount ELSE 0 END),0) gross_total,"
+            "COALESCE(SUM(CASE WHEN t.kind='mandatory' THEN t.amount ELSE 0 END),0) withheld_total "
+            "FROM income_sources s LEFT JOIN transactions t ON t.income_source_id=s.id "
+            "WHERE s.user_id=? GROUP BY s.id,s.name,s.withholding_percent,s.active ORDER BY s.id",
+            (user_id,),
+        ).fetchall()
+
+
+def create_income_source(user_id: int, name: str, withholding_percent: float):
+    ensure_user(user_id)
+    clean_name = " ".join(name.split())[:80]
+    with get_connection() as conn:
+        if conn.execute(
+            "SELECT 1 FROM income_sources WHERE user_id=? AND lower(name)=lower(?)",
+            (user_id, clean_name),
+        ).fetchone():
+            raise ValueError("Источник с таким названием уже существует")
         conn.execute(
-            "INSERT INTO transactions(user_id, created_at, kind, amount, description) VALUES (?, ?, 'mandatory', ?, ?)",
-            (user_id, now, fee, f"Обязательный вычет {percent:g}%"),
+            "INSERT INTO income_sources(user_id,name,withholding_percent) VALUES (?, ?, ?)",
+            (user_id, clean_name, round(withholding_percent, 2)),
         )
+
+
+def update_income_source(user_id: int, source_id: int, name: str, withholding_percent: float):
+    clean_name = " ".join(name.split())[:80]
+    with get_connection() as conn:
+        duplicate = conn.execute(
+            "SELECT 1 FROM income_sources WHERE user_id=? AND lower(name)=lower(?) AND id<>?",
+            (user_id, clean_name, source_id),
+        ).fetchone()
+        if duplicate:
+            raise ValueError("Источник с таким названием уже существует")
+        cursor = conn.execute(
+            "UPDATE income_sources SET name=?,withholding_percent=? WHERE user_id=? AND id=?",
+            (clean_name, round(withholding_percent, 2), user_id, source_id),
+        )
+        if cursor.rowcount != 1:
+            raise ValueError("Источник не найден")
+
+
+def delete_income_source(user_id: int, source_id: int):
+    with get_connection() as conn:
+        used = conn.execute(
+            "SELECT 1 FROM transactions WHERE user_id=? AND income_source_id=? LIMIT 1",
+            (user_id, source_id),
+        ).fetchone()
+        if used:
+            conn.execute(
+                "UPDATE income_sources SET active=0 WHERE user_id=? AND id=?", (user_id, source_id)
+            )
+        else:
+            conn.execute("DELETE FROM income_sources WHERE user_id=? AND id=?", (user_id, source_id))
+
+
+def find_income_source(user_id: int, text: str):
+    normalized = " ".join(text.casefold().split())
+    sources = list_income_sources(user_id)
+    matches = [source for source in sources if int(source["active"]) and source["name"].casefold() in normalized]
+    return max(matches, key=lambda source: len(source["name"])) if matches else None
+
+
+def add_income_from_source(user_id: int, gross: float, source_id: int, description="Доход", request_id=None):
+    ensure_month(user_id)
+    key = month_key(user_id)
+    now = datetime.now().isoformat(timespec="seconds")
+    with get_connection() as conn:
+        source = conn.execute(
+            "SELECT name,withholding_percent FROM income_sources WHERE id=? AND user_id=? AND active=1",
+            (source_id, user_id),
+        ).fetchone()
+        if not source:
+            raise ValueError("Источник дохода не найден")
+        fee = round(gross * float(source["withholding_percent"]) / 100, 2)
+        net = round(gross - fee, 2)
+        if not _claim_request(conn, user_id, request_id):
+            return fee, net, False
+        conn.execute(
+            "INSERT INTO transactions(user_id,created_at,kind,amount,description,income_source_id) "
+            "VALUES (?, ?, 'income', ?, ?, ?)",
+            (user_id, now, gross, description or source["name"], source_id),
+        )
+        if fee:
+            conn.execute(
+                "INSERT INTO transactions(user_id,created_at,kind,amount,description,income_source_id) "
+                "VALUES (?, ?, 'mandatory', ?, ?, ?)",
+                (user_id, now, fee, f"Удержание {float(source['withholding_percent']):g}% · {source['name']}", source_id),
+            )
         conn.execute("UPDATE months SET budget=budget+? WHERE user_id=? AND month=?", (net, user_id, key))
     return fee, net, True
 
@@ -593,6 +685,43 @@ def recent_transactions(user_id: int, limit=15):
             "WHERE user_id=? ORDER BY id DESC LIMIT ?",
             (user_id, safe_limit),
         ).fetchall()
+
+
+def update_expense(user_id: int, transaction_id: int, amount: float, description: str):
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT created_at,amount,kind FROM transactions WHERE id=? AND user_id=?",
+            (transaction_id, user_id),
+        ).fetchone()
+    if not row or row["kind"] != "expense":
+        raise ValueError("Можно изменять только обычные расходы")
+    created_at = datetime.fromisoformat(row["created_at"])
+    key = month_key(user_id, created_at)
+    month = get_month(user_id, key)
+    increase = round(amount - float(row["amount"]), 2)
+    available = float(month["budget"]) - float(month["spent"]) - float(month["rent"]) - float(month["saved"])
+    if increase > available:
+        raise ValueError("Недостаточно средств для увеличения расхода")
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE transactions SET amount=?,description=? WHERE id=? AND user_id=? AND kind='expense'",
+            (round(amount, 2), normalize_expense_category(description), transaction_id, user_id),
+        )
+    rebuild_month_from_transactions(user_id, financial_period_start(user_id, created_at))
+
+
+def reset_user_data(user_id: int):
+    with get_connection() as conn:
+        conn.execute("DELETE FROM income_sources WHERE user_id=?", (user_id,))
+        conn.execute("DELETE FROM recurring_payments WHERE user_id=?", (user_id,))
+        conn.execute("DELETE FROM goals WHERE user_id=?", (user_id,))
+        conn.execute("DELETE FROM operation_requests WHERE user_id=?", (user_id,))
+        conn.execute("DELETE FROM transactions WHERE user_id=?", (user_id,))
+        conn.execute("DELETE FROM months WHERE user_id=?", (user_id,))
+        conn.execute(
+            "UPDATE users SET mandatory_percent=0,savings=0,status_chat_id=NULL,status_message_id=NULL WHERE user_id=?",
+            (user_id,),
+        )
 
 
 def list_recurring_payments(user_id: int):

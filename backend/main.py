@@ -22,14 +22,20 @@ from database.repository import (
     add_income,
     add_rent,
     add_to_savings,
+    create_income_source,
+    delete_income_source,
     apply_due_recurring_payments,
     delete_recurring_payment,
     ensure_user,
     get_percent,
     get_status_snapshot,
     list_recurring_payments,
+    list_income_sources,
     recent_transactions,
+    reset_user_data,
     set_financial_day,
+    update_income_source,
+    update_expense,
 )
 from services.analytics import clear_goal, current_period_stats, set_goal
 from services.parser import extract_date, parse_expense, strip_date_words
@@ -62,6 +68,20 @@ class RecurringPayment(BaseModel):
     amount: float = Field(gt=0, le=1_000_000_000)
     kind: str = Field(pattern="^(expense|rent)$")
     day_of_month: int = Field(ge=1, le=28)
+
+
+class IncomeSource(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    withholding_percent: float = Field(ge=0, le=100)
+
+
+class ExpenseCorrection(BaseModel):
+    amount: float = Field(gt=0, le=1_000_000_000)
+    description: str = Field(min_length=1, max_length=255)
+
+
+class ResetConfirmation(BaseModel):
+    confirmation: str
 
 
 def verify_init_data(init_data: str) -> dict:
@@ -182,6 +202,27 @@ def api_transactions(
     return [dict(row) for row in recent_transactions(user_id, limit)]
 
 
+@app.post("/api/transactions/{transaction_id}/edit")
+def api_edit_expense(
+    transaction_id: int,
+    correction: ExpenseCorrection,
+    user_id: int = Depends(current_user),
+):
+    try:
+        update_expense(user_id, transaction_id, correction.amount, correction.description)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return state(user_id)
+
+
+@app.post("/api/reset")
+def api_reset(data: ResetConfirmation, user_id: int = Depends(current_user)):
+    if data.confirmation != "УДАЛИТЬ ВСЕ":
+        raise HTTPException(400, "Введите точную фразу: УДАЛИТЬ ВСЕ")
+    reset_user_data(user_id)
+    return state(user_id)
+
+
 @app.get("/api/analytics")
 def api_analytics(user_id: int = Depends(current_user)):
     stats = current_period_stats(user_id)
@@ -253,6 +294,35 @@ def api_clear_goal(user_id: int = Depends(current_user)):
 def api_recurring(user_id: int = Depends(current_user)):
     apply_due_recurring_payments(user_id)
     return [dict(row) for row in list_recurring_payments(user_id)]
+
+
+@app.get("/api/income-sources")
+def api_income_sources(user_id: int = Depends(current_user)):
+    return [dict(row) for row in list_income_sources(user_id)]
+
+
+@app.post("/api/income-sources")
+def api_add_income_source(source: IncomeSource, user_id: int = Depends(current_user)):
+    try:
+        create_income_source(user_id, source.name, source.withholding_percent)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return [dict(row) for row in list_income_sources(user_id)]
+
+
+@app.post("/api/income-sources/{source_id}")
+def api_update_income_source(source_id: int, source: IncomeSource, user_id: int = Depends(current_user)):
+    try:
+        update_income_source(user_id, source_id, source.name, source.withholding_percent)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return [dict(row) for row in list_income_sources(user_id)]
+
+
+@app.post("/api/income-sources/{source_id}/delete")
+def api_delete_income_source(source_id: int, user_id: int = Depends(current_user)):
+    delete_income_source(user_id, source_id)
+    return [dict(row) for row in list_income_sources(user_id)]
 
 
 @app.post("/api/recurring")

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <title>Мой бюджет</title>
-  <link rel="stylesheet" href="/static/app.css?v=20260926-5">
+  <link rel="stylesheet" href="/static/app.css?v=20260928-1">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -113,6 +113,19 @@
           <button class="secondary" id="save-period" type="submit">Сохранить</button>
         </form>
       </section>
+      <section class="sources-section">
+        <h2>Источники дохода</h2>
+        <form id="source-form">
+          <input id="source-id" type="hidden">
+          <label><span>Организация</span><input id="source-name" maxlength="80" placeholder="Например, Кафе" required></label>
+          <label><span>Удержание при поступлении</span><div class="amount-input"><input id="source-percent" type="number" min="0" max="100" step="0.01" inputmode="decimal" required><b>%</b></div></label>
+          <div class="form-actions">
+            <button class="secondary" id="save-source" type="submit">Добавить источник</button>
+            <button class="text-button" id="cancel-source" type="button" hidden>Отмена</button>
+          </div>
+        </form>
+        <div id="sources-list" class="sources-list"></div>
+      </section>
       <section class="recurring-section">
         <h2>Регулярные платежи</h2>
         <form id="recurring-form" class="recurring-form">
@@ -127,14 +140,36 @@
         </form>
         <div id="recurring-list" class="recurring-list"></div>
       </section>
+      <section class="danger-section">
+        <h2>Сброс данных</h2>
+        <p>Удаляет операции, источники, цели и настройки только вашего аккаунта.</p>
+        <button class="danger-button" id="open-reset" type="button">Очистить всё и начать с нуля</button>
+      </section>
     </div>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <dialog id="edit-expense-dialog">
+    <form id="edit-expense-form" method="dialog">
+      <h2>Изменить расход</h2>
+      <input id="edit-expense-id" type="hidden">
+      <label><span>Сумма</span><input id="edit-expense-amount" type="number" min="0.01" step="0.01" required></label>
+      <label><span>Категория или комментарий</span><input id="edit-expense-description" maxlength="255" required></label>
+      <div class="dialog-actions"><button class="text-button" id="cancel-expense-edit" type="button">Отмена</button><button class="primary" type="submit">Сохранить</button></div>
+    </form>
+  </dialog>
+  <dialog id="reset-dialog">
+    <form id="reset-form" method="dialog">
+      <h2>Удалить все данные?</h2>
+      <p>Для подтверждения введите <b>УДАЛИТЬ ВСЕ</b></p>
+      <input id="reset-confirmation" autocomplete="off" required>
+      <div class="dialog-actions"><button class="text-button" id="cancel-reset" type="button">Отмена</button><button class="danger-button" type="submit">Удалить всё</button></div>
+    </form>
+  </dialog>
   <div class="blocking-message" id="blocking-message" hidden>
     <h2>Откройте приложение из Telegram</h2>
     <p>Авторизация доступна через кнопку меню вашего бота.</p>
   </div>
-  <script src="/static/app.js?v=20260926-5" defer></script>
+  <script src="/static/app.js?v=20260928-1" defer></script>
 </body>
 </html>

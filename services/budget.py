@@ -63,7 +63,6 @@ def status_from_snapshot(snapshot: dict) -> str:
         f"🔁 Регулярные платежи: {money(recurring)} ₽ <i>(отдельно)</i>\n"
         f"🏠 Квартира: {money(rent)} ₽ <i>(отдельно)</i>\n"
         f"🔒 Отложено: {money(saved)} ₽ <i>(накопления)</i>\n"
-        f"📉 Обязательный вычет: {percent:g}%\n"
         f"🏦 Накопления всего: {money(savings)} ₽\n"
         f"📈 Прогноз остатка к 19-му: <b>{money(forecast)} ₽</b>"
         f"{goal_line}"

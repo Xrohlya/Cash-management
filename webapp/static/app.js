@@ -142,6 +142,16 @@ function renderHistory(items) {
     const meta = document.createElement("time");
     meta.textContent = `${kindLabels[item.kind] || item.kind} · ${shortDate(item.created_at)}`;
     row.append(title, amount, meta);
+    if (item.kind === "expense") {
+      const edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "history-edit";
+      edit.textContent = "Изменить";
+      edit.dataset.expenseEdit = item.id;
+      edit.dataset.expenseAmount = item.amount;
+      edit.dataset.expenseDescription = item.description;
+      row.append(edit);
+    }
     return row;
   }));
 }
@@ -217,19 +227,170 @@ function renderRecurring(items) {
   }));
 }
 
+function renderSources(items) {
+  const root = document.getElementById("sources-list");
+  const active = items.filter((item) => Number(item.active));
+  if (!active.length) {
+    root.innerHTML = '<p class="empty">Создайте первый источник дохода</p>';
+    return;
+  }
+  root.replaceChildren(...active.map((item) => {
+    const row = document.createElement("article");
+    row.className = "source-item";
+    const info = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = `${item.name} · ${Number(item.withholding_percent).toLocaleString("ru-RU")}%`;
+    const totals = document.createElement("small");
+    totals.textContent = `Доход ${money(item.gross_total)} · удержано ${money(item.withheld_total)}`;
+    info.append(title, totals);
+    const actions = document.createElement("div");
+    actions.className = "source-actions";
+    const edit = document.createElement("button");
+    edit.type = "button";
+    edit.textContent = "✎";
+    edit.title = "Изменить";
+    edit.dataset.sourceEdit = item.id;
+    edit.dataset.sourceName = item.name;
+    edit.dataset.sourcePercent = item.withholding_percent;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.title = "Удалить";
+    remove.dataset.sourceDelete = item.id;
+    actions.append(edit, remove);
+    const command = document.createElement("div");
+    command.className = "source-command";
+    command.textContent = `Напишите боту: получил 30000 ${item.name.toLocaleLowerCase("ru-RU")}`;
+    row.append(info, actions, command);
+    return row;
+  }));
+}
+
 async function load() {
-  const [state, history, analytics, recurring] = await Promise.all([
+  const [state, history, analytics, recurring, sources] = await Promise.all([
     api("/api/state"),
     api("/api/transactions?limit=30"),
     api("/api/analytics"),
     api("/api/recurring"),
+    api("/api/income-sources"),
   ]);
   renderState(state);
   renderHistory(history);
   renderCategories(analytics.categories);
   renderDaily(analytics.daily);
   renderRecurring(recurring);
+  renderSources(sources);
 }
+
+function resetSourceForm() {
+  document.getElementById("source-form").reset();
+  document.getElementById("source-id").value = "";
+  document.getElementById("save-source").textContent = "Добавить источник";
+  document.getElementById("cancel-source").hidden = true;
+}
+
+document.getElementById("source-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const id = document.getElementById("source-id").value;
+  const button = document.getElementById("save-source");
+  button.disabled = true;
+  try {
+    const items = await api(`/api/income-sources${id ? `/${id}` : ""}`, {
+      method: "POST",
+      body: JSON.stringify({
+        name: document.getElementById("source-name").value.trim(),
+        withholding_percent: Number(document.getElementById("source-percent").value),
+      }),
+    });
+    renderSources(items);
+    resetSourceForm();
+    showToast(id ? "Источник обновлён" : "Источник добавлен");
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.getElementById("cancel-source").addEventListener("click", resetSourceForm);
+
+document.getElementById("sources-list").addEventListener("click", async (event) => {
+  const edit = event.target.closest("[data-source-edit]");
+  if (edit) {
+    document.getElementById("source-id").value = edit.dataset.sourceEdit;
+    document.getElementById("source-name").value = edit.dataset.sourceName;
+    document.getElementById("source-percent").value = edit.dataset.sourcePercent;
+    document.getElementById("save-source").textContent = "Сохранить";
+    document.getElementById("cancel-source").hidden = false;
+    document.getElementById("source-name").focus();
+    return;
+  }
+  const remove = event.target.closest("[data-source-delete]");
+  if (!remove || !window.confirm("Удалить источник дохода? История останется сохранена.")) return;
+  try {
+    renderSources(await api(`/api/income-sources/${remove.dataset.sourceDelete}/delete`, { method: "POST" }));
+    showToast("Источник удалён");
+  } catch (error) {
+    showToast(error.message);
+  }
+});
+
+document.getElementById("history").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-expense-edit]");
+  if (!button) return;
+  document.getElementById("edit-expense-id").value = button.dataset.expenseEdit;
+  document.getElementById("edit-expense-amount").value = button.dataset.expenseAmount;
+  document.getElementById("edit-expense-description").value = button.dataset.expenseDescription;
+  document.getElementById("edit-expense-dialog").showModal();
+});
+
+document.getElementById("cancel-expense-edit").addEventListener("click", () => {
+  document.getElementById("edit-expense-dialog").close();
+});
+
+document.getElementById("edit-expense-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    await api(`/api/transactions/${document.getElementById("edit-expense-id").value}/edit`, {
+      method: "POST",
+      body: JSON.stringify({
+        amount: Number(document.getElementById("edit-expense-amount").value),
+        description: document.getElementById("edit-expense-description").value.trim(),
+      }),
+    });
+    document.getElementById("edit-expense-dialog").close();
+    await load();
+    showToast("Расход исправлен");
+  } catch (error) {
+    showToast(error.message);
+  }
+});
+
+document.getElementById("open-reset").addEventListener("click", () => {
+  document.getElementById("reset-form").reset();
+  document.getElementById("reset-dialog").showModal();
+});
+
+document.getElementById("cancel-reset").addEventListener("click", () => {
+  document.getElementById("reset-dialog").close();
+});
+
+document.getElementById("reset-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    await api("/api/reset", {
+      method: "POST",
+      body: JSON.stringify({ confirmation: document.getElementById("reset-confirmation").value }),
+    });
+    document.getElementById("reset-dialog").close();
+    sessionStorage.removeItem("cash-management-tab");
+    selectTab("budget");
+    await load();
+    showToast("Данные удалены. Начинаем с нуля.");
+  } catch (error) {
+    showToast(error.message);
+  }
+});
 
 document.querySelectorAll("[data-quick-expense]").forEach((button) => {
   button.addEventListener("click", () => {

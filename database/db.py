@@ -152,7 +152,8 @@ def _create_schema(conn):
             created_at TEXT NOT NULL,
             kind TEXT NOT NULL,
             amount DOUBLE PRECISION NOT NULL,
-            description TEXT NOT NULL DEFAULT ''
+            description TEXT NOT NULL DEFAULT '',
+            income_source_id BIGINT
         )
     """)
     conn.execute("""
@@ -183,6 +184,15 @@ def _create_schema(conn):
             last_notified TEXT
         )
     """)
+    conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS income_sources (
+            id {id_type} PRIMARY KEY{id_suffix},
+            user_id BIGINT NOT NULL,
+            name TEXT NOT NULL,
+            withholding_percent DOUBLE PRECISION NOT NULL DEFAULT 0,
+            active INTEGER NOT NULL DEFAULT 1
+        )
+    """)
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_transactions_user_created "
         "ON transactions(user_id, created_at DESC)"
@@ -199,6 +209,7 @@ def init_db():
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT NOT NULL DEFAULT ''")
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS financial_day INTEGER NOT NULL DEFAULT 20")
             conn.execute("ALTER TABLE recurring_payments ADD COLUMN IF NOT EXISTS last_notified TEXT")
+            conn.execute("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS income_source_id BIGINT")
             return
 
         month_columns = {row["name"] for row in conn.execute("PRAGMA table_info(months)")}
@@ -206,6 +217,10 @@ def init_db():
             conn.execute("ALTER TABLE months ADD COLUMN rent REAL NOT NULL DEFAULT 0")
         if "saved" not in month_columns:
             conn.execute("ALTER TABLE months ADD COLUMN saved REAL NOT NULL DEFAULT 0")
+
+        transaction_columns = {row["name"] for row in conn.execute("PRAGMA table_info(transactions)")}
+        if "income_source_id" not in transaction_columns:
+            conn.execute("ALTER TABLE transactions ADD COLUMN income_source_id INTEGER")
 
         user_columns = {row["name"] for row in conn.execute("PRAGMA table_info(users)")}
         migrations = {
