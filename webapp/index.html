@@ -5,21 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <title>Мой бюджет</title>
-  <link rel="stylesheet" href="/static/app.css?v=20260928-1">
+  <link rel="stylesheet" href="/static/app.css?v=20260928-2">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
   <header class="topbar">
-    <div>
-      <p class="eyebrow" id="period">Финансовый месяц</p>
-      <h1>Мой бюджет</h1>
+    <div class="profile-header">
+      <span class="avatar" id="avatar">—</span>
+      <div>
+        <p class="eyebrow" id="today-date">Сегодня</p>
+        <h1 id="greeting">Мой бюджет</h1>
+        <p class="period-line" id="period">Финансовый месяц</p>
+      </div>
     </div>
     <button class="icon-button" id="refresh" type="button" aria-label="Обновить" title="Обновить">↻</button>
   </header>
 
   <nav class="tabbar" role="tablist" aria-label="Разделы">
     <button class="active" id="nav-budget" type="button" role="tab" data-tab-target="budget" aria-controls="tab-budget" aria-selected="true">Основной бюджет</button>
-    <button id="nav-expenses" type="button" role="tab" data-tab-target="expenses" aria-controls="tab-expenses" aria-selected="false">Расходы</button>
+    <button id="nav-expenses" type="button" role="tab" data-tab-target="expenses" aria-controls="tab-expenses" aria-selected="false">Операции</button>
     <button id="nav-settings" type="button" role="tab" data-tab-target="settings" aria-controls="tab-settings" aria-selected="false">Настройки</button>
   </nav>
 
@@ -42,7 +46,12 @@
         <article><span>Накопления</span><b id="savings">—</b></article>
       </section>
 
-      <section class="operation-section">
+      <section class="upcoming-payment" id="upcoming-payment" hidden>
+        <div><span>Ближайший платёж</span><strong id="upcoming-title">—</strong></div>
+        <div><b id="upcoming-amount">—</b><small id="upcoming-date">—</small></div>
+      </section>
+
+      <section class="operation-section" id="operation-section">
         <h2>Новая операция</h2>
         <div class="quick-expenses" aria-label="Частые расходы">
           <button type="button" data-quick-expense="Кафе">Кофе</button>
@@ -148,6 +157,8 @@
     </div>
   </main>
 
+  <button class="quick-add" id="quick-add" type="button" aria-label="Добавить операцию" title="Добавить операцию" hidden>+</button>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <dialog id="edit-expense-dialog">
     <form id="edit-expense-form" method="dialog">
@@ -170,6 +181,6 @@
     <h2>Откройте приложение из Telegram</h2>
     <p>Авторизация доступна через кнопку меню вашего бота.</p>
   </div>
-  <script src="/static/app.js?v=20260928-1" defer></script>
+  <script src="/static/app.js?v=20260928-2" defer></script>
 </body>
 </html>

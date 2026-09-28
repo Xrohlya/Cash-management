@@ -35,6 +35,12 @@ class RepositoryTest(unittest.TestCase):
         self.assertEqual(len(repository.recent_transactions(101)), 2)
         self.assertEqual(len(repository.recent_transactions(202)), 1)
 
+    def test_user_profile_is_available_for_mini_app_header(self):
+        repository.ensure_user(101, "Алексей", "alexey")
+        profile = repository.get_user_profile(101)
+        self.assertEqual(profile["first_name"], "Алексей")
+        self.assertEqual(profile["username"], "alexey")
+
     def test_main_income_has_no_withholding(self):
         fee, net, created = repository.add_income(101, 1000, 25)
         self.assertTrue(created)

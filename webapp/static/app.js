@@ -37,6 +37,8 @@ function selectTab(tabName, remember = true) {
     button.classList.toggle("active", active);
     button.setAttribute("aria-selected", String(active));
   });
+  const quickAdd = document.getElementById("quick-add");
+  if (quickAdd) quickAdd.hidden = selected === "budget";
   if (remember) sessionStorage.setItem("cash-management-tab", selected);
 }
 
@@ -103,7 +105,19 @@ function renderState(state) {
   document.getElementById("period").textContent = `${state.period_start.split("-").reverse().join(".")} — ${state.period_end.split("-").reverse().join(".")}`;
   document.getElementById("days-left").textContent = `${state.days_left} дн. до конца периода`;
   financialDay.value = String(state.financial_day || 20);
+  renderProfile(state.profile);
   renderGoal(state.goal);
+}
+
+function renderProfile(profile) {
+  const name = profile?.first_name || "Пользователь";
+  const hour = new Date().getHours();
+  const welcome = hour < 6 ? "Доброй ночи" : hour < 12 ? "Доброе утро" : hour < 18 ? "Добрый день" : "Добрый вечер";
+  document.getElementById("greeting").textContent = `${welcome}, ${name}`;
+  document.getElementById("avatar").textContent = name.trim().slice(0, 2).toLocaleUpperCase("ru-RU");
+  document.getElementById("today-date").textContent = new Intl.DateTimeFormat("ru-RU", {
+    weekday: "long", day: "numeric", month: "long",
+  }).format(new Date());
 }
 
 function renderGoal(goal) {
@@ -227,6 +241,28 @@ function renderRecurring(items) {
   }));
 }
 
+function renderUpcomingPayment(items) {
+  const root = document.getElementById("upcoming-payment");
+  const active = items.filter((item) => Number(item.active));
+  if (!active.length) {
+    root.hidden = true;
+    return;
+  }
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const upcoming = active.map((item) => {
+    let due = new Date(now.getFullYear(), now.getMonth(), Number(item.day_of_month));
+    if (due < today) due = new Date(now.getFullYear(), now.getMonth() + 1, Number(item.day_of_month));
+    return { item, due };
+  }).sort((a, b) => a.due - b.due)[0];
+  document.getElementById("upcoming-title").textContent = upcoming.item.title;
+  document.getElementById("upcoming-amount").textContent = money(upcoming.item.amount);
+  document.getElementById("upcoming-date").textContent = new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric", month: "long",
+  }).format(upcoming.due);
+  root.hidden = false;
+}
+
 function renderSources(items) {
   const root = document.getElementById("sources-list");
   const active = items.filter((item) => Number(item.active));
@@ -279,6 +315,7 @@ async function load() {
   renderCategories(analytics.categories);
   renderDaily(analytics.daily);
   renderRecurring(recurring);
+  renderUpcomingPayment(recurring);
   renderSources(sources);
 }
 
@@ -450,6 +487,13 @@ document.getElementById("operation-form").addEventListener("submit", async (even
 });
 
 document.getElementById("refresh").addEventListener("click", () => load().catch((error) => showToast(error.message)));
+
+document.getElementById("quick-add").addEventListener("click", () => {
+  selectTab("budget");
+  document.getElementById("operation-section").scrollIntoView({ behavior: "smooth", block: "start" });
+  setTimeout(() => document.getElementById("amount").focus(), 260);
+  telegram?.HapticFeedback?.selectionChanged?.();
+});
 
 document.getElementById("period-form").addEventListener("submit", async (event) => {
   event.preventDefault();

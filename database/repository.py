@@ -96,6 +96,14 @@ def ensure_user(user_id: int, first_name: str = "", username: str = ""):
             )
 
 
+def get_user_profile(user_id: int):
+    ensure_user(user_id)
+    with get_connection() as conn:
+        return conn.execute(
+            "SELECT first_name,username FROM users WHERE user_id=?", (user_id,)
+        ).fetchone()
+
+
 def get_percent(user_id: int) -> float:
     ensure_user(user_id)
     with get_connection() as conn:

@@ -29,6 +29,7 @@ from database.repository import (
     ensure_user,
     get_percent,
     get_status_snapshot,
+    get_user_profile,
     list_recurring_payments,
     list_income_sources,
     recent_transactions,
@@ -131,6 +132,7 @@ def siri_user(x_siri_token: str = Header(default="")) -> int:
 
 def state(user_id: int):
     snapshot = get_status_snapshot(user_id)
+    profile = get_user_profile(user_id)
     end = snapshot["end"]
     goal = snapshot.get("goal")
     return {
@@ -148,6 +150,10 @@ def state(user_id: int):
         "financial_day": snapshot["financial_day"],
         "period_start": snapshot["start"].isoformat(),
         "period_end": (end - timedelta(days=1)).isoformat(),
+        "profile": {
+            "first_name": profile["first_name"] or "Пользователь",
+            "username": profile["username"] or "",
+        },
         "goal": (
             {
                 "target": float(goal["target"]),
