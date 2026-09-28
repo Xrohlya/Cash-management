@@ -437,14 +437,16 @@ def add_income(user_id: int, gross: float, percent: float, description="Дохо
 
 def list_income_sources(user_id: int):
     ensure_user(user_id)
+    start = financial_period_start(user_id)
+    end = financial_period_end_for_start(start)
     with get_connection() as conn:
         return conn.execute(
             "SELECT s.id,s.name,s.withholding_percent,s.active,"
-            "COALESCE(SUM(CASE WHEN t.kind='income' THEN t.amount ELSE 0 END),0) gross_total,"
-            "COALESCE(SUM(CASE WHEN t.kind='mandatory' THEN t.amount ELSE 0 END),0) withheld_total "
+            "COALESCE(SUM(CASE WHEN t.kind='income' AND t.created_at>=? AND t.created_at<? THEN t.amount ELSE 0 END),0) gross_total,"
+            "COALESCE(SUM(CASE WHEN t.kind='mandatory' AND t.created_at>=? AND t.created_at<? THEN t.amount ELSE 0 END),0) withheld_total "
             "FROM income_sources s LEFT JOIN transactions t ON t.income_source_id=s.id "
             "WHERE s.user_id=? GROUP BY s.id,s.name,s.withholding_percent,s.active ORDER BY s.id",
-            (user_id,),
+            (start.isoformat(), end.isoformat(), start.isoformat(), end.isoformat(), user_id),
         ).fetchall()
 
 

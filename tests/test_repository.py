@@ -5,6 +5,7 @@ from pathlib import Path
 import database.db as db
 from database import repository
 from services.analytics import current_period_stats, get_goal, set_goal
+from services.budget import status
 
 
 class RepositoryTest(unittest.TestCase):
@@ -12,13 +13,16 @@ class RepositoryTest(unittest.TestCase):
         self.tempdir = tempfile.TemporaryDirectory()
         self.original_path = db.SQLITE_PATH
         self.original_url = db.DATABASE_URL
+        self.original_repository_url = repository.DATABASE_URL
         db.SQLITE_PATH = Path(self.tempdir.name) / "test.db"
         db.DATABASE_URL = ""
+        repository.DATABASE_URL = ""
         db.init_db()
 
     def tearDown(self):
         db.SQLITE_PATH = self.original_path
         db.DATABASE_URL = self.original_url
+        repository.DATABASE_URL = self.original_repository_url
         self.tempdir.cleanup()
 
     def test_users_have_isolated_balances_and_history(self):
@@ -50,6 +54,8 @@ class RepositoryTest(unittest.TestCase):
         stats = repository.list_income_sources(101)[0]
         self.assertEqual(float(stats["gross_total"]), 30000)
         self.assertEqual(float(stats["withheld_total"]), 1800)
+        status_text = status(101)
+        self.assertIn("Кафе — <b>30 000 ₽</b> за месяц · удержание <b>6%</b>", status_text)
 
     def test_expense_can_be_corrected_and_month_is_rebuilt(self):
         repository.add_income(101, 1000, 0)

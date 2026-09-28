@@ -1,8 +1,10 @@
 from datetime import date, timedelta
+from html import escape
 from database.repository import (
     get_month,
     financial_period_end,
     get_status_snapshot,
+    list_income_sources,
 )
 
 
@@ -28,7 +30,6 @@ def money(value: float) -> str:
 
 def status_from_snapshot(snapshot: dict) -> str:
     savings = snapshot["savings"]
-    percent = snapshot["mandatory_percent"]
     budget = snapshot["budget"]
     spent = snapshot["spent"]
     recurring = snapshot["recurring"]
@@ -70,4 +71,14 @@ def status_from_snapshot(snapshot: dict) -> str:
 
 
 def status(user_id: int, snapshot: dict | None = None) -> str:
-    return status_from_snapshot(snapshot or get_status_snapshot(user_id))
+    text = status_from_snapshot(snapshot or get_status_snapshot(user_id))
+    sources = [source for source in list_income_sources(user_id) if int(source["active"])]
+    if not sources:
+        return text
+    lines = ["", "", "💼 <b>ИСТОЧНИКИ ДОХОДА</b>"]
+    for source in sources:
+        lines.append(
+            f"• {escape(source['name'])} — <b>{money(source['gross_total'])} ₽</b> за месяц · удержание "
+            f"<b>{float(source['withholding_percent']):g}%</b>"
+        )
+    return text + "\n".join(lines)
