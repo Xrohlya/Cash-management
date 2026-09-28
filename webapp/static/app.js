@@ -381,14 +381,10 @@ function renderAccounts(items, state) {
 }
 
 async function load() {
-  const [state, history, analytics, recurring, sources, accounts] = await Promise.all([
-    api("/api/state"),
-    api("/api/transactions?limit=30"),
-    api("/api/analytics"),
-    api("/api/recurring"),
-    api("/api/income-sources"),
-    api("/api/accounts"),
-  ]);
+  const dashboard = await api("/api/dashboard");
+  const { state, analytics, recurring, accounts } = dashboard;
+  const history = dashboard.transactions;
+  const sources = dashboard.income_sources;
   renderState(state);
   renderHistory(history);
   renderCategories(analytics.categories);

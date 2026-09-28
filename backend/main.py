@@ -181,6 +181,28 @@ def state(user_id: int):
     }
 
 
+def analytics_payload(user_id: int):
+    stats = current_period_stats(user_id)
+    return {
+        "average": round(stats["avg"], 2),
+        "forecast": round(stats["forecast"], 2),
+        "categories": [
+            {
+                "name": name,
+                "amount": round(amount, 2),
+                "count": stats["category_counts"].get(name, 0),
+            }
+            for name, amount in sorted(
+                stats["categories"].items(), key=lambda item: item[1], reverse=True
+            )
+        ],
+        "daily": [
+            {"date": day, "amount": round(amount, 2)}
+            for day, amount in sorted(stats["daily"].items())
+        ],
+    }
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     init_db()
@@ -214,6 +236,19 @@ def api_state(user_id: int = Depends(current_user)):
     return state(user_id)
 
 
+@app.get("/api/dashboard")
+def api_dashboard(user_id: int = Depends(current_user)):
+    current_state = state(user_id)
+    return {
+        "state": current_state,
+        "transactions": [dict(row) for row in recent_transactions(user_id, 30)],
+        "analytics": analytics_payload(user_id),
+        "recurring": [dict(row) for row in list_recurring_payments(user_id)],
+        "income_sources": [dict(row) for row in list_income_sources(user_id)],
+        "accounts": [dict(row) for row in list_extra_accounts(user_id)],
+    }
+
+
 @app.get("/api/transactions")
 def api_transactions(
     limit: int = Query(default=30, ge=1, le=100),
@@ -245,23 +280,7 @@ def api_reset(data: ResetConfirmation, user_id: int = Depends(current_user)):
 
 @app.get("/api/analytics")
 def api_analytics(user_id: int = Depends(current_user)):
-    stats = current_period_stats(user_id)
-    return {
-        "average": round(stats["avg"], 2),
-        "forecast": round(stats["forecast"], 2),
-        "categories": [
-            {
-                "name": name,
-                "amount": round(amount, 2),
-                "count": stats["category_counts"].get(name, 0),
-            }
-            for name, amount in sorted(stats["categories"].items(), key=lambda item: item[1], reverse=True)
-        ],
-        "daily": [
-            {"date": day, "amount": round(amount, 2)}
-            for day, amount in sorted(stats["daily"].items())
-        ],
-    }
+    return analytics_payload(user_id)
 
 
 @app.post("/api/siri/expense", response_class=PlainTextResponse)
