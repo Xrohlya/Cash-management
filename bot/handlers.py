@@ -99,6 +99,10 @@ async def send_transient(message: Message, text: str, **kwargs):
             )
             return message.bot
         except Exception:
+            try:
+                await message.bot.delete_message(chat_id, message_id)
+            except Exception:
+                pass
             clear_status_message(user_id)
 
     sent = await message.answer(text, parse_mode=parse_mode, reply_markup=reply_markup)
@@ -147,6 +151,11 @@ async def update_status(message_or_callback, user_id: int):
             return
         except Exception:
             # Сообщение могли удалить вручную или Telegram больше не даёт его редактировать.
+            if saved:
+                try:
+                    await message_or_callback.bot.delete_message(saved[0], saved[1])
+                except Exception:
+                    pass
             clear_status_message(user_id)
 
     if isinstance(message_or_callback, CallbackQuery):
@@ -177,7 +186,16 @@ async def edit_interface(callback: CallbackQuery, text: str, reply_markup=None):
         except TelegramBadRequest as exc:
             if "message is not modified" in str(exc).casefold():
                 return
+            try:
+                await callback.bot.delete_message(saved[0], saved[1])
+            except Exception:
+                pass
+            clear_status_message(user_id)
         except Exception:
+            try:
+                await callback.bot.delete_message(saved[0], saved[1])
+            except Exception:
+                pass
             clear_status_message(user_id)
     sent = await callback.message.answer(text, parse_mode="HTML", reply_markup=markup)
     set_status_message(user_id, sent.chat.id, sent.message_id)
@@ -188,6 +206,26 @@ async def delete_user_message(message: Message):
         await message.delete()
     except Exception:
         pass
+
+
+async def replace_interface_with_document(message_or_callback, path, caption: str):
+    user_id = message_or_callback.from_user.id
+    bot = message_or_callback.bot
+    source_message = message_or_callback.message if isinstance(message_or_callback, CallbackQuery) else message_or_callback
+    saved = get_status_message(user_id)
+    if saved:
+        try:
+            await bot.delete_message(saved[0], saved[1])
+        except Exception:
+            pass
+        clear_status_message(user_id)
+    sent = await bot.send_document(
+        chat_id=source_message.chat.id,
+        document=FSInputFile(path),
+        caption=caption,
+        reply_markup=main_menu(),
+    )
+    set_status_message(user_id, sent.chat.id, sent.message_id)
 
 
 @router.message(Command("start"))
@@ -396,7 +434,7 @@ async def cmd_excel(message: Message):
     await delete_user_message(message)
     try:
         path = build_excel_report(user_id, start, end)
-        await message.bot.send_document(chat_id=message.chat.id, document=FSInputFile(path), caption=f"📊 Excel: {start:%d.%m.%Y} — {(end-timedelta(days=1)):%d.%m.%Y}")
+        await replace_interface_with_document(message, path, f"📊 Excel: {start:%d.%m.%Y} — {(end-timedelta(days=1)):%d.%m.%Y}")
     except Exception as exc:
         await send_transient(message, f"⚠️ Ошибка Excel: <code>{str(exc)[:300].replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')}</code>", parse_mode="HTML")
 
@@ -420,10 +458,9 @@ async def cmd_report(message: Message):
     await delete_user_message(message)
     try:
         report_path = build_monthly_report(user_id, start, end)
-        await message.bot.send_document(
-            chat_id=message.chat.id,
-            document=FSInputFile(report_path),
-            caption=f"📊 Отчёт за {start:%d.%m.%Y} — {(end - timedelta(days=1)):%d.%m.%Y}",
+        await replace_interface_with_document(
+            message, report_path,
+            f"📊 Отчёт за {start:%d.%m.%Y} — {(end - timedelta(days=1)):%d.%m.%Y}",
         )
     except Exception as exc:
         await send_transient(message, f"⚠️ Не удалось создать отчёт: <code>{str(exc)[:300]}</code>", parse_mode="HTML")
@@ -549,10 +586,9 @@ async def cb_report(callback: CallbackQuery):
     try:
         start, end = parse_report_period(user_id)
         report_path = build_monthly_report(user_id, start, end)
-        await callback.bot.send_document(
-            chat_id=callback.message.chat.id,
-            document=FSInputFile(report_path),
-            caption=f"📊 Отчёт за {start:%d.%m.%Y} — {(end - timedelta(days=1)):%d.%m.%Y}",
+        await replace_interface_with_document(
+            callback, report_path,
+            f"📊 Отчёт за {start:%d.%m.%Y} — {(end - timedelta(days=1)):%d.%m.%Y}",
         )
     except Exception as exc:
         # Не создаём ещё одно сообщение: показываем ошибку в единственном
