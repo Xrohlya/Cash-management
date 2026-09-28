@@ -1,17 +1,49 @@
 import asyncio
 import logging
+from html import escape
 
 from aiogram.types import BotCommand, MenuButtonCommands, MenuButtonWebApp, WebAppInfo
 
 from bot.connection import create_bot, create_dispatcher
 from bot.handlers import router
+from bot.keyboards import main_menu
 from config.settings import WEBAPP_URL
 from database.db import close_db_pool, init_db
 from database.repository import (
     apply_due_recurring_payments,
     due_recurring_notifications,
     mark_recurring_notified,
+    clear_status_message,
+    get_status_message,
+    get_status_snapshot,
+    set_status_message,
 )
+from services.budget import money, status
+
+
+async def show_recurring_notice(bot, payment):
+    user_id = int(payment["user_id"])
+    apply_due_recurring_payments(user_id)
+    notice = (
+        "🔁 <b>ПЛАТЁЖ СЕГОДНЯ</b>\n"
+        f"{escape(payment['title'])} · <b>{money(float(payment['amount']))} ₽</b>\n"
+        "Учтён отдельно от обычных расходов.\n\n"
+    )
+    text = notice + status(user_id, get_status_snapshot(user_id))
+    saved = get_status_message(user_id)
+    if saved:
+        try:
+            await bot.edit_message_text(
+                chat_id=saved[0], message_id=saved[1], text=text,
+                parse_mode="HTML", reply_markup=main_menu(),
+            )
+            return
+        except Exception:
+            clear_status_message(user_id)
+    sent = await bot.send_message(
+        user_id, text, parse_mode="HTML", reply_markup=main_menu()
+    )
+    set_status_message(user_id, sent.chat.id, sent.message_id)
 
 
 async def recurring_notification_loop(bot):
@@ -19,16 +51,8 @@ async def recurring_notification_loop(bot):
         retry_delay = 3600
         try:
             for payment in due_recurring_notifications():
-                await bot.send_message(
-                    payment["user_id"],
-                    "🔁 <b>Регулярный платёж сегодня</b>\n\n"
-                    f"Нужно оплатить: <b>{payment['title']}</b>\n"
-                    f"Сумма: <b>{payment['amount']:,.0f} ₽</b>\n\n"
-                    "Сумма будет учтена в бюджете отдельно от обычных расходов.",
-                    parse_mode="HTML",
-                )
+                await show_recurring_notice(bot, payment)
                 mark_recurring_notified(payment["id"])
-                apply_due_recurring_payments(payment["user_id"])
         except Exception:
             logging.exception("Recurring payment notification failed")
             retry_delay = 60

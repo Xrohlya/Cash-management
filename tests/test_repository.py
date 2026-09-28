@@ -44,6 +44,7 @@ class RepositoryTest(unittest.TestCase):
 
     def test_income_source_applies_its_own_percentage(self):
         repository.create_income_source(101, "Кафе", 6)
+        self.assertIn("Кафе — <b>0 ₽</b> за месяц", status(101))
         source = repository.find_income_source(101, "получил 30000 кафе")
         self.assertIsNotNone(source)
         fee, net, created = repository.add_income_from_source(101, 30000, source["id"], "Кафе")
