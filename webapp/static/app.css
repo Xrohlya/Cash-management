@@ -102,14 +102,14 @@ main { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
 .upcoming-payment strong { display: block; overflow: hidden; margin-top: 2px; color: #b9dcff; text-overflow: ellipsis; white-space: nowrap; }
 .upcoming-payment b { display: block; color: var(--accent); }
 
-.operation-section, .goal-section, .category-section, .chart-section, .history-section, .settings-section, .sources-section, .recurring-section, .danger-section { padding: 22px 18px 0; }
+.operation-section, .goal-section, .category-section, .chart-section, .history-section, .settings-section, .sources-section, .recurring-section, .danger-section, .accounts-overview, .sources-overview, .accounts-settings { padding: 22px 18px 0; }
 
-.operation-section h2, .goal-section h2, .category-section h2, .chart-section h2, .settings-section h2, .sources-section h2, .recurring-section h2 {
+.operation-section h2, .goal-section h2, .category-section h2, .chart-section h2, .settings-section h2, .sources-section h2, .recurring-section h2, .accounts-overview h2, .sources-overview h2, .accounts-settings h2 {
   position: relative;
   padding-left: 12px;
 }
 
-.operation-section h2::before, .goal-section h2::before, .category-section h2::before, .chart-section h2::before, .settings-section h2::before, .sources-section h2::before, .recurring-section h2::before {
+.operation-section h2::before, .goal-section h2::before, .category-section h2::before, .chart-section h2::before, .settings-section h2::before, .sources-section h2::before, .recurring-section h2::before, .accounts-overview h2::before, .sources-overview h2::before, .accounts-settings h2::before {
   position: absolute;
   top: 3px;
   bottom: 3px;
@@ -214,6 +214,31 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px r
 
 .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .section-heading span { color: var(--muted); font-size: 12px; }
+.section-heading small { color: var(--muted); font-size: 11px; }
+
+.accounts-overview, .sources-overview { padding-bottom: 3px; border-bottom: 1px solid var(--line); }
+.accounts-summary { display: grid; gap: 8px; }
+.account-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 3px 12px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.account-card:last-child { border-bottom: 0; }
+.account-card div { min-width: 0; }
+.account-card strong, .account-card small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-card small { margin-top: 2px; color: var(--muted); font-size: 11px; }
+.account-card > b { color: #b9dcff; }
+.primary-account > b { color: var(--positive); text-shadow: 0 0 12px rgba(37, 223, 189, 0.2); }
+.account-transfer-button { grid-column: 1 / -1; justify-self: start; padding: 4px 0; border: 0; background: transparent; color: var(--accent); font-size: 12px; }
+.sources-overview-list { border-top: 1px solid var(--line); }
+.source-overview-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.source-overview-item:last-child { border-bottom: 0; }
+.source-overview-item strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.source-overview-item b { color: #b9dcff; }
+.source-overview-item small { grid-column: 1 / -1; color: var(--muted); font-size: 11px; }
+.account-form { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+.accounts-settings-list { margin-top: 16px; border-top: 1px solid var(--line); }
+.account-settings-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.account-settings-item div { min-width: 0; }
+.account-settings-item strong, .account-settings-item small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-settings-item small { color: var(--muted); font-size: 11px; }
+.compact-empty { padding: 14px 0; }
 .categories { border-top: 1px solid var(--line); }
 .category-item { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; overflow: hidden; padding: 13px 0; border-bottom: 1px solid var(--line); }
 .category-item strong, .category-item b { position: relative; z-index: 1; }

@@ -193,10 +193,31 @@ def _create_schema(conn):
             active INTEGER NOT NULL DEFAULT 1
         )
     """)
+    conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS extra_accounts (
+            id {id_type} PRIMARY KEY{id_suffix},
+            user_id BIGINT NOT NULL,
+            name TEXT NOT NULL,
+            balance DOUBLE PRECISION NOT NULL DEFAULT 0,
+            active INTEGER NOT NULL DEFAULT 1
+        )
+    """)
+    conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS account_transactions (
+            id {id_type} PRIMARY KEY{id_suffix},
+            account_id BIGINT NOT NULL,
+            user_id BIGINT NOT NULL,
+            created_at TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            amount DOUBLE PRECISION NOT NULL
+        )
+    """)
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_transactions_user_created "
         "ON transactions(user_id, created_at DESC)"
     )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_extra_accounts_user ON extra_accounts(user_id, id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_account_transactions_user ON account_transactions(user_id, created_at DESC)")
 
 
 def init_db():

@@ -18,6 +18,8 @@ const kindLabels = {
   recurring: "Регулярный платёж",
   rent: "Квартира",
   save: "Накопления",
+  account_transfer: "Перевод на счёт",
+  account_return: "Возврат на основной",
 };
 
 let operationKind = "expense";
@@ -302,13 +304,90 @@ function renderSources(items) {
   }));
 }
 
+function renderSourcesOverview(items) {
+  const root = document.getElementById("sources-overview");
+  const active = items.filter((item) => Number(item.active));
+  if (!active.length) {
+    root.innerHTML = '<p class="empty compact-empty">Источники добавляются в настройках</p>';
+    return;
+  }
+  root.replaceChildren(...active.map((item) => {
+    const row = document.createElement("article");
+    row.className = "source-overview-item";
+    const name = document.createElement("strong");
+    name.textContent = item.name;
+    const percent = document.createElement("small");
+    percent.textContent = `Удержание ${Number(item.withholding_percent).toLocaleString("ru-RU")}%`;
+    const total = document.createElement("b");
+    total.textContent = money(item.gross_total);
+    row.append(name, total, percent);
+    return row;
+  }));
+}
+
+function renderAccounts(items, state) {
+  const root = document.getElementById("accounts-summary");
+  const primary = document.createElement("article");
+  primary.className = "account-card primary-account";
+  primary.innerHTML = `<div><strong>Основной</strong><small>Главный счёт</small></div><b>${money(state.available)}</b>`;
+  const extra = items.map((item) => {
+    const card = document.createElement("article");
+    card.className = "account-card";
+    const info = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = item.name;
+    const hint = document.createElement("small");
+    hint.textContent = "Дополнительный счёт";
+    info.append(title, hint);
+    const amount = document.createElement("b");
+    amount.textContent = money(item.balance);
+    const transfer = document.createElement("button");
+    transfer.type = "button";
+    transfer.className = "account-transfer-button";
+    transfer.textContent = "Перевести";
+    transfer.dataset.accountTransfer = item.id;
+    transfer.dataset.accountName = item.name;
+    card.append(info, amount, transfer);
+    return card;
+  });
+  root.replaceChildren(primary, ...extra);
+
+  document.getElementById("account-limit").textContent = `${items.length} из 3`;
+  const settingsRoot = document.getElementById("accounts-settings-list");
+  if (!items.length) {
+    settingsRoot.innerHTML = '<p class="empty compact-empty">Дополнительных счетов пока нет</p>';
+  } else {
+    settingsRoot.replaceChildren(...items.map((item) => {
+      const row = document.createElement("article");
+      row.className = "account-settings-item";
+      const label = document.createElement("div");
+      const name = document.createElement("strong");
+      name.textContent = item.name;
+      const balance = document.createElement("small");
+      balance.textContent = money(item.balance);
+      label.append(name, balance);
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "delete-button";
+      remove.textContent = "×";
+      remove.title = "Удалить";
+      remove.dataset.accountDelete = item.id;
+      row.append(label, remove);
+      return row;
+    }));
+  }
+  const createButton = document.querySelector("#account-form button");
+  createButton.disabled = items.length >= 3;
+}
+
 async function load() {
-  const [state, history, analytics, recurring, sources] = await Promise.all([
+  const [state, history, analytics, recurring, sources, accounts] = await Promise.all([
     api("/api/state"),
     api("/api/transactions?limit=30"),
     api("/api/analytics"),
     api("/api/recurring"),
     api("/api/income-sources"),
+    api("/api/accounts"),
   ]);
   renderState(state);
   renderHistory(history);
@@ -317,6 +396,8 @@ async function load() {
   renderRecurring(recurring);
   renderUpcomingPayment(recurring);
   renderSources(sources);
+  renderSourcesOverview(sources);
+  renderAccounts(accounts, state);
 }
 
 function resetSourceForm() {
@@ -340,6 +421,7 @@ document.getElementById("source-form").addEventListener("submit", async (event) 
       }),
     });
     renderSources(items);
+    renderSourcesOverview(items);
     resetSourceForm();
     showToast(id ? "Источник обновлён" : "Источник добавлен");
   } catch (error) {
@@ -365,10 +447,79 @@ document.getElementById("sources-list").addEventListener("click", async (event) 
   const remove = event.target.closest("[data-source-delete]");
   if (!remove || !window.confirm("Удалить источник дохода? История останется сохранена.")) return;
   try {
-    renderSources(await api(`/api/income-sources/${remove.dataset.sourceDelete}/delete`, { method: "POST" }));
+    const items = await api(`/api/income-sources/${remove.dataset.sourceDelete}/delete`, { method: "POST" });
+    renderSources(items);
+    renderSourcesOverview(items);
     showToast("Источник удалён");
   } catch (error) {
     showToast(error.message);
+  }
+});
+
+document.getElementById("account-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const button = event.submitter;
+  button.disabled = true;
+  try {
+    await api("/api/accounts", {
+      method: "POST",
+      body: JSON.stringify({ name: document.getElementById("account-name").value.trim() }),
+    });
+    event.target.reset();
+    await load();
+    showToast("Счёт создан");
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    if (document.getElementById("account-limit").textContent !== "3 из 3") button.disabled = false;
+  }
+});
+
+document.getElementById("accounts-settings-list").addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-account-delete]");
+  if (!button || !window.confirm("Удалить дополнительный счёт?")) return;
+  try {
+    await api(`/api/accounts/${button.dataset.accountDelete}/delete`, { method: "POST" });
+    await load();
+    showToast("Счёт удалён");
+  } catch (error) {
+    showToast(error.message);
+  }
+});
+
+document.getElementById("accounts-summary").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-account-transfer]");
+  if (!button) return;
+  document.getElementById("account-transfer-form").reset();
+  document.getElementById("account-transfer-id").value = button.dataset.accountTransfer;
+  document.getElementById("account-transfer-title").textContent = `Счёт «${button.dataset.accountName}»`;
+  document.getElementById("account-transfer-dialog").showModal();
+});
+
+document.getElementById("cancel-account-transfer").addEventListener("click", () => {
+  document.getElementById("account-transfer-dialog").close();
+});
+
+document.getElementById("account-transfer-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const button = event.submitter;
+  button.disabled = true;
+  try {
+    await api(`/api/accounts/${document.getElementById("account-transfer-id").value}/transfer`, {
+      method: "POST",
+      body: JSON.stringify({
+        amount: Number(document.getElementById("account-transfer-amount").value),
+        direction: document.getElementById("account-transfer-direction").value,
+        request_id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+      }),
+    });
+    document.getElementById("account-transfer-dialog").close();
+    await load();
+    showToast("Перевод выполнен");
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    button.disabled = false;
   }
 });
 

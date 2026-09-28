@@ -279,13 +279,18 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
         budget = float(row["budget"])
         total_spent = float(row["spent"])
         with get_connection() as conn:
-            recurring_row = conn.execute(
-                "SELECT COALESCE(SUM(amount), 0) AS total FROM transactions "
-                "WHERE user_id=? AND kind='recurring' AND created_at>=? AND created_at<?",
+            special_row = conn.execute(
+                "SELECT "
+                "COALESCE(SUM(CASE WHEN kind='recurring' THEN amount ELSE 0 END),0) recurring,"
+                "COALESCE(SUM(CASE WHEN kind='account_transfer' THEN amount ELSE 0 END),0) transferred,"
+                "COALESCE(SUM(CASE WHEN kind='account_return' THEN amount ELSE 0 END),0) returned "
+                "FROM transactions WHERE user_id=? AND created_at>=? AND created_at<?",
                 (user_id, start.isoformat(), end.isoformat()),
             ).fetchone()
-        recurring = float(recurring_row["total"] or 0)
-        spent = total_spent - recurring
+        recurring = float(special_row["recurring"] or 0)
+        transferred = float(special_row["transferred"] or 0)
+        returned = float(special_row["returned"] or 0)
+        spent = total_spent - recurring - transferred + returned
         rent = float(row["rent"])
         saved = float(row["saved"])
         savings = float(row["savings"])
@@ -342,9 +347,12 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
             "WHERE user_id=? AND kind='expense' AND created_at>=? AND created_at<?",
             (user_id, today.isoformat(), (today + timedelta(days=1)).isoformat()),
         ).fetchone()
-        recurring_row = conn.execute(
-            "SELECT COALESCE(SUM(amount), 0) AS total FROM transactions "
-            "WHERE user_id=? AND kind='recurring' AND created_at>=? AND created_at<?",
+        special_row = conn.execute(
+            "SELECT "
+            "COALESCE(SUM(CASE WHEN kind='recurring' THEN amount ELSE 0 END),0) recurring,"
+            "COALESCE(SUM(CASE WHEN kind='account_transfer' THEN amount ELSE 0 END),0) transferred,"
+            "COALESCE(SUM(CASE WHEN kind='account_return' THEN amount ELSE 0 END),0) returned "
+            "FROM transactions WHERE user_id=? AND created_at>=? AND created_at<?",
             (user_id, start.isoformat(), end.isoformat()),
         ).fetchone()
         goal = conn.execute(
@@ -354,8 +362,10 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
 
     budget = float(month["budget"])
     total_spent = float(month["spent"])
-    recurring = float(recurring_row["total"] or 0)
-    spent = total_spent - recurring
+    recurring = float(special_row["recurring"] or 0)
+    transferred = float(special_row["transferred"] or 0)
+    returned = float(special_row["returned"] or 0)
+    spent = total_spent - recurring - transferred + returned
     rent = float(month["rent"])
     saved = float(month["saved"])
     savings = float(user["savings"])
@@ -396,7 +406,7 @@ def rebuild_month_from_transactions(user_id: int, start: date):
             "SELECT kind, amount FROM transactions WHERE user_id=? AND created_at>=? AND created_at<?",
             (user_id, start.isoformat(), end.isoformat()),
         ).fetchall()
-        totals = {"income": 0.0, "mandatory": 0.0, "expense": 0.0, "recurring": 0.0, "rent": 0.0, "save": 0.0}
+        totals = {"income": 0.0, "mandatory": 0.0, "expense": 0.0, "recurring": 0.0, "account_transfer": 0.0, "account_return": 0.0, "rent": 0.0, "save": 0.0}
         for row in rows:
             if row["kind"] in totals:
                 totals[row["kind"]] += float(row["amount"])
@@ -405,7 +415,7 @@ def rebuild_month_from_transactions(user_id: int, start: date):
             "UPDATE months SET budget=?, spent=?, rent=?, saved=? WHERE user_id=? AND month=?",
             (
                 round(totals["income"] - totals["mandatory"], 2),
-                round(totals["expense"] + totals["recurring"], 2),
+                round(totals["expense"] + totals["recurring"] + totals["account_transfer"] - totals["account_return"], 2),
                 round(totals["rent"], 2),
                 round(totals["save"], 2),
                 user_id,
@@ -502,6 +512,121 @@ def delete_income_source(user_id: int, source_id: int):
             )
         else:
             conn.execute("DELETE FROM income_sources WHERE user_id=? AND id=?", (user_id, source_id))
+
+
+def list_extra_accounts(user_id: int):
+    ensure_user(user_id)
+    with get_connection() as conn:
+        return conn.execute(
+            "SELECT id,name,balance FROM extra_accounts "
+            "WHERE user_id=? AND active=1 ORDER BY id",
+            (user_id,),
+        ).fetchall()
+
+
+def create_extra_account(user_id: int, name: str):
+    ensure_user(user_id)
+    clean_name = " ".join(name.split())[:80]
+    if not clean_name:
+        raise ValueError("Введите название счёта")
+    with get_connection() as conn:
+        count = conn.execute(
+            "SELECT COUNT(*) count FROM extra_accounts WHERE user_id=? AND active=1",
+            (user_id,),
+        ).fetchone()["count"]
+        if int(count) >= 3:
+            raise ValueError("Можно создать не больше трёх дополнительных счетов")
+        if conn.execute(
+            "SELECT 1 FROM extra_accounts WHERE user_id=? AND active=1 AND lower(name)=lower(?)",
+            (user_id, clean_name),
+        ).fetchone():
+            raise ValueError("Счёт с таким названием уже существует")
+        conn.execute(
+            "INSERT INTO extra_accounts(user_id,name,balance) VALUES (?, ?, 0)",
+            (user_id, clean_name),
+        )
+
+
+def delete_extra_account(user_id: int, account_id: int):
+    with get_connection() as conn:
+        account = conn.execute(
+            "SELECT balance FROM extra_accounts WHERE id=? AND user_id=? AND active=1",
+            (account_id, user_id),
+        ).fetchone()
+        if not account:
+            raise ValueError("Счёт не найден")
+        if abs(float(account["balance"])) > 0.005:
+            raise ValueError("Сначала верните остаток на основной счёт")
+        conn.execute(
+            "UPDATE extra_accounts SET active=0 WHERE id=? AND user_id=?",
+            (account_id, user_id),
+        )
+
+
+def transfer_extra_account(user_id: int, account_id: int, amount: float, direction: str, request_id=None):
+    if direction not in {"to_account", "to_main"}:
+        raise ValueError("Некорректное направление перевода")
+    amount = round(float(amount), 2)
+    if amount <= 0:
+        raise ValueError("Сумма должна быть больше нуля")
+    ensure_month(user_id)
+    key = month_key(user_id)
+    now = datetime.now().isoformat(timespec="seconds")
+    with get_connection() as conn:
+        account = conn.execute(
+            "SELECT name,balance FROM extra_accounts WHERE id=? AND user_id=? AND active=1",
+            (account_id, user_id),
+        ).fetchone()
+        if not account:
+            raise ValueError("Счёт не найден")
+        if not _claim_request(conn, user_id, request_id):
+            return
+        if direction == "to_account":
+            cursor = conn.execute(
+                "UPDATE months SET spent=spent+? WHERE user_id=? AND month=? "
+                "AND (budget-spent-rent-saved)>=?",
+                (amount, user_id, key, amount),
+            )
+            if cursor.rowcount != 1:
+                if request_id:
+                    conn.execute(
+                        "DELETE FROM operation_requests WHERE user_id=? AND request_id=?",
+                        (user_id, request_id[:100]),
+                    )
+                raise ValueError("Недостаточно денег на основном счёте")
+            conn.execute(
+                "UPDATE extra_accounts SET balance=balance+? WHERE id=? AND user_id=?",
+                (amount, account_id, user_id),
+            )
+            global_kind, account_kind = "account_transfer", "in"
+            description = f"На счёт «{account['name']}»"
+        else:
+            cursor = conn.execute(
+                "UPDATE extra_accounts SET balance=balance-? "
+                "WHERE id=? AND user_id=? AND balance>=?",
+                (amount, account_id, user_id, amount),
+            )
+            if cursor.rowcount != 1:
+                if request_id:
+                    conn.execute(
+                        "DELETE FROM operation_requests WHERE user_id=? AND request_id=?",
+                        (user_id, request_id[:100]),
+                    )
+                raise ValueError("Недостаточно денег на дополнительном счёте")
+            conn.execute(
+                "UPDATE months SET spent=spent-? WHERE user_id=? AND month=?",
+                (amount, user_id, key),
+            )
+            global_kind, account_kind = "account_return", "out"
+            description = f"Со счёта «{account['name']}»"
+        conn.execute(
+            "INSERT INTO transactions(user_id,created_at,kind,amount,description) VALUES (?, ?, ?, ?, ?)",
+            (user_id, now, global_kind, amount, description),
+        )
+        conn.execute(
+            "INSERT INTO account_transactions(account_id,user_id,created_at,kind,amount) VALUES (?, ?, ?, ?, ?)",
+            (account_id, user_id, now, account_kind, amount),
+        )
 
 
 def find_income_source(user_id: int, text: str):
@@ -722,6 +847,8 @@ def update_expense(user_id: int, transaction_id: int, amount: float, description
 
 def reset_user_data(user_id: int):
     with get_connection() as conn:
+        conn.execute("DELETE FROM account_transactions WHERE user_id=?", (user_id,))
+        conn.execute("DELETE FROM extra_accounts WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM income_sources WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM recurring_payments WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM goals WHERE user_id=?", (user_id,))

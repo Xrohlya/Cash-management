@@ -23,6 +23,8 @@ from database.repository import (
     add_rent,
     add_to_savings,
     create_income_source,
+    create_extra_account,
+    delete_extra_account,
     delete_income_source,
     apply_due_recurring_payments,
     delete_recurring_payment,
@@ -32,11 +34,13 @@ from database.repository import (
     get_user_profile,
     list_recurring_payments,
     list_income_sources,
+    list_extra_accounts,
     recent_transactions,
     reset_user_data,
     set_financial_day,
     update_income_source,
     update_expense,
+    transfer_extra_account,
 )
 from services.analytics import clear_goal, current_period_stats, set_goal
 from services.parser import extract_date, parse_expense, strip_date_words
@@ -74,6 +78,16 @@ class RecurringPayment(BaseModel):
 class IncomeSource(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     withholding_percent: float = Field(ge=0, le=100)
+
+
+class ExtraAccount(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+
+
+class AccountTransfer(BaseModel):
+    amount: float = Field(gt=0, le=1_000_000_000)
+    direction: str = Field(pattern="^(to_account|to_main)$")
+    request_id: str = Field(min_length=8, max_length=100)
 
 
 class ExpenseCorrection(BaseModel):
@@ -305,6 +319,47 @@ def api_recurring(user_id: int = Depends(current_user)):
 @app.get("/api/income-sources")
 def api_income_sources(user_id: int = Depends(current_user)):
     return [dict(row) for row in list_income_sources(user_id)]
+
+
+@app.get("/api/accounts")
+def api_accounts(user_id: int = Depends(current_user)):
+    return [dict(row) for row in list_extra_accounts(user_id)]
+
+
+@app.post("/api/accounts")
+def api_add_account(account: ExtraAccount, user_id: int = Depends(current_user)):
+    try:
+        create_extra_account(user_id, account.name)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return [dict(row) for row in list_extra_accounts(user_id)]
+
+
+@app.post("/api/accounts/{account_id}/delete")
+def api_delete_account(account_id: int, user_id: int = Depends(current_user)):
+    try:
+        delete_extra_account(user_id, account_id)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return [dict(row) for row in list_extra_accounts(user_id)]
+
+
+@app.post("/api/accounts/{account_id}/transfer")
+def api_transfer_account(
+    account_id: int,
+    transfer: AccountTransfer,
+    user_id: int = Depends(current_user),
+):
+    try:
+        transfer_extra_account(
+            user_id, account_id, transfer.amount, transfer.direction, transfer.request_id
+        )
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return {
+        "state": state(user_id),
+        "accounts": [dict(row) for row in list_extra_accounts(user_id)],
+    }
 
 
 @app.post("/api/income-sources")

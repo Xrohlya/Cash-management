@@ -82,6 +82,47 @@ class RepositoryTest(unittest.TestCase):
         self.assertEqual(len(repository.recent_transactions(202)), 1)
         self.assertEqual(repository.list_income_sources(101), [])
 
+    def test_extra_accounts_transfer_without_counting_as_expense(self):
+        repository.add_income(101, 1000, 0)
+        repository.create_extra_account(101, "Отпуск")
+        account = repository.list_extra_accounts(101)[0]
+
+        repository.transfer_extra_account(101, account["id"], 300, "to_account", "transfer-0001")
+        snapshot = repository.get_status_snapshot(101)
+        self.assertEqual(snapshot["remaining"], 700)
+        self.assertEqual(snapshot["spent"], 0)
+        self.assertEqual(float(repository.list_extra_accounts(101)[0]["balance"]), 300)
+
+        repository.transfer_extra_account(101, account["id"], 125, "to_main", "transfer-0002")
+        snapshot = repository.get_status_snapshot(101)
+        self.assertEqual(snapshot["remaining"], 825)
+        self.assertEqual(snapshot["spent"], 0)
+        self.assertEqual(float(repository.list_extra_accounts(101)[0]["balance"]), 175)
+
+    def test_extra_accounts_are_limited_and_nonempty_account_cannot_be_deleted(self):
+        repository.add_income(101, 1000, 0)
+        for name in ("Отпуск", "Ремонт", "Резерв"):
+            repository.create_extra_account(101, name)
+        with self.assertRaises(ValueError):
+            repository.create_extra_account(101, "Четвёртый")
+
+        account = repository.list_extra_accounts(101)[0]
+        repository.transfer_extra_account(101, account["id"], 100, "to_account", "transfer-0003")
+        with self.assertRaises(ValueError):
+            repository.delete_extra_account(101, account["id"])
+        repository.transfer_extra_account(101, account["id"], 100, "to_main", "transfer-0004")
+        repository.delete_extra_account(101, account["id"])
+        self.assertEqual(len(repository.list_extra_accounts(101)), 2)
+
+    def test_extra_account_transfer_is_idempotent(self):
+        repository.add_income(101, 1000, 0)
+        repository.create_extra_account(101, "Резерв")
+        account = repository.list_extra_accounts(101)[0]
+        repository.transfer_extra_account(101, account["id"], 200, "to_account", "transfer-0005")
+        repository.transfer_extra_account(101, account["id"], 200, "to_account", "transfer-0005")
+        self.assertEqual(float(repository.list_extra_accounts(101)[0]["balance"]), 200)
+        self.assertEqual(repository.get_status_snapshot(101)["remaining"], 800)
+
     def test_request_id_prevents_duplicate_operation(self):
         repository.add_income(101, 1000, 0)
         self.assertTrue(repository.add_expense(101, 100, "Еда", "request-0001"))

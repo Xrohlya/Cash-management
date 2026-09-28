@@ -21,6 +21,8 @@ TABLES = {
     "operation_requests": "user_id, request_id, created_at",
     "recurring_payments": "id, user_id, title, amount, kind, day_of_month, active, last_run, last_notified",
     "income_sources": "id, user_id, name, withholding_percent, active",
+    "extra_accounts": "id, user_id, name, balance, active",
+    "account_transactions": "id, account_id, user_id, created_at, kind, amount",
 }
 
 

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <title>Мой бюджет</title>
-  <link rel="stylesheet" href="/static/app.css?v=20260928-2">
+  <link rel="stylesheet" href="/static/app.css?v=20260928-3">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -49,6 +49,16 @@
       <section class="upcoming-payment" id="upcoming-payment" hidden>
         <div><span>Ближайший платёж</span><strong id="upcoming-title">—</strong></div>
         <div><b id="upcoming-amount">—</b><small id="upcoming-date">—</small></div>
+      </section>
+
+      <section class="accounts-overview">
+        <div class="section-heading"><h2>Мои счета</h2><small>Основной и дополнительные</small></div>
+        <div id="accounts-summary" class="accounts-summary"></div>
+      </section>
+
+      <section class="sources-overview">
+        <div class="section-heading"><h2>Источники дохода</h2><small>За текущий период</small></div>
+        <div id="sources-overview" class="sources-overview-list"></div>
       </section>
 
       <section class="operation-section" id="operation-section">
@@ -122,6 +132,15 @@
           <button class="secondary" id="save-period" type="submit">Сохранить</button>
         </form>
       </section>
+      <section class="accounts-settings">
+        <div class="section-heading"><h2>Дополнительные счета</h2><small id="account-limit">0 из 3</small></div>
+        <form id="account-form" class="account-form">
+          <label><span>Название счёта</span><input id="account-name" maxlength="80" placeholder="Например, Отпуск" required></label>
+          <button class="secondary" type="submit">Создать счёт</button>
+        </form>
+        <p class="form-hint">Деньги переводятся с основного счёта и не считаются расходом.</p>
+        <div id="accounts-settings-list" class="accounts-settings-list"></div>
+      </section>
       <section class="sources-section">
         <h2>Источники дохода</h2>
         <form id="source-form">
@@ -177,10 +196,19 @@
       <div class="dialog-actions"><button class="text-button" id="cancel-reset" type="button">Отмена</button><button class="danger-button" type="submit">Удалить всё</button></div>
     </form>
   </dialog>
+  <dialog id="account-transfer-dialog">
+    <form id="account-transfer-form" method="dialog">
+      <h2 id="account-transfer-title">Перевод</h2>
+      <input id="account-transfer-id" type="hidden">
+      <label><span>Направление</span><select id="account-transfer-direction"><option value="to_account">С основного на этот счёт</option><option value="to_main">С этого счёта на основной</option></select></label>
+      <label><span>Сумма</span><div class="amount-input"><input id="account-transfer-amount" type="number" min="0.01" step="0.01" inputmode="decimal" required><b>₽</b></div></label>
+      <div class="dialog-actions"><button class="text-button" id="cancel-account-transfer" type="button">Отмена</button><button class="primary" type="submit">Перевести</button></div>
+    </form>
+  </dialog>
   <div class="blocking-message" id="blocking-message" hidden>
     <h2>Откройте приложение из Telegram</h2>
     <p>Авторизация доступна через кнопку меню вашего бота.</p>
   </div>
-  <script src="/static/app.js?v=20260928-2" defer></script>
+  <script src="/static/app.js?v=20260928-3" defer></script>
 </body>
 </html>
