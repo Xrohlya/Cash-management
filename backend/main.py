@@ -42,7 +42,7 @@ from database.repository import (
     update_expense,
     transfer_extra_account,
 )
-from services.analytics import clear_goal, current_period_stats, set_goal
+from services.analytics import clear_goal, current_period_stats, financial_radar, set_goal
 from services.parser import extract_date, parse_expense, strip_date_words
 
 
@@ -239,11 +239,13 @@ def api_state(user_id: int = Depends(current_user)):
 @app.get("/api/dashboard")
 def api_dashboard(user_id: int = Depends(current_user)):
     current_state = state(user_id)
+    recurring = [dict(row) for row in list_recurring_payments(user_id)]
     return {
         "state": current_state,
         "transactions": [dict(row) for row in recent_transactions(user_id, 30)],
         "analytics": analytics_payload(user_id),
-        "recurring": [dict(row) for row in list_recurring_payments(user_id)],
+        "radar": financial_radar(user_id, current_state["available"], recurring),
+        "recurring": recurring,
         "income_sources": [dict(row) for row in list_income_sources(user_id)],
         "accounts": [dict(row) for row in list_extra_accounts(user_id)],
     }

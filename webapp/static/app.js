@@ -140,6 +140,59 @@ function renderGoal(goal) {
   document.getElementById("goal-date").value = goal.target_date;
 }
 
+function renderRadar(radar) {
+  document.getElementById("safe-today").textContent = money(radar.safe_today);
+  document.getElementById("reserved-total").textContent = money(radar.reserved);
+  document.getElementById("projected-balance").textContent = `Прогноз: ${money(radar.projected_balance)}`;
+  document.getElementById("streak-current").textContent = `${radar.streak.current} дн.`;
+  document.getElementById("streak-best").textContent = `Рекорд: ${radar.streak.best} дн.`;
+  document.getElementById("weekly-total").textContent = money(radar.weekly.current);
+
+  const change = Number(radar.weekly.change_percent || 0);
+  const weeklyChange = document.getElementById("weekly-change");
+  if (radar.weekly.previous === 0 && radar.weekly.current === 0) {
+    weeklyChange.textContent = "Расходов не было";
+  } else if (change === 0) {
+    weeklyChange.textContent = "Как неделю назад";
+  } else {
+    weeklyChange.textContent = `${change > 0 ? "+" : ""}${change.toLocaleString("ru-RU")}% к прошлой неделе`;
+  }
+  weeklyChange.className = change > 0 ? "trend-worse" : change < 0 ? "trend-better" : "";
+
+  const pill = document.getElementById("risk-pill");
+  pill.className = `risk-pill risk-${radar.risk}`;
+  pill.textContent = radar.risk_title;
+  document.getElementById("risk-text").textContent = radar.risk_text;
+
+  const calendar = document.getElementById("money-calendar-list");
+  if (!radar.calendar.length) {
+    calendar.innerHTML = '<p class="empty compact-empty">Событий пока нет</p>';
+    return;
+  }
+  calendar.replaceChildren(...radar.calendar.map((event) => {
+    const row = document.createElement("article");
+    row.className = `calendar-event calendar-${event.kind}`;
+    const [year, month, day] = event.date.split("-").map(Number);
+    const dateValue = new Date(year, month - 1, day);
+    const dateBlock = document.createElement("time");
+    dateBlock.dateTime = event.date;
+    dateBlock.innerHTML = `<b>${day}</b><span>${new Intl.DateTimeFormat("ru-RU", { month: "short" }).format(dateValue)}</span>`;
+    const info = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = event.title;
+    const kind = document.createElement("small");
+    kind.textContent = event.kind === "income" ? "Поступление" : event.kind === "payment" ? "Запланированный платёж" : "Граница периода";
+    info.append(title, kind);
+    row.append(dateBlock, info);
+    if (Number(event.amount) > 0) {
+      const amount = document.createElement("b");
+      amount.textContent = `${event.kind === "income" ? "+" : "−"}${money(event.amount)}`;
+      row.append(amount);
+    }
+    return row;
+  }));
+}
+
 function renderHistory(items) {
   const root = document.getElementById("history");
   if (!items.length) {
@@ -386,6 +439,7 @@ async function load() {
   const history = dashboard.transactions;
   const sources = dashboard.income_sources;
   renderState(state);
+  renderRadar(dashboard.radar);
   renderHistory(history);
   renderCategories(analytics.categories);
   renderDaily(analytics.daily);
@@ -585,6 +639,83 @@ document.querySelectorAll("[data-quick-expense]").forEach((button) => {
     document.getElementById("amount").focus();
     telegram?.HapticFeedback?.selectionChanged?.();
   });
+});
+
+function loadReceiptOcr() {
+  if (window.Tesseract) return Promise.resolve(window.Tesseract);
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+    script.onload = () => resolve(window.Tesseract);
+    script.onerror = () => reject(new Error("Не удалось загрузить распознавание чека"));
+    document.head.append(script);
+  });
+}
+
+function receiptAmount(text) {
+  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const amountPattern = /(?:\d{1,3}(?:[\s.]\d{3})*|\d+)(?:[,.]\d{2})?/g;
+  const decimalPattern = /(?:\d{1,3}(?:[\s.]\d{3})*|\d+)[,.]\d{2}/g;
+  const values = (linesToRead, pattern) => linesToRead.flatMap((line) =>
+    (line.match(pattern) || []).map((value) => Number(value.replace(/[\s.](?=\d{3})/g, "").replace(",", ".")))
+  ).filter((value) => Number.isFinite(value) && value > 0 && value < 1_000_000);
+  const preferred = lines.filter((line) => /итого|к оплате|сумма|total|оплачено/i.test(line));
+  const totals = values(preferred, amountPattern);
+  if (totals.length) return Math.max(...totals);
+  const candidates = values(lines.filter((line) => !/инн|кассир|чек|дата|смена/i.test(line)), decimalPattern);
+  return candidates.length ? Math.max(...candidates) : null;
+}
+
+function receiptCategory(text) {
+  const value = text.toLocaleLowerCase("ru-RU");
+  const groups = [
+    ["Еда", ["продукт", "пятероч", "перекрест", "вкусвилл", "магнит", "лента", "ашан", "молоко", "хлеб", "кофе", "кафе", "ресторан"]],
+    ["Транспорт", ["такси", "бензин", "топливо", "парков", "метро", "автобус"]],
+    ["Здоровье", ["аптек", "лекар", "клиник", "медицин"]],
+    ["Дом и связь", ["интернет", "мобильн", "телефон", "хозтовар", "ремонт"]],
+    ["Подписки", ["подписк", "онлайн-сервис", "subscription"]],
+    ["Одежда", ["одежд", "обув", "fashion"]],
+  ];
+  return groups.find(([, words]) => words.some((word) => value.includes(word)))?.[0] || "Разное";
+}
+
+document.getElementById("scan-receipt").addEventListener("click", () => {
+  document.getElementById("receipt-photo").click();
+});
+
+document.getElementById("receipt-photo").addEventListener("change", async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const status = document.getElementById("receipt-status");
+  const button = document.getElementById("scan-receipt");
+  button.disabled = true;
+  status.textContent = "Подготавливаю распознавание…";
+  try {
+    const tesseract = await loadReceiptOcr();
+    const result = await tesseract.recognize(file, "rus+eng", {
+      logger: (progress) => {
+        if (progress.status === "recognizing text") {
+          status.textContent = `Читаю чек: ${Math.round(progress.progress * 100)}%`;
+        }
+      },
+    });
+    const text = result.data?.text || "";
+    const amount = receiptAmount(text);
+    if (!amount) throw new Error("Не удалось найти итоговую сумму. Введите её вручную.");
+    operationKind = "expense";
+    document.querySelectorAll("#operation-kind button").forEach((item) => item.classList.toggle("active", item.dataset.kind === "expense"));
+    document.getElementById("submit").textContent = operationLabels.expense[0];
+    document.getElementById("amount").value = amount.toFixed(2);
+    document.getElementById("description").value = receiptCategory(text);
+    status.textContent = "Чек распознан. Проверьте сумму перед записью.";
+    telegram?.HapticFeedback?.notificationOccurred?.("success");
+  } catch (error) {
+    status.textContent = error.message;
+    showToast(error.message);
+  } finally {
+    button.disabled = false;
+    event.target.value = "";
+  }
 });
 
 document.getElementById("operation-kind").addEventListener("click", (event) => {

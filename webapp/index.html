@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <title>Мой бюджет</title>
-  <link rel="stylesheet" href="/static/app.css?v=20260929-1">
+  <link rel="stylesheet" href="/static/app.css?v=20260929-2">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -46,6 +46,27 @@
         <article><span>Накопления</span><b id="savings">—</b></article>
       </section>
 
+      <section class="radar-section" aria-labelledby="radar-title">
+        <div class="section-heading">
+          <h2 id="radar-title">Финансовый радар</h2>
+          <span class="risk-pill" id="risk-pill">Расчёт</span>
+        </div>
+        <div class="radar-hero">
+          <div><span>Безопасно потратить сегодня</span><strong id="safe-today">—</strong></div>
+          <p id="risk-text">Анализируем текущий темп расходов</p>
+        </div>
+        <div class="radar-stats">
+          <article><span>Без расходов</span><b id="streak-current">—</b><small id="streak-best">—</small></article>
+          <article><span>Последние 7 дней</span><b id="weekly-total">—</b><small id="weekly-change">—</small></article>
+          <article><span>Резерв платежей</span><b id="reserved-total">—</b><small id="projected-balance">—</small></article>
+        </div>
+      </section>
+
+      <section class="money-calendar" aria-labelledby="calendar-title">
+        <div class="section-heading"><h2 id="calendar-title">Календарь денег</h2><small>До конца периода</small></div>
+        <div id="money-calendar-list" class="money-calendar-list"></div>
+      </section>
+
       <section class="upcoming-payment" id="upcoming-payment" hidden>
         <div><span>Ближайший платёж</span><strong id="upcoming-title">—</strong></div>
         <div><b id="upcoming-amount">—</b><small id="upcoming-date">—</small></div>
@@ -75,6 +96,11 @@
           <button type="button" data-kind="save">Отложить</button>
         </div>
         <form id="operation-form">
+          <div class="receipt-scan">
+            <input id="receipt-photo" type="file" accept="image/*" capture="environment" hidden>
+            <button class="receipt-button" id="scan-receipt" type="button"><span aria-hidden="true">▣</span> Сканировать чек</button>
+            <small id="receipt-status">Сумма и категория заполнятся автоматически</small>
+          </div>
           <label>
             <span>Сумма</span>
             <div class="amount-input"><input id="amount" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required><b>₽</b></div>
@@ -209,6 +235,6 @@
     <h2>Откройте приложение из Telegram</h2>
     <p>Авторизация доступна через кнопку меню вашего бота.</p>
   </div>
-  <script src="/static/app.js?v=20260929-1" defer></script>
+  <script src="/static/app.js?v=20260929-2" defer></script>
 </body>
 </html>

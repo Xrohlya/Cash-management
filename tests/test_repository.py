@@ -4,7 +4,7 @@ from pathlib import Path
 
 import database.db as db
 from database import repository
-from services.analytics import current_period_stats, get_goal, set_goal
+from services.analytics import current_period_stats, financial_radar, get_goal, set_goal
 from services.budget import status
 
 
@@ -196,6 +196,38 @@ class RepositoryTest(unittest.TestCase):
         month = repository.get_month(101)
         self.assertEqual(float(month["budget"]), 1000)
         self.assertEqual(float(month["spent"]), 125)
+
+    def test_financial_radar_reserves_payments_and_compares_weeks(self):
+        from datetime import date, timedelta
+
+        today = date(2026, 9, 25)
+        repository.ensure_user(101)
+        with db.get_connection() as conn:
+            conn.execute(
+                "INSERT INTO transactions(user_id,created_at,kind,amount,description) VALUES (?, ?, 'expense', 100, 'Еда')",
+                (101, today.isoformat()),
+            )
+            conn.execute(
+                "INSERT INTO transactions(user_id,created_at,kind,amount,description) VALUES (?, ?, 'expense', 200, 'Еда')",
+                (101, (today - timedelta(days=8)).isoformat()),
+            )
+        payments = [{
+            "title": "Аренда",
+            "amount": 200,
+            "day_of_month": 1,
+            "active": 1,
+            "last_run": None,
+        }]
+
+        radar = financial_radar(101, 1000, payments, today)
+
+        self.assertEqual(radar["reserved"], 200)
+        self.assertEqual(radar["safe_today"], 32)
+        self.assertEqual(radar["weekly"]["current"], 100)
+        self.assertEqual(radar["weekly"]["previous"], 200)
+        self.assertEqual(radar["weekly"]["change_percent"], -50)
+        self.assertEqual(radar["streak"]["current"], 0)
+        self.assertTrue(any(item["title"] == "Аренда" for item in radar["calendar"]))
 
 
 if __name__ == "__main__":
