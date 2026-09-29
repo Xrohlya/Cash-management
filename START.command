@@ -67,6 +67,4 @@ if ! curl -fsS http://127.0.0.1:8788/health >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "API: http://127.0.0.1:8788/health"
-echo "Бот запущен. Для остановки нажмите Ctrl+C."
 python app.py

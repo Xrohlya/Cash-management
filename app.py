@@ -5,9 +5,10 @@ from html import escape
 from aiogram.types import BotCommand, MenuButtonCommands, MenuButtonWebApp, WebAppInfo
 
 from bot.connection import create_bot, create_dispatcher
+from bot.console import ActivityMiddleware, configure_logging, show_startup
 from bot.handlers import router
 from bot.keyboards import main_menu
-from config.settings import WEBAPP_URL
+from config.settings import DATABASE_URL, WEBAPP_URL
 from database.db import close_db_pool, init_db
 from database.repository import (
     apply_due_recurring_payments,
@@ -16,6 +17,7 @@ from database.repository import (
     clear_status_message,
     get_status_message,
     get_status_snapshot,
+    list_user_summaries,
     set_status_message,
 )
 from services.budget import money, status
@@ -76,19 +78,25 @@ async def configure_bot(bot):
 
 
 async def main():
-    logging.basicConfig(level=logging.INFO)
+    configure_logging()
     init_db()
     bot = create_bot()
+    bot_info = await bot.get_me()
     await configure_bot(bot)
     dp = create_dispatcher()
+    dp.message.outer_middleware(ActivityMiddleware())
+    dp.callback_query.outer_middleware(ActivityMiddleware())
     dp.include_router(router)
-    logging.info("Cash Management bot started")
+    users = list_user_summaries()
+    database_name = "PostgreSQL · Aiven" if DATABASE_URL else "SQLite · локальная"
+    show_startup(bot_info, users, database_name)
     notification_task = asyncio.create_task(recurring_notification_loop(bot))
     try:
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
         notification_task.cancel()
         close_db_pool()
+        print("\nБот остановлен.")
 
 
 if __name__ == "__main__":

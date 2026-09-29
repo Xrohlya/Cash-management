@@ -104,6 +104,26 @@ def get_user_profile(user_id: int):
         ).fetchone()
 
 
+def list_user_summaries():
+    with get_connection() as conn:
+        users = conn.execute(
+            "SELECT user_id,first_name,username FROM users ORDER BY user_id"
+        ).fetchall()
+    summaries = []
+    for user in users:
+        try:
+            balance = get_status_snapshot(int(user["user_id"]))["remaining"]
+        except Exception:
+            balance = None
+        summaries.append({
+            "user_id": int(user["user_id"]),
+            "first_name": user["first_name"] or "",
+            "username": user["username"] or "",
+            "balance": balance,
+        })
+    return summaries
+
+
 def get_percent(user_id: int) -> float:
     ensure_user(user_id)
     with get_connection() as conn:

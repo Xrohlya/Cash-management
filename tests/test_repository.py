@@ -41,6 +41,20 @@ class RepositoryTest(unittest.TestCase):
         self.assertEqual(profile["first_name"], "Алексей")
         self.assertEqual(profile["username"], "alexey")
 
+    def test_user_summaries_include_identity_and_isolated_balance(self):
+        repository.ensure_user(101, "Алексей", "alexey")
+        repository.ensure_user(202, "Мария", "maria")
+        repository.add_income(101, 1000, 0)
+        repository.add_income(202, 500, 0)
+        repository.add_expense(101, 125, "Кафе")
+
+        summaries = repository.list_user_summaries()
+
+        self.assertEqual([item["user_id"] for item in summaries], [101, 202])
+        self.assertEqual(summaries[0]["username"], "alexey")
+        self.assertEqual(summaries[0]["balance"], 875)
+        self.assertEqual(summaries[1]["balance"], 500)
+
     def test_main_income_has_no_withholding(self):
         fee, net, created = repository.add_income(101, 1000, 25)
         self.assertTrue(created)
