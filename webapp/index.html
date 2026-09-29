@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <title>Мой бюджет</title>
-  <link rel="stylesheet" href="/static/app.css?v=20260929-2">
+  <link rel="stylesheet" href="/static/app.css?v=20260930-1">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -59,6 +59,7 @@
           <article><span>Без расходов</span><b id="streak-current">—</b><small id="streak-best">—</small></article>
           <article><span>Последние 7 дней</span><b id="weekly-total">—</b><small id="weekly-change">—</small></article>
           <article><span>Резерв платежей</span><b id="reserved-total">—</b><small id="projected-balance">—</small></article>
+          <article><span>Оставить к концу</span><b id="target-balance-radar">—</b><small>Личный резерв</small></article>
         </div>
       </section>
 
@@ -158,6 +159,17 @@
           <button class="secondary" id="save-period" type="submit">Сохранить</button>
         </form>
       </section>
+      <section class="settings-section" aria-labelledby="radar-settings-title">
+        <h2 id="radar-settings-title">Настройка радара</h2>
+        <form id="radar-form" class="period-form">
+          <label for="target-balance">
+            <span>Оставить на основном счёте к концу периода</span>
+            <div class="amount-input"><input id="target-balance" type="number" min="0" step="100" inputmode="decimal" required><b>₽</b></div>
+          </label>
+          <button class="secondary" id="save-radar" type="submit">Сохранить</button>
+        </form>
+        <p class="form-hint">Радар вычтет эту сумму и будущие платежи перед расчётом безопасного лимита.</p>
+      </section>
       <section class="accounts-settings">
         <div class="section-heading"><h2>Дополнительные счета</h2><small id="account-limit">0 из 3</small></div>
         <form id="account-form" class="account-form">
@@ -235,6 +247,6 @@
     <h2>Откройте приложение из Telegram</h2>
     <p>Авторизация доступна через кнопку меню вашего бота.</p>
   </div>
-  <script src="/static/app.js?v=20260929-2" defer></script>
+  <script src="/static/app.js?v=20260930-1" defer></script>
 </body>
 </html>

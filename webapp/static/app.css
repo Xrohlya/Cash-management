@@ -136,7 +136,7 @@ main { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
 .radar-hero span { display: block; color: var(--muted); font-size: 11px; }
 .radar-hero strong { display: block; margin-top: 3px; color: #b9dcff; font-size: 29px; line-height: 1.1; text-shadow: 0 0 18px rgba(53, 169, 255, 0.3); }
 .radar-hero p { max-width: 190px; margin: 0; color: var(--muted); font-size: 11px; text-align: right; }
-.radar-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; border: 1px solid var(--line); background: var(--line); }
+.radar-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; border: 1px solid var(--line); background: var(--line); }
 .radar-stats article { min-width: 0; padding: 11px 9px; background: #0d1723; }
 .radar-stats span, .radar-stats small { display: block; overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .radar-stats b { display: block; overflow: hidden; margin: 4px 0 2px; color: var(--text); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }

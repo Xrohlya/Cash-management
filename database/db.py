@@ -125,6 +125,7 @@ def _create_schema(conn):
             user_id BIGINT PRIMARY KEY,
             mandatory_percent DOUBLE PRECISION NOT NULL DEFAULT 6.0,
             financial_day INTEGER NOT NULL DEFAULT 20,
+            target_balance DOUBLE PRECISION NOT NULL DEFAULT 0,
             savings DOUBLE PRECISION NOT NULL DEFAULT 0,
             status_chat_id BIGINT,
             status_message_id BIGINT,
@@ -229,6 +230,7 @@ def init_db():
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT NOT NULL DEFAULT ''")
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT NOT NULL DEFAULT ''")
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS financial_day INTEGER NOT NULL DEFAULT 20")
+            conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS target_balance DOUBLE PRECISION NOT NULL DEFAULT 0")
             conn.execute("ALTER TABLE recurring_payments ADD COLUMN IF NOT EXISTS last_notified TEXT")
             conn.execute("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS income_source_id BIGINT")
             return
@@ -250,6 +252,7 @@ def init_db():
             "first_name": "ALTER TABLE users ADD COLUMN first_name TEXT NOT NULL DEFAULT ''",
             "username": "ALTER TABLE users ADD COLUMN username TEXT NOT NULL DEFAULT ''",
             "financial_day": "ALTER TABLE users ADD COLUMN financial_day INTEGER NOT NULL DEFAULT 20",
+            "target_balance": "ALTER TABLE users ADD COLUMN target_balance REAL NOT NULL DEFAULT 0",
         }
         for column, statement in migrations.items():
             if column not in user_columns:

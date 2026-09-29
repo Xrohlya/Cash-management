@@ -109,7 +109,13 @@ def _monthly_occurrences(day_of_month: int, start: date, end: date):
     return result
 
 
-def financial_radar(user_id: int, remaining: float, recurring_payments: list, today: date | None = None):
+def financial_radar(
+    user_id: int,
+    remaining: float,
+    recurring_payments: list,
+    today: date | None = None,
+    target_balance: float = 0,
+):
     today = today or date.today()
     start = financial_period_start(user_id, today)
     end = financial_period_end(user_id, today)
@@ -179,7 +185,8 @@ def financial_radar(user_id: int, remaining: float, recurring_payments: list, to
         weekly_change = 0.0
 
     days_left = max(1, (end - today).days)
-    safe_today = max(0.0, (float(remaining) - reserved) / days_left)
+    target_balance = max(0.0, float(target_balance))
+    safe_today = max(0.0, (float(remaining) - reserved - target_balance) / days_left)
     elapsed = max(1, (today - start).days + 1)
     period_spending = sum(
         float(row["amount"])
@@ -188,11 +195,12 @@ def financial_radar(user_id: int, remaining: float, recurring_payments: list, to
     )
     daily_pace = period_spending / elapsed
     projected_balance = float(remaining) - reserved - daily_pace * max(0, days_left - 1)
-    if projected_balance < 0:
+    target_gap = projected_balance - target_balance
+    if target_gap < 0:
         risk = "red"
         risk_title = "Высокий риск"
-        risk_text = "При текущем темпе денег не хватит до конца периода."
-    elif projected_balance < max(500, float(remaining) * 0.15):
+        risk_text = "При текущем темпе желаемый остаток не сохранится."
+    elif target_gap < max(500, float(remaining) * 0.15):
         risk = "yellow"
         risk_title = "Нужна осторожность"
         risk_text = "Запас к концу периода будет небольшим."
@@ -221,6 +229,7 @@ def financial_radar(user_id: int, remaining: float, recurring_payments: list, to
         "safe_today": round(safe_today, 2),
         "reserved": reserved,
         "projected_balance": round(projected_balance, 2),
+        "target_balance": round(target_balance, 2),
         "risk": risk,
         "risk_title": risk_title,
         "risk_text": risk_text,

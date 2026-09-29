@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import logging
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -8,7 +9,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from urllib.parse import parse_qsl
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -38,6 +39,7 @@ from database.repository import (
     recent_transactions,
     reset_user_data,
     set_financial_day,
+    set_target_balance,
     update_income_source,
     update_expense,
     transfer_extra_account,
@@ -57,6 +59,10 @@ class Operation(BaseModel):
 
 class PeriodSettings(BaseModel):
     financial_day: int = Field(ge=1, le=28)
+
+
+class RadarSettings(BaseModel):
+    target_balance: float = Field(ge=0, le=1_000_000_000)
 
 
 class SiriExpense(BaseModel):
@@ -162,6 +168,7 @@ def state(user_id: int):
         "budget": round(snapshot["budget"], 2),
         "mandatory_percent": snapshot["mandatory_percent"],
         "financial_day": snapshot["financial_day"],
+        "target_balance": round(snapshot["target_balance"], 2),
         "period_start": snapshot["start"].isoformat(),
         "period_end": (end - timedelta(days=1)).isoformat(),
         "profile": {
@@ -201,6 +208,52 @@ def analytics_payload(user_id: int):
             for day, amount in sorted(stats["daily"].items())
         ],
     }
+
+
+async def refresh_telegram_status(user_id: int):
+    """Refresh the persistent Telegram summary without delaying the API response."""
+    if not settings.BOT_TOKEN:
+        return
+    from aiogram import Bot
+    from aiogram.exceptions import TelegramBadRequest
+    from bot.keyboards import main_menu
+    from database.repository import clear_status_message, get_status_message, set_status_message
+    from services.budget import status
+
+    saved = get_status_message(user_id)
+    bot = Bot(settings.BOT_TOKEN)
+    try:
+        text = status(user_id)
+        if saved:
+            await bot.edit_message_text(
+                chat_id=saved[0],
+                message_id=saved[1],
+                text=text,
+                parse_mode="HTML",
+                reply_markup=main_menu(),
+            )
+        else:
+            sent = await bot.send_message(
+                user_id, text, parse_mode="HTML", reply_markup=main_menu()
+            )
+            set_status_message(user_id, sent.chat.id, sent.message_id)
+    except TelegramBadRequest as exc:
+        message = str(exc).casefold()
+        if "message is not modified" not in message:
+            logging.warning("Mini App could not refresh Telegram summary: %s", exc)
+        if "message to edit not found" in message:
+            clear_status_message(user_id)
+            try:
+                sent = await bot.send_message(
+                    user_id, status(user_id), parse_mode="HTML", reply_markup=main_menu()
+                )
+                set_status_message(user_id, sent.chat.id, sent.message_id)
+            except Exception:
+                logging.exception("Mini App could not recreate Telegram summary")
+    except Exception:
+        logging.exception("Mini App Telegram summary refresh failed")
+    finally:
+        await bot.session.close()
 
 
 @asynccontextmanager
@@ -247,7 +300,12 @@ def api_dashboard(user_id: int = Depends(current_user)):
         "state": current_state,
         "transactions": [dict(row) for row in recent_transactions(user_id, 30)],
         "analytics": analytics_payload(user_id),
-        "radar": financial_radar(user_id, current_state["available"], recurring),
+        "radar": financial_radar(
+            user_id,
+            current_state["available"],
+            recurring,
+            target_balance=current_state["target_balance"],
+        ),
         "recurring": recurring,
         "income_sources": [dict(row) for row in list_income_sources(user_id)],
         "accounts": [dict(row) for row in list_extra_accounts(user_id)],
@@ -266,12 +324,14 @@ def api_transactions(
 def api_edit_expense(
     transaction_id: int,
     correction: ExpenseCorrection,
+    background_tasks: BackgroundTasks,
     user_id: int = Depends(current_user),
 ):
     try:
         update_expense(user_id, transaction_id, correction.amount, correction.description)
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
+    background_tasks.add_task(refresh_telegram_status, user_id)
     return state(user_id)
 
 
@@ -429,14 +489,23 @@ def api_delete_recurring(payment_id: int, user_id: int = Depends(current_user)):
 
 
 @app.post("/api/expense")
-def api_expense(op: Operation, user_id: int = Depends(current_user)):
+def api_expense(
+    op: Operation,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(current_user),
+):
     if not add_expense(user_id, op.amount, op.description or "Расход", op.request_id):
         raise HTTPException(409, "Недостаточно средств в доступном бюджете.")
+    background_tasks.add_task(refresh_telegram_status, user_id)
     return state(user_id)
 
 
 @app.post("/api/income")
-def api_income(op: Operation, user_id: int = Depends(current_user)):
+def api_income(
+    op: Operation,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(current_user),
+):
     add_income(
         user_id,
         op.amount,
@@ -444,24 +513,46 @@ def api_income(op: Operation, user_id: int = Depends(current_user)):
         op.description or "Доход",
         op.request_id,
     )
+    background_tasks.add_task(refresh_telegram_status, user_id)
     return state(user_id)
 
 
 @app.post("/api/rent")
-def api_rent(op: Operation, user_id: int = Depends(current_user)):
+def api_rent(
+    op: Operation,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(current_user),
+):
     if not add_rent(user_id, op.amount, op.description or "Квартира", op.request_id):
         raise HTTPException(409, "Недостаточно средств в доступном бюджете.")
+    background_tasks.add_task(refresh_telegram_status, user_id)
     return state(user_id)
 
 
 @app.post("/api/save")
-def api_save(op: Operation, user_id: int = Depends(current_user)):
+def api_save(
+    op: Operation,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(current_user),
+):
     if not add_to_savings(user_id, op.amount, op.description or "Накопления", op.request_id):
         raise HTTPException(409, "Недостаточно средств в доступном бюджете.")
+    background_tasks.add_task(refresh_telegram_status, user_id)
     return state(user_id)
 
 
 @app.post("/api/settings/period")
 def api_set_period(settings_data: PeriodSettings, user_id: int = Depends(current_user)):
     set_financial_day(user_id, settings_data.financial_day)
+    return state(user_id)
+
+
+@app.post("/api/settings/radar")
+def api_set_radar(
+    settings_data: RadarSettings,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(current_user),
+):
+    set_target_balance(user_id, settings_data.target_balance)
+    background_tasks.add_task(refresh_telegram_status, user_id)
     return state(user_id)

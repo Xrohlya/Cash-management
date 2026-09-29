@@ -71,7 +71,24 @@ def status_from_snapshot(snapshot: dict) -> str:
 
 
 def status(user_id: int, snapshot: dict | None = None) -> str:
-    text = status_from_snapshot(snapshot or get_status_snapshot(user_id))
+    snapshot = snapshot or get_status_snapshot(user_id)
+    text = status_from_snapshot(snapshot)
+    from services.analytics import financial_radar
+    from database.repository import list_recurring_payments
+
+    radar = financial_radar(
+        user_id,
+        snapshot["remaining"],
+        [dict(row) for row in list_recurring_payments(user_id)],
+        target_balance=snapshot["target_balance"],
+    )
+    text += (
+        "\n\n🧭 <b>ФИНАНСОВЫЙ РАДАР</b>\n"
+        f"• Желаемый остаток: <b>{money(radar['target_balance'])} ₽</b>\n"
+        f"• Безопасно сегодня: <b>{money(radar['safe_today'])} ₽</b>\n"
+        f"• Прогноз к концу периода: <b>{money(radar['projected_balance'])} ₽</b>\n"
+        f"• {radar['risk_title']}"
+    )
     sources = [source for source in list_income_sources(user_id) if int(source["active"])]
     if not sources:
         return text

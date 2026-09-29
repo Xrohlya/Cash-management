@@ -45,6 +45,7 @@ function selectTab(tabName, remember = true) {
 }
 
 const financialDay = document.getElementById("financial-day");
+const targetBalance = document.getElementById("target-balance");
 const recurringDay = document.getElementById("recurring-day");
 for (let day = 1; day <= 28; day += 1) {
   const option = document.createElement("option");
@@ -107,6 +108,7 @@ function renderState(state) {
   document.getElementById("period").textContent = `${state.period_start.split("-").reverse().join(".")} — ${state.period_end.split("-").reverse().join(".")}`;
   document.getElementById("days-left").textContent = `${state.days_left} дн. до конца периода`;
   financialDay.value = String(state.financial_day || 20);
+  targetBalance.value = String(state.target_balance || 0);
   renderProfile(state.profile);
   renderGoal(state.goal);
 }
@@ -144,6 +146,7 @@ function renderRadar(radar) {
   document.getElementById("safe-today").textContent = money(radar.safe_today);
   document.getElementById("reserved-total").textContent = money(radar.reserved);
   document.getElementById("projected-balance").textContent = `Прогноз: ${money(radar.projected_balance)}`;
+  document.getElementById("target-balance-radar").textContent = money(radar.target_balance);
   document.getElementById("streak-current").textContent = `${radar.streak.current} дн.`;
   document.getElementById("streak-best").textContent = `Рекорд: ${radar.streak.best} дн.`;
   document.getElementById("weekly-total").textContent = money(radar.weekly.current);
@@ -792,6 +795,26 @@ document.getElementById("period-form").addEventListener("submit", async (event) 
     renderDaily(analytics.daily);
     telegram?.HapticFeedback?.notificationOccurred("success");
     showToast("Период обновлён");
+  } catch (error) {
+    telegram?.HapticFeedback?.notificationOccurred("error");
+    showToast(error.message);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.getElementById("radar-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const button = document.getElementById("save-radar");
+  button.disabled = true;
+  try {
+    await api("/api/settings/radar", {
+      method: "POST",
+      body: JSON.stringify({ target_balance: Number(targetBalance.value) }),
+    });
+    await load();
+    telegram?.HapticFeedback?.notificationOccurred("success");
+    showToast("Желаемый остаток сохранён");
   } catch (error) {
     telegram?.HapticFeedback?.notificationOccurred("error");
     showToast(error.message);

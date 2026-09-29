@@ -233,15 +233,26 @@ class RepositoryTest(unittest.TestCase):
             "last_run": None,
         }]
 
-        radar = financial_radar(101, 1000, payments, today)
+        radar = financial_radar(101, 1000, payments, today, target_balance=300)
 
         self.assertEqual(radar["reserved"], 200)
-        self.assertEqual(radar["safe_today"], 32)
+        self.assertEqual(radar["target_balance"], 300)
+        self.assertEqual(radar["safe_today"], 20)
         self.assertEqual(radar["weekly"]["current"], 100)
         self.assertEqual(radar["weekly"]["previous"], 200)
         self.assertEqual(radar["weekly"]["change_percent"], -50)
         self.assertEqual(radar["streak"]["current"], 0)
         self.assertTrue(any(item["title"] == "Аренда" for item in radar["calendar"]))
+
+    def test_target_balance_is_saved_per_user_and_shown_in_telegram_status(self):
+        repository.add_income(101, 10000, 0)
+        repository.set_target_balance(101, 2500)
+
+        self.assertEqual(repository.get_status_snapshot(101)["target_balance"], 2500)
+        self.assertEqual(repository.get_status_snapshot(202)["target_balance"], 0)
+        status_text = status(101)
+        self.assertIn("ФИНАНСОВЫЙ РАДАР", status_text)
+        self.assertIn("Желаемый остаток: <b>2 500 ₽</b>", status_text)
 
 
 if __name__ == "__main__":

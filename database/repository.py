@@ -162,6 +162,14 @@ def set_financial_day(user_id: int, financial_day: int):
     rebuild_month_from_transactions(user_id, financial_period_start(user_id))
 
 
+def set_target_balance(user_id: int, amount: float):
+    if amount < 0 or amount > 1_000_000_000:
+        raise ValueError("Желаемый остаток должен быть от 0 до 1 000 000 000.")
+    ensure_user(user_id)
+    with get_connection() as conn:
+        conn.execute("UPDATE users SET target_balance=? WHERE user_id=?", (round(amount, 2), user_id))
+
+
 def financial_period_start(user_id: int, dt=None) -> date:
     dt = dt or datetime.now()
     financial_day = get_financial_day(user_id)
@@ -219,7 +227,7 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
                     ON CONFLICT (user_id) DO NOTHING
                 ),
                 u AS (
-                    SELECT mandatory_percent, financial_day, savings, status_chat_id, status_message_id
+                    SELECT mandatory_percent, financial_day, target_balance, savings, status_chat_id, status_message_id
                     FROM users
                     WHERE user_id=?
                 ),
@@ -260,6 +268,7 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
                 SELECT
                     period.mandatory_percent,
                     period.financial_day,
+                    period.target_balance,
                     period.savings,
                     period.status_chat_id,
                     period.status_message_id,
@@ -326,6 +335,7 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
             "start": start,
             "end": end,
             "financial_day": int(row["financial_day"] or DEFAULT_FINANCIAL_DAY),
+            "target_balance": float(row["target_balance"] or 0),
             "mandatory_percent": float(row["mandatory_percent"]),
             "budget": budget,
             "spent": spent,
@@ -349,7 +359,7 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
     ensure_user(user_id)
     with get_connection() as conn:
         user = conn.execute(
-            "SELECT mandatory_percent, financial_day, savings, status_chat_id, status_message_id "
+            "SELECT mandatory_percent, financial_day, target_balance, savings, status_chat_id, status_message_id "
             "FROM users WHERE user_id=?",
             (user_id,),
         ).fetchone()
@@ -398,6 +408,7 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
         "start": start,
         "end": end,
         "financial_day": financial_day,
+        "target_balance": float(user["target_balance"] or 0),
         "mandatory_percent": float(user["mandatory_percent"]),
         "budget": budget,
         "spent": spent,
@@ -876,7 +887,7 @@ def reset_user_data(user_id: int):
         conn.execute("DELETE FROM transactions WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM months WHERE user_id=?", (user_id,))
         conn.execute(
-            "UPDATE users SET mandatory_percent=0,savings=0,status_chat_id=NULL,status_message_id=NULL WHERE user_id=?",
+            "UPDATE users SET mandatory_percent=0,target_balance=0,savings=0,status_chat_id=NULL,status_message_id=NULL WHERE user_id=?",
             (user_id,),
         )
 
