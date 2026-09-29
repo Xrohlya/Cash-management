@@ -8,7 +8,7 @@ from bot.connection import create_bot, create_dispatcher
 from bot.console import ActivityMiddleware, configure_logging, show_startup
 from bot.handlers import router
 from bot.keyboards import main_menu
-from config.settings import DATABASE_URL, WEBAPP_URL
+from config.settings import DATABASE_URL, WEBAPP_URL, versioned_webapp_url
 from database.db import close_db_pool, init_db
 from database.repository import (
     apply_due_recurring_payments,
@@ -71,7 +71,9 @@ async def configure_bot(bot):
     ])
     if WEBAPP_URL:
         await bot.set_chat_menu_button(
-            menu_button=MenuButtonWebApp(text="Бюджет", web_app=WebAppInfo(url=WEBAPP_URL))
+            menu_button=MenuButtonWebApp(
+                text="Бюджет", web_app=WebAppInfo(url=versioned_webapp_url(WEBAPP_URL))
+            )
         )
     else:
         await bot.set_chat_menu_button(menu_button=MenuButtonCommands())

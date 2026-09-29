@@ -223,7 +223,10 @@ app.mount("/static", StaticFiles(directory=WEBAPP_DIR / "static"), name="static"
 
 @app.get("/", include_in_schema=False)
 def webapp():
-    return FileResponse(WEBAPP_DIR / "index.html")
+    return FileResponse(
+        WEBAPP_DIR / "index.html",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
 
 
 @app.get("/health")

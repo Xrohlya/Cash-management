@@ -10,6 +10,7 @@ load_dotenv(BASE_DIR / ".env")
 BOT_NAME = os.getenv("BOT_NAME", "Мой Бюджет").strip() or "Мой Бюджет"
 BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 WEBAPP_URL = os.getenv("WEBAPP_URL", "").strip().rstrip("/")
+WEBAPP_RELEASE = "20260929-3"
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 SQLITE_PATH = Path(os.getenv("SQLITE_PATH", str(BASE_DIR / "data" / "budget.db"))).expanduser()
 
@@ -24,6 +25,13 @@ ALLOWED_ORIGINS = [
     for value in os.getenv("ALLOWED_ORIGINS", WEBAPP_URL).split(",")
     if value.strip()
 ]
+
+
+def versioned_webapp_url(url: str) -> str:
+    if not url:
+        return ""
+    separator = "&" if "?" in url else "?"
+    return f"{url}{separator}v={WEBAPP_RELEASE}"
 
 
 def require_bot_token() -> str:

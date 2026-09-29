@@ -13,6 +13,7 @@ class MainMenuTest(unittest.TestCase):
             keyboards.WEBAPP_URL = original_url
 
         self.assertEqual([button.text for button in rows[0]], ["Открыть приложение"])
+        self.assertEqual(rows[0][0].web_app.url, "https://example.com?v=20260929-3")
         self.assertEqual(
             [[button.callback_data for button in row] for row in rows[1:]],
             [

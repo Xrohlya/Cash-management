@@ -1,6 +1,6 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 
-from config.settings import WEBAPP_URL
+from config.settings import WEBAPP_URL, versioned_webapp_url
 
 
 def main_menu():
@@ -9,7 +9,7 @@ def main_menu():
         rows.append([
             InlineKeyboardButton(
                 text="Открыть приложение",
-                web_app=WebAppInfo(url=WEBAPP_URL),
+                web_app=WebAppInfo(url=versioned_webapp_url(WEBAPP_URL)),
             )
         ])
     rows.extend([
