@@ -91,7 +91,7 @@ async def main():
     dp.include_router(router)
     users = list_user_summaries()
     database_name = "PostgreSQL · Aiven" if DATABASE_URL else "SQLite · локальная"
-    show_startup(bot_info, users, database_name)
+    show_startup(bot_info, users, database_name, WEBAPP_URL)
     notification_task = asyncio.create_task(recurring_notification_loop(bot))
     try:
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())

@@ -18,10 +18,11 @@ class ConsoleTest(unittest.TestCase):
 
         output = io.StringIO()
         with redirect_stdout(output):
-            show_startup(bot_info, users)
+            show_startup(bot_info, users, webapp_url="https://example.com")
 
         text = output.getvalue()
         self.assertIn("@cash_test_bot", text)
+        self.assertIn("Mini App: https://example.com", text)
         self.assertIn("Пользователей: 1", text)
         self.assertIn("123456", text)
         self.assertIn("Алексей · @alexey", text)

@@ -1,6 +1,8 @@
 import re
 import sqlite3
 import atexit
+import logging
+import time
 
 from config.settings import DATABASE_URL, DB_POOL_MAX, SQLITE_PATH
 
@@ -221,7 +223,7 @@ def _create_schema(conn):
     conn.execute("CREATE INDEX IF NOT EXISTS idx_account_transactions_user ON account_transactions(user_id, created_at DESC)")
 
 
-def init_db():
+def _init_db_once():
     with get_connection() as conn:
         if not DATABASE_URL:
             conn.execute("PRAGMA journal_mode=WAL")
@@ -260,3 +262,22 @@ def init_db():
         recurring_columns = {row["name"] for row in conn.execute("PRAGMA table_info(recurring_payments)")}
         if "last_notified" not in recurring_columns:
             conn.execute("ALTER TABLE recurring_payments ADD COLUMN last_notified TEXT")
+
+
+def init_db(attempts: int = 3):
+    for attempt in range(1, attempts + 1):
+        try:
+            _init_db_once()
+            return
+        except Exception:
+            close_db_pool()
+            if attempt == attempts:
+                raise
+            delay = attempt * 2
+            logging.warning(
+                "Database initialization failed; retrying in %s seconds (%s/%s)",
+                delay,
+                attempt,
+                attempts,
+            )
+            time.sleep(delay)

@@ -257,6 +257,10 @@ async def refresh_telegram_status(user_id: int):
         await bot.session.close()
 
 
+def schedule_telegram_refresh(background_tasks: BackgroundTasks, user_id: int):
+    background_tasks.add_task(refresh_telegram_status, user_id)
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     init_db()
@@ -336,15 +340,20 @@ def api_edit_expense(
         update_expense(user_id, transaction_id, correction.amount, correction.description)
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
-    background_tasks.add_task(refresh_telegram_status, user_id)
+    schedule_telegram_refresh(background_tasks, user_id)
     return state(user_id)
 
 
 @app.post("/api/reset")
-def api_reset(data: ResetConfirmation, user_id: int = Depends(current_user)):
+def api_reset(
+    data: ResetConfirmation,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(current_user),
+):
     if data.confirmation != "УДАЛИТЬ ВСЕ":
         raise HTTPException(400, "Введите точную фразу: УДАЛИТЬ ВСЕ")
     reset_user_data(user_id)
+    schedule_telegram_refresh(background_tasks, user_id)
     return state(user_id)
 
 
@@ -354,7 +363,11 @@ def api_analytics(user_id: int = Depends(current_user)):
 
 
 @app.post("/api/siri/expense", response_class=PlainTextResponse)
-def api_siri_expense(op: SiriExpense, user_id: int = Depends(siri_user)):
+def api_siri_expense(
+    op: SiriExpense,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(siri_user),
+):
     query = op.text.casefold().strip()
     snapshot = get_status_snapshot(user_id)
     if "остат" in query:
@@ -381,6 +394,7 @@ def api_siri_expense(op: SiriExpense, user_id: int = Depends(siri_user)):
         raise HTTPException(409, "Недостаточно средств в доступном бюджете.")
 
     snapshot = get_status_snapshot(user_id)
+    schedule_telegram_refresh(background_tasks, user_id)
     return (
         f"Записано: {amount:g} рублей, {description}. "
         f"Осталось {snapshot['remaining']:.0f} рублей."
@@ -388,14 +402,23 @@ def api_siri_expense(op: SiriExpense, user_id: int = Depends(siri_user)):
 
 
 @app.post("/api/goal")
-def api_set_goal(goal: GoalSettings, user_id: int = Depends(current_user)):
+def api_set_goal(
+    goal: GoalSettings,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(current_user),
+):
     set_goal(user_id, goal.target, goal.target_date)
+    schedule_telegram_refresh(background_tasks, user_id)
     return state(user_id)
 
 
 @app.post("/api/goal/clear")
-def api_clear_goal(user_id: int = Depends(current_user)):
+def api_clear_goal(
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(current_user),
+):
     clear_goal(user_id)
+    schedule_telegram_refresh(background_tasks, user_id)
     return state(user_id)
 
 
@@ -437,6 +460,7 @@ def api_delete_account(account_id: int, user_id: int = Depends(current_user)):
 def api_transfer_account(
     account_id: int,
     transfer: AccountTransfer,
+    background_tasks: BackgroundTasks,
     user_id: int = Depends(current_user),
 ):
     try:
@@ -445,6 +469,7 @@ def api_transfer_account(
         )
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
+    schedule_telegram_refresh(background_tasks, user_id)
     return {
         "state": state(user_id),
         "accounts": [dict(row) for row in list_extra_accounts(user_id)],
@@ -452,31 +477,51 @@ def api_transfer_account(
 
 
 @app.post("/api/income-sources")
-def api_add_income_source(source: IncomeSource, user_id: int = Depends(current_user)):
+def api_add_income_source(
+    source: IncomeSource,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(current_user),
+):
     try:
         create_income_source(user_id, source.name, source.withholding_percent)
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
+    schedule_telegram_refresh(background_tasks, user_id)
     return [dict(row) for row in list_income_sources(user_id)]
 
 
 @app.post("/api/income-sources/{source_id}")
-def api_update_income_source(source_id: int, source: IncomeSource, user_id: int = Depends(current_user)):
+def api_update_income_source(
+    source_id: int,
+    source: IncomeSource,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(current_user),
+):
     try:
         update_income_source(user_id, source_id, source.name, source.withholding_percent)
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
+    schedule_telegram_refresh(background_tasks, user_id)
     return [dict(row) for row in list_income_sources(user_id)]
 
 
 @app.post("/api/income-sources/{source_id}/delete")
-def api_delete_income_source(source_id: int, user_id: int = Depends(current_user)):
+def api_delete_income_source(
+    source_id: int,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(current_user),
+):
     delete_income_source(user_id, source_id)
+    schedule_telegram_refresh(background_tasks, user_id)
     return [dict(row) for row in list_income_sources(user_id)]
 
 
 @app.post("/api/recurring")
-def api_add_recurring(payment: RecurringPayment, user_id: int = Depends(current_user)):
+def api_add_recurring(
+    payment: RecurringPayment,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(current_user),
+):
     add_recurring_payment(
         user_id,
         payment.title,
@@ -484,12 +529,18 @@ def api_add_recurring(payment: RecurringPayment, user_id: int = Depends(current_
         payment.kind,
         payment.day_of_month,
     )
+    schedule_telegram_refresh(background_tasks, user_id)
     return [dict(row) for row in list_recurring_payments(user_id)]
 
 
 @app.post("/api/recurring/{payment_id}/delete")
-def api_delete_recurring(payment_id: int, user_id: int = Depends(current_user)):
+def api_delete_recurring(
+    payment_id: int,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(current_user),
+):
     delete_recurring_payment(user_id, payment_id)
+    schedule_telegram_refresh(background_tasks, user_id)
     return [dict(row) for row in list_recurring_payments(user_id)]
 
 
@@ -501,7 +552,7 @@ def api_expense(
 ):
     if not add_expense(user_id, op.amount, op.description or "Расход", op.request_id):
         raise HTTPException(409, "Недостаточно средств в доступном бюджете.")
-    background_tasks.add_task(refresh_telegram_status, user_id)
+    schedule_telegram_refresh(background_tasks, user_id)
     return state(user_id)
 
 
@@ -518,7 +569,7 @@ def api_income(
         op.description or "Доход",
         op.request_id,
     )
-    background_tasks.add_task(refresh_telegram_status, user_id)
+    schedule_telegram_refresh(background_tasks, user_id)
     return state(user_id)
 
 
@@ -530,7 +581,7 @@ def api_rent(
 ):
     if not add_rent(user_id, op.amount, op.description or "Квартира", op.request_id):
         raise HTTPException(409, "Недостаточно средств в доступном бюджете.")
-    background_tasks.add_task(refresh_telegram_status, user_id)
+    schedule_telegram_refresh(background_tasks, user_id)
     return state(user_id)
 
 
@@ -542,13 +593,18 @@ def api_save(
 ):
     if not add_to_savings(user_id, op.amount, op.description or "Накопления", op.request_id):
         raise HTTPException(409, "Недостаточно средств в доступном бюджете.")
-    background_tasks.add_task(refresh_telegram_status, user_id)
+    schedule_telegram_refresh(background_tasks, user_id)
     return state(user_id)
 
 
 @app.post("/api/settings/period")
-def api_set_period(settings_data: PeriodSettings, user_id: int = Depends(current_user)):
+def api_set_period(
+    settings_data: PeriodSettings,
+    background_tasks: BackgroundTasks,
+    user_id: int = Depends(current_user),
+):
     set_financial_day(user_id, settings_data.financial_day)
+    schedule_telegram_refresh(background_tasks, user_id)
     return state(user_id)
 
 
@@ -559,5 +615,5 @@ def api_set_radar(
     user_id: int = Depends(current_user),
 ):
     set_target_balance(user_id, settings_data.target_balance)
-    background_tasks.add_task(refresh_telegram_status, user_id)
+    schedule_telegram_refresh(background_tasks, user_id)
     return state(user_id)

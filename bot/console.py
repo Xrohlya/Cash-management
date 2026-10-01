@@ -57,7 +57,7 @@ def _status_line(marker, label, value, marker_color):
     )
 
 
-def show_startup(bot_info, users, database_name="PostgreSQL · Aiven"):
+def show_startup(bot_info, users, database_name="PostgreSQL · Aiven", webapp_url=""):
     width = 72
     title = "CASH MANAGEMENT"
     subtitle = f"Telegram-бот @{bot_info.username}" if bot_info.username else "Telegram-бот"
@@ -68,7 +68,7 @@ def show_startup(bot_info, users, database_name="PostgreSQL · Aiven"):
     print(f"{Style.BLUE}├{'─' * width}┤{Style.RESET}")
     _status_line("✓", "База данных", database_name, Style.GREEN)
     _status_line("✓", "Telegram API", "подключен", Style.GREEN)
-    _status_line("✓", "Локальный API", "127.0.0.1:8788", Style.GREEN)
+    _status_line("✓", "Mini App", webapp_url or "не настроен", Style.GREEN)
     _status_line("→", "Пользователей", str(len(users)), Style.CYAN)
     print(f"{Style.BLUE}╰{'─' * width}╯{Style.RESET}")
 

@@ -37,34 +37,20 @@ from config.settings import require_bot_token
 require_bot_token()
 PY
 
-if lsof -tiTCP:8787 -sTCP:LISTEN >/dev/null 2>&1; then
-  echo "Старая версия бота ещё работает на порту 8787."
-  echo "Остановите её через Ctrl+C в старом терминале и запустите задачу снова."
-  exit 1
+PID_FILE=".bot.pid"
+if [ -f "$PID_FILE" ]; then
+  OLD_PID="$(cat "$PID_FILE" 2>/dev/null || true)"
+  if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
+    echo "Бот уже запущен (PID $OLD_PID)."
+    echo "Сначала остановите старый процесс командой: kill $OLD_PID"
+    exit 1
+  fi
 fi
-
-mkdir -p logs
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8788 > logs/api.log 2>&1 &
-API_PID=$!
+printf '%s\n' "$$" > "$PID_FILE"
 
 cleanup() {
-  kill "$API_PID" 2>/dev/null || true
+  rm -f "$PID_FILE"
 }
 trap cleanup EXIT INT TERM
-
-for _ in {1..30}; do
-  if curl -fsS http://127.0.0.1:8788/health >/dev/null 2>&1; then
-    break
-  fi
-  if ! kill -0 "$API_PID" 2>/dev/null; then
-    break
-  fi
-  sleep 1
-done
-if ! curl -fsS http://127.0.0.1:8788/health >/dev/null 2>&1; then
-  echo "API не запустился. Проверьте logs/api.log"
-  tail -n 40 logs/api.log
-  exit 1
-fi
 
 python app.py
