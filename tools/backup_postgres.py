@@ -14,7 +14,7 @@ from config.settings import DATABASE_URL
 
 
 TABLES = {
-    "users": "user_id, mandatory_percent, financial_day, savings, status_chat_id, status_message_id, first_name, username",
+    "users": "*",
     "months": "user_id, month, budget, spent, rent, saved",
     "transactions": "id, user_id, created_at, kind, amount, description, income_source_id",
     "goals": "user_id, target, target_date",
@@ -23,6 +23,9 @@ TABLES = {
     "income_sources": "id, user_id, name, withholding_percent, active",
     "extra_accounts": "id, user_id, name, balance, active",
     "account_transactions": "id, account_id, user_id, created_at, kind, amount",
+    "expected_income": "*",
+    "category_limits": "*",
+    "operation_undo": "*",
 }
 
 
@@ -40,7 +43,11 @@ def main():
     data = {}
     with psycopg.connect(require_sslmode(DATABASE_URL), row_factory=dict_row, connect_timeout=20) as conn:
         with conn.cursor() as cur:
+            cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
             for table, columns in TABLES.items():
+                cur.execute("SELECT to_regclass(%s) present", (table,))
+                if cur.fetchone()["present"] is None:
+                    continue
                 cur.execute(f"SELECT {columns} FROM {table} ORDER BY 1")
                 data[table] = [dict(row) for row in cur.fetchall()]
 

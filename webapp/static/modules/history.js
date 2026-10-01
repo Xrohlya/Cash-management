@@ -1,4 +1,4 @@
-import { kindLabels, money, shortDate, operationWord } from "./core.js?v=20261001-1";
+import { kindLabels, money, shortDate, operationWord } from "./core.js?v=20261001-2";
 
 function renderHistory(items) {
   const root = document.getElementById("history");
@@ -8,13 +8,13 @@ function renderHistory(items) {
   }
   root.replaceChildren(...items.map((item) => {
     const row = document.createElement("article");
-    row.className = "history-item";
+    row.className = item.kind === "cancelled" ? "history-item cancelled" : "history-item";
     const title = document.createElement("strong");
     title.textContent = item.description || kindLabels[item.kind] || item.kind;
     const amount = document.createElement("b");
     const positive = item.kind === "income";
     amount.className = positive ? "positive" : "negative";
-    amount.textContent = `${positive ? "+" : "−"}${money(item.amount)}`;
+    amount.textContent = `${item.kind === "cancelled" ? "" : positive ? "+" : "−"}${money(item.amount)}`;
     const meta = document.createElement("time");
     meta.textContent = `${kindLabels[item.kind] || item.kind} · ${shortDate(item.created_at)}`;
     row.append(title, amount, meta);

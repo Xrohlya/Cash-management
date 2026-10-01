@@ -1,0 +1,14 @@
+<section class="recurring-section">
+        <h2>Регулярные платежи</h2>
+        <form id="recurring-form" class="recurring-form">
+          <label><span>Название</span><input id="recurring-title" maxlength="255" placeholder="Например, аренда" required></label>
+          <div class="form-row">
+            <label><span>Сумма</span><input id="recurring-amount" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
+            <label><span>Тип</span><select id="recurring-kind"><option value="expense">Расход</option><option value="rent">Квартира</option></select></label>
+          </div>
+          <label><span>Списывать каждого месяца</span><select id="recurring-day"></select></label>
+          <p class="form-hint">Первое списание — в следующую назначенную дату.</p>
+          <button class="secondary" type="submit">Добавить платёж</button>
+        </form>
+        <div id="recurring-list" class="recurring-list"></div>
+      </section>

@@ -1,7 +1,6 @@
-import { renderState } from "./budget.js?v=20261001-1";
-import { telegram, financialDay, targetBalance, api, showToast } from "./core.js?v=20261001-1";
-import { load } from "./dashboard.js?v=20261001-1";
-import { renderHistory, renderCategories, renderDaily } from "./history.js?v=20261001-1";
+import { renderState } from "./budget.js?v=20261001-2";
+import { telegram, financialDay, targetBalance, api, showToast } from "./core.js?v=20261001-2";
+import { load } from "./dashboard.js?v=20261001-2";
 
 function initSettingsActions() {
   document.getElementById("period-form").addEventListener("submit", async (event) => {
@@ -14,13 +13,7 @@ function initSettingsActions() {
         body: JSON.stringify({ financial_day: Number(financialDay.value) }),
       });
       renderState(state);
-      const [history, analytics] = await Promise.all([
-        api("/api/transactions?limit=30"),
-        api("/api/analytics"),
-      ]);
-      renderHistory(history);
-      renderCategories(analytics.categories);
-      renderDaily(analytics.daily);
+      await load();
       telegram?.HapticFeedback?.notificationOccurred("success");
       showToast("Период обновлён");
     } catch (error) {

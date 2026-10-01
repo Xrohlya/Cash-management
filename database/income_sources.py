@@ -1,6 +1,5 @@
-from datetime import datetime
 from database.db import get_connection
-from database.operations import _claim_request
+from database.income_posting import post_income
 from database.periods import ensure_month, financial_period_end_for_start, financial_period_start, month_key
 from database.users import ensure_user
 
@@ -75,28 +74,5 @@ def find_income_source(user_id: int, text: str):
 def add_income_from_source(user_id: int, gross: float, source_id: int, description="Доход", request_id=None):
     ensure_month(user_id)
     key = month_key(user_id)
-    now = datetime.now().isoformat(timespec="seconds")
     with get_connection() as conn:
-        source = conn.execute(
-            "SELECT name,withholding_percent FROM income_sources WHERE id=? AND user_id=? AND active=1",
-            (source_id, user_id),
-        ).fetchone()
-        if not source:
-            raise ValueError("Источник дохода не найден")
-        fee = round(gross * float(source["withholding_percent"]) / 100, 2)
-        net = round(gross - fee, 2)
-        if not _claim_request(conn, user_id, request_id):
-            return fee, net, False
-        conn.execute(
-            "INSERT INTO transactions(user_id,created_at,kind,amount,description,income_source_id) "
-            "VALUES (?, ?, 'income', ?, ?, ?)",
-            (user_id, now, gross, description or source["name"], source_id),
-        )
-        if fee:
-            conn.execute(
-                "INSERT INTO transactions(user_id,created_at,kind,amount,description,income_source_id) "
-                "VALUES (?, ?, 'mandatory', ?, ?, ?)",
-                (user_id, now, fee, f"Удержание {float(source['withholding_percent']):g}% · {source['name']}", source_id),
-            )
-        conn.execute("UPDATE months SET budget=budget+? WHERE user_id=? AND month=?", (net, user_id, key))
-    return fee, net, True
+        return post_income(conn, user_id, gross, description, key, source_id, request_id)[:3]

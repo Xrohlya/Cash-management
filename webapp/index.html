@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <title>Мой бюджет</title>
-  <link rel="stylesheet" href="/static/app.css?v=20260930-1">
+  <link rel="stylesheet" href="/static/design.css?v=20261001-2">
+  <script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -22,231 +23,27 @@
   </header>
 
   <nav class="tabbar" role="tablist" aria-label="Разделы">
-    <button class="active" id="nav-budget" type="button" role="tab" data-tab-target="budget" aria-controls="tab-budget" aria-selected="true">Основной бюджет</button>
-    <button id="nav-expenses" type="button" role="tab" data-tab-target="expenses" aria-controls="tab-expenses" aria-selected="false">Операции</button>
-    <button id="nav-settings" type="button" role="tab" data-tab-target="settings" aria-controls="tab-settings" aria-selected="false">Настройки</button>
+    <button class="active" id="nav-budget" type="button" role="tab" data-tab-target="budget" aria-controls="tab-budget" aria-selected="true"><i data-lucide="wallet" aria-hidden="true"></i><span>Бюджет</span></button>
+    <button id="nav-expenses" type="button" role="tab" data-tab-target="expenses" aria-controls="tab-expenses" aria-selected="false"><i data-lucide="arrow-left-right" aria-hidden="true"></i><span>Операции</span></button>
+    <button id="nav-plans" type="button" role="tab" data-tab-target="plans" aria-controls="tab-plans" aria-selected="false"><i data-lucide="calendar-days" aria-hidden="true"></i><span>Планы</span></button>
+    <button id="nav-settings" type="button" role="tab" data-tab-target="settings" aria-controls="tab-settings" aria-selected="false"><i data-lucide="settings-2" aria-hidden="true"></i><span>Настройки</span></button>
   </nav>
 
   <main>
-    <div class="tab-panel active" id="tab-budget" data-tab-panel="budget" role="tabpanel" aria-labelledby="nav-budget">
-      <section class="balance-band" aria-labelledby="available-label">
-        <p id="available-label">Доступно</p>
-        <strong id="available">—</strong>
-        <div class="limit-row">
-          <span>Лимит на день <b id="daily-limit">—</b></span>
-          <span>Сегодня <b id="today">—</b></span>
-        </div>
-      </section>
-
-      <section class="metrics" aria-label="Сводка">
-        <article><span>Бюджет</span><b id="budget">—</b></article>
-        <article><span>Расходы</span><b id="spent">—</b></article>
-        <article><span>Регулярные</span><b id="recurring">—</b></article>
-        <article><span>Квартира</span><b id="rent">—</b></article>
-        <article><span>Накопления</span><b id="savings">—</b></article>
-      </section>
-
-      <section class="radar-section" aria-labelledby="radar-title">
-        <div class="section-heading">
-          <h2 id="radar-title">Финансовый радар</h2>
-          <span class="risk-pill" id="risk-pill">Расчёт</span>
-        </div>
-        <div class="radar-hero">
-          <div><span>Безопасно потратить сегодня</span><strong id="safe-today">—</strong></div>
-          <p id="risk-text">Анализируем текущий темп расходов</p>
-        </div>
-        <div class="radar-stats">
-          <article><span>Без расходов</span><b id="streak-current">—</b><small id="streak-best">—</small></article>
-          <article><span>Последние 7 дней</span><b id="weekly-total">—</b><small id="weekly-change">—</small></article>
-          <article><span>Резерв платежей</span><b id="reserved-total">—</b><small id="projected-balance">—</small></article>
-          <article><span>Оставить к концу</span><b id="target-balance-radar">—</b><small>Личный резерв</small></article>
-        </div>
-      </section>
-
-      <section class="money-calendar" aria-labelledby="calendar-title">
-        <div class="section-heading"><h2 id="calendar-title">Календарь денег</h2><small>До конца периода</small></div>
-        <div id="money-calendar-list" class="money-calendar-list"></div>
-      </section>
-
-      <section class="upcoming-payment" id="upcoming-payment" hidden>
-        <div><span>Ближайший платёж</span><strong id="upcoming-title">—</strong></div>
-        <div><b id="upcoming-amount">—</b><small id="upcoming-date">—</small></div>
-      </section>
-
-      <section class="accounts-overview">
-        <div class="section-heading"><h2>Мои счета</h2><small>Основной и дополнительные</small></div>
-        <div id="accounts-summary" class="accounts-summary"></div>
-      </section>
-
-      <section class="sources-overview">
-        <div class="section-heading"><h2>Источники дохода</h2><small>За текущий период</small></div>
-        <div id="sources-overview" class="sources-overview-list"></div>
-      </section>
-
-      <section class="operation-section" id="operation-section">
-        <h2>Новая операция</h2>
-        <div class="quick-expenses" aria-label="Частые расходы">
-          <button type="button" data-quick-expense="Кафе">Кофе</button>
-          <button type="button" data-quick-expense="Еда">Продукты</button>
-          <button type="button" data-quick-expense="Такси">Такси</button>
-        </div>
-        <div class="segments" id="operation-kind" role="tablist" aria-label="Тип операции">
-          <button class="active" type="button" data-kind="expense">Расход</button>
-          <button type="button" data-kind="income">Доход</button>
-          <button type="button" data-kind="rent">Квартира</button>
-          <button type="button" data-kind="save">Отложить</button>
-        </div>
-        <form id="operation-form">
-          <div class="receipt-scan">
-            <input id="receipt-photo" type="file" accept="image/*" capture="environment" hidden>
-            <button class="receipt-button" id="scan-receipt" type="button"><span aria-hidden="true">▣</span> Сканировать чек</button>
-            <small id="receipt-status">Сумма и категория заполнятся автоматически</small>
-          </div>
-          <label>
-            <span>Сумма</span>
-            <div class="amount-input"><input id="amount" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required><b>₽</b></div>
-          </label>
-          <label>
-            <span>Категория или комментарий</span>
-            <input id="description" name="description" maxlength="255" autocomplete="off" placeholder="Например, продукты">
-          </label>
-          <button class="primary" id="submit" type="submit">Записать расход</button>
-        </form>
-      </section>
-
-      <section class="goal-section">
-        <div class="section-heading">
-          <h2>Финансовая цель</h2>
-          <button class="text-button" id="clear-goal" type="button" hidden>Удалить</button>
-        </div>
-        <div id="goal-summary" class="goal-summary empty-goal">Цель пока не задана</div>
-        <form id="goal-form" class="goal-form">
-          <label><span>Сумма цели</span><input id="goal-target" type="number" min="1" step="1" inputmode="decimal" required></label>
-          <label><span>Срок</span><input id="goal-date" type="date" required></label>
-          <button class="secondary" type="submit">Сохранить цель</button>
-        </form>
-      </section>
-    </div>
-
-    <div class="tab-panel" id="tab-expenses" data-tab-panel="expenses" role="tabpanel" aria-labelledby="nav-expenses" hidden>
-      <section class="category-section">
-        <div class="section-heading">
-          <h2>Расходы по категориям</h2>
-          <span id="days-left"></span>
-        </div>
-        <div id="categories" class="categories" aria-live="polite"></div>
-      </section>
-
-      <section class="chart-section">
-        <h2>Расходы по дням</h2>
-        <div id="daily-chart" class="daily-chart" aria-label="График расходов по дням"></div>
-      </section>
-
-      <details class="history-section history-details">
-        <summary>Все операции</summary>
-        <div id="history" class="history" aria-live="polite"></div>
-      </details>
-    </div>
-
-    <div class="tab-panel" id="tab-settings" data-tab-panel="settings" role="tabpanel" aria-labelledby="nav-settings" hidden>
-      <section class="settings-section" aria-labelledby="period-settings-title">
-        <h2 id="period-settings-title">Период бюджета</h2>
-        <form id="period-form" class="period-form">
-          <label for="financial-day">
-            <span>Начинать каждый месяц</span>
-            <select id="financial-day" name="financial-day" aria-label="День начала периода"></select>
-          </label>
-          <button class="secondary" id="save-period" type="submit">Сохранить</button>
-        </form>
-      </section>
-      <section class="settings-section" aria-labelledby="radar-settings-title">
-        <h2 id="radar-settings-title">Настройка радара</h2>
-        <form id="radar-form" class="period-form">
-          <label for="target-balance">
-            <span>Оставить на основном счёте к концу периода</span>
-            <div class="amount-input"><input id="target-balance" type="number" min="0" step="100" inputmode="decimal" required><b>₽</b></div>
-          </label>
-          <button class="secondary" id="save-radar" type="submit">Сохранить</button>
-        </form>
-        <p class="form-hint">Радар вычтет эту сумму и будущие платежи перед расчётом безопасного лимита.</p>
-      </section>
-      <section class="accounts-settings">
-        <div class="section-heading"><h2>Дополнительные счета</h2><small id="account-limit">0 из 3</small></div>
-        <form id="account-form" class="account-form">
-          <label><span>Название счёта</span><input id="account-name" maxlength="80" placeholder="Например, Отпуск" required></label>
-          <button class="secondary" type="submit">Создать счёт</button>
-        </form>
-        <p class="form-hint">Деньги переводятся с основного счёта и не считаются расходом.</p>
-        <div id="accounts-settings-list" class="accounts-settings-list"></div>
-      </section>
-      <section class="sources-section">
-        <h2>Источники дохода</h2>
-        <form id="source-form">
-          <input id="source-id" type="hidden">
-          <label><span>Организация</span><input id="source-name" maxlength="80" placeholder="Например, Кафе" required></label>
-          <label><span>Удержание при поступлении</span><div class="amount-input"><input id="source-percent" type="number" min="0" max="100" step="0.01" inputmode="decimal" required><b>%</b></div></label>
-          <div class="form-actions">
-            <button class="secondary" id="save-source" type="submit">Добавить источник</button>
-            <button class="text-button" id="cancel-source" type="button" hidden>Отмена</button>
-          </div>
-        </form>
-        <div id="sources-list" class="sources-list"></div>
-      </section>
-      <section class="recurring-section">
-        <h2>Регулярные платежи</h2>
-        <form id="recurring-form" class="recurring-form">
-          <label><span>Название</span><input id="recurring-title" maxlength="255" placeholder="Например, аренда" required></label>
-          <div class="form-row">
-            <label><span>Сумма</span><input id="recurring-amount" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
-            <label><span>Тип</span><select id="recurring-kind"><option value="expense">Расход</option><option value="rent">Квартира</option></select></label>
-          </div>
-          <label><span>Списывать каждого месяца</span><select id="recurring-day"></select></label>
-          <p class="form-hint">Первое списание — в следующую назначенную дату.</p>
-          <button class="secondary" type="submit">Добавить платёж</button>
-        </form>
-        <div id="recurring-list" class="recurring-list"></div>
-      </section>
-      <section class="danger-section">
-        <h2>Сброс данных</h2>
-        <p>Удаляет операции, источники, цели и настройки только вашего аккаунта.</p>
-        <button class="danger-button" id="open-reset" type="button">Очистить всё и начать с нуля</button>
-      </section>
-    </div>
+$budget
+$operations
+$plans
+$settings
   </main>
 
   <button class="quick-add" id="quick-add" type="button" aria-label="Добавить операцию" title="Добавить операцию" hidden>+</button>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <dialog id="edit-expense-dialog">
-    <form id="edit-expense-form" method="dialog">
-      <h2>Изменить расход</h2>
-      <input id="edit-expense-id" type="hidden">
-      <label><span>Сумма</span><input id="edit-expense-amount" type="number" min="0.01" step="0.01" required></label>
-      <label><span>Категория или комментарий</span><input id="edit-expense-description" maxlength="255" required></label>
-      <div class="dialog-actions"><button class="text-button" id="cancel-expense-edit" type="button">Отмена</button><button class="primary" type="submit">Сохранить</button></div>
-    </form>
-  </dialog>
-  <dialog id="reset-dialog">
-    <form id="reset-form" method="dialog">
-      <h2>Удалить все данные?</h2>
-      <p>Для подтверждения введите <b>УДАЛИТЬ ВСЕ</b></p>
-      <input id="reset-confirmation" autocomplete="off" required>
-      <div class="dialog-actions"><button class="text-button" id="cancel-reset" type="button">Отмена</button><button class="danger-button" type="submit">Удалить всё</button></div>
-    </form>
-  </dialog>
-  <dialog id="account-transfer-dialog">
-    <form id="account-transfer-form" method="dialog">
-      <h2 id="account-transfer-title">Перевод</h2>
-      <input id="account-transfer-id" type="hidden">
-      <label><span>Направление</span><select id="account-transfer-direction"><option value="to_account">С основного на этот счёт</option><option value="to_main">С этого счёта на основной</option></select></label>
-      <label><span>Сумма</span><div class="amount-input"><input id="account-transfer-amount" type="number" min="0.01" step="0.01" inputmode="decimal" required><b>₽</b></div></label>
-      <div class="dialog-actions"><button class="text-button" id="cancel-account-transfer" type="button">Отмена</button><button class="primary" type="submit">Перевести</button></div>
-    </form>
-  </dialog>
+  $dialogs
   <div class="blocking-message" id="blocking-message" hidden>
     <h2>Откройте приложение из Telegram</h2>
     <p>Авторизация доступна через кнопку меню вашего бота.</p>
   </div>
-  <script src="/static/app.js?v=20261001-1" type="module"></script>
+  <script src="/static/app.js?v=20261001-2" type="module"></script>
 </body>
 </html>

@@ -1,0 +1,90 @@
+<div class="tab-panel active" id="tab-budget" data-tab-panel="budget" role="tabpanel" aria-labelledby="nav-budget">
+      <section class="balance-band" aria-labelledby="available-label">
+        <p id="available-label">Доступно</p>
+        <strong id="available">—</strong>
+        <div class="limit-row">
+          <span>Лимит на день <b id="daily-limit">—</b></span>
+          <span>Сегодня <b id="today">—</b></span>
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="Сводка">
+        <article><span>Бюджет</span><b id="budget">—</b></article>
+        <article><span>Расходы</span><b id="spent">—</b></article>
+        <article><span>Регулярные</span><b id="recurring">—</b></article>
+        <article><span>Квартира</span><b id="rent">—</b></article>
+        <article><span>Накопления</span><b id="savings">—</b></article>
+      </section>
+
+      <div class="home-actions">
+        <button type="button" data-planning-jump="afford-section"><i data-lucide="shopping-bag" aria-hidden="true"></i>Могу позволить?</button>
+        <button type="button" data-planning-jump="scenario-section"><i data-lucide="git-branch" aria-hidden="true"></i>А что, если…</button>
+      </div>
+      <button class="budget-limit-notice" id="budget-limit-notice" type="button" hidden></button>
+      <section class="radar-section" aria-labelledby="radar-title">
+        <div class="section-heading">
+          <h2 id="radar-title">Финансовый радар</h2>
+          <span class="risk-pill" id="risk-pill">Расчёт</span>
+        </div>
+        <div class="radar-hero">
+          <div><span>Безопасно потратить сегодня</span><strong id="safe-today">—</strong></div>
+          <p id="risk-text">Анализируем текущий темп расходов</p>
+        </div>
+        <div class="radar-stats">
+          <article><span>Без расходов</span><b id="streak-current">—</b><small id="streak-best">—</small></article>
+          <article><span>Последние 7 дней</span><b id="weekly-total">—</b><small id="weekly-change">—</small></article>
+          <article><span>Резерв платежей</span><b id="reserved-total">—</b><small id="projected-balance">—</small></article>
+          <article><span>Оставить к концу</span><b id="target-balance-radar">—</b><small>Личный резерв</small></article>
+        </div>
+      </section>
+
+      
+
+      <section class="upcoming-payment" id="upcoming-payment" hidden>
+        <div><span>Ближайший платёж</span><strong id="upcoming-title">—</strong></div>
+        <div><b id="upcoming-amount">—</b><small id="upcoming-date">—</small></div>
+      </section>
+
+      <section class="accounts-overview">
+        <div class="section-heading"><h2>Мои счета</h2><small>Основной и дополнительные</small></div>
+        <div id="accounts-summary" class="accounts-summary"></div>
+      </section>
+
+      <section class="sources-overview">
+        <div class="section-heading"><h2>Источники дохода</h2><small>За текущий период</small></div>
+        <div id="sources-overview" class="sources-overview-list"></div>
+      </section>
+
+      <section class="operation-section" id="operation-section">
+        <h2>Новая операция</h2>
+        <div class="quick-expenses" aria-label="Частые расходы">
+          <button type="button" data-quick-expense="Кафе">Кофе</button>
+          <button type="button" data-quick-expense="Еда">Продукты</button>
+          <button type="button" data-quick-expense="Такси">Такси</button>
+        </div>
+        <div class="segments" id="operation-kind" role="tablist" aria-label="Тип операции">
+          <button class="active" type="button" data-kind="expense">Расход</button>
+          <button type="button" data-kind="income">Доход</button>
+          <button type="button" data-kind="rent">Квартира</button>
+          <button type="button" data-kind="save">Отложить</button>
+        </div>
+        <form id="operation-form">
+          <div class="receipt-scan">
+            <input id="receipt-photo" type="file" accept="image/*" capture="environment" hidden>
+            <button class="receipt-button" id="scan-receipt" type="button"><span aria-hidden="true">▣</span> Сканировать чек</button>
+            <small id="receipt-status">Сумма и категория заполнятся автоматически</small>
+          </div>
+          <label>
+            <span>Сумма</span>
+            <div class="amount-input"><input id="amount" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required><b>₽</b></div>
+          </label>
+          <label>
+            <span>Категория или комментарий</span>
+            <input id="description" name="description" maxlength="255" autocomplete="off" placeholder="Например, продукты">
+          </label>
+          <button class="primary" id="submit" type="submit">Записать расход</button>
+        </form>
+      </section>
+
+      
+    </div>

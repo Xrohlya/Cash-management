@@ -1,0 +1,51 @@
+<div class="tab-panel" id="tab-settings" data-tab-panel="settings" role="tabpanel" aria-labelledby="nav-settings" hidden>
+      <section class="settings-section" aria-labelledby="period-settings-title">
+        <h2 id="period-settings-title">Период бюджета</h2>
+        <form id="period-form" class="period-form">
+          <label for="financial-day">
+            <span>Начинать каждый месяц</span>
+            <select id="financial-day" name="financial-day" aria-label="День начала периода"></select>
+          </label>
+          <button class="secondary" id="save-period" type="submit">Сохранить</button>
+        </form>
+      </section>
+      <section class="settings-section" aria-labelledby="radar-settings-title">
+        <h2 id="radar-settings-title">Настройка радара</h2>
+        <form id="radar-form" class="period-form">
+          <label for="target-balance">
+            <span>Оставить на основном счёте к концу периода</span>
+            <div class="amount-input"><input id="target-balance" type="number" min="0" step="100" inputmode="decimal" required><b>₽</b></div>
+          </label>
+          <button class="secondary" id="save-radar" type="submit">Сохранить</button>
+        </form>
+        <p class="form-hint">Радар вычтет эту сумму и будущие платежи перед расчётом безопасного лимита.</p>
+      </section>
+      <section class="accounts-settings">
+        <div class="section-heading"><h2>Дополнительные счета</h2><small id="account-limit">0 из 3</small></div>
+        <form id="account-form" class="account-form">
+          <label><span>Название счёта</span><input id="account-name" maxlength="80" placeholder="Например, Отпуск" required></label>
+          <button class="secondary" type="submit">Создать счёт</button>
+        </form>
+        <p class="form-hint">Деньги переводятся с основного счёта и не считаются расходом.</p>
+        <div id="accounts-settings-list" class="accounts-settings-list"></div>
+      </section>
+      <section class="sources-section">
+        <h2>Источники дохода</h2>
+        <form id="source-form">
+          <input id="source-id" type="hidden">
+          <label><span>Организация</span><input id="source-name" maxlength="80" placeholder="Например, Кафе" required></label>
+          <label><span>Удержание при поступлении</span><div class="amount-input"><input id="source-percent" type="number" min="0" max="100" step="0.01" inputmode="decimal" required><b>%</b></div></label>
+          <div class="form-actions">
+            <button class="secondary" id="save-source" type="submit">Добавить источник</button>
+            <button class="text-button" id="cancel-source" type="button" hidden>Отмена</button>
+          </div>
+        </form>
+        <div id="sources-list" class="sources-list"></div>
+      </section>
+      
+      <section class="danger-section">
+        <h2>Сброс данных</h2>
+        <p>Удаляет операции, источники, цели и настройки только вашего аккаунта.</p>
+        <button class="danger-button" id="open-reset" type="button">Очистить всё и начать с нуля</button>
+      </section>
+    </div>

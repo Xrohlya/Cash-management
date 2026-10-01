@@ -1,4 +1,4 @@
-import { money } from "./core.js?v=20261001-1";
+import { money } from "./core.js?v=20261001-2";
 
 function renderAccounts(items, state) {
   const root = document.getElementById("accounts-summary");

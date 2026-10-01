@@ -1,0 +1,41 @@
+<dialog id="edit-expense-dialog">
+    <form id="edit-expense-form" method="dialog">
+      <h2>Изменить расход</h2>
+      <input id="edit-expense-id" type="hidden">
+      <label><span>Сумма</span><input id="edit-expense-amount" type="number" min="0.01" step="0.01" required></label>
+      <label><span>Категория или комментарий</span><input id="edit-expense-description" maxlength="255" required></label>
+      <div class="dialog-actions"><button class="text-button" id="cancel-expense-edit" type="button">Отмена</button><button class="primary" type="submit">Сохранить</button></div>
+    </form>
+</dialog>
+<dialog id="action-confirm-dialog">
+  <form id="action-confirm-form" method="dialog">
+    <h2>Подтверждение</h2>
+    <p id="action-confirm-text"></p>
+    <div class="dialog-actions"><button class="text-button" id="cancel-action-confirm" type="button">Отмена</button><button class="primary" type="submit">Подтвердить</button></div>
+  </form>
+</dialog>
+<dialog id="undo-dialog">
+  <form id="undo-form" method="dialog">
+    <h2>Отменить операцию?</h2>
+    <p id="undo-confirmation-text"></p>
+    <p class="financial-note">Суммы будут восстановлены. Исходная запись сохранится в архиве отмен.</p>
+    <div class="dialog-actions"><button class="text-button" id="cancel-undo" type="button">Назад</button><button class="danger-button" type="submit">Подтвердить отмену</button></div>
+  </form>
+</dialog>
+<dialog id="reset-dialog">
+    <form id="reset-form" method="dialog">
+      <h2>Удалить все данные?</h2>
+      <p>Для подтверждения введите <b>УДАЛИТЬ ВСЕ</b></p>
+      <input id="reset-confirmation" autocomplete="off" required>
+      <div class="dialog-actions"><button class="text-button" id="cancel-reset" type="button">Отмена</button><button class="danger-button" type="submit">Удалить всё</button></div>
+    </form>
+  </dialog>
+<dialog id="account-transfer-dialog">
+    <form id="account-transfer-form" method="dialog">
+      <h2 id="account-transfer-title">Перевод</h2>
+      <input id="account-transfer-id" type="hidden">
+      <label><span>Направление</span><select id="account-transfer-direction"><option value="to_account">С основного на этот счёт</option><option value="to_main">С этого счёта на основной</option></select></label>
+      <label><span>Сумма</span><div class="amount-input"><input id="account-transfer-amount" type="number" min="0.01" step="0.01" inputmode="decimal" required><b>₽</b></div></label>
+      <div class="dialog-actions"><button class="text-button" id="cancel-account-transfer" type="button">Отмена</button><button class="primary" type="submit">Перевести</button></div>
+    </form>
+  </dialog>

@@ -94,6 +94,9 @@ def clear_status_message(user_id: int):
 
 def reset_user_data(user_id: int):
     with get_connection() as conn:
+        conn.execute("DELETE FROM expected_income WHERE user_id=?", (user_id,))
+        conn.execute("DELETE FROM category_limits WHERE user_id=?", (user_id,))
+        conn.execute("DELETE FROM operation_undo WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM account_transactions WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM extra_accounts WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM income_sources WHERE user_id=?", (user_id,))

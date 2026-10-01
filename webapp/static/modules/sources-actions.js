@@ -1,5 +1,7 @@
-import { api, showToast } from "./core.js?v=20261001-1";
-import { renderSources, renderSourcesOverview } from "./sources.js?v=20261001-1";
+import { api, showToast } from "./core.js?v=20261001-2";
+import { renderSources, renderSourcesOverview } from "./sources.js?v=20261001-2";
+import { load } from "./dashboard.js?v=20261001-2";
+import { requestConfirmation } from "./ui.js?v=20261001-2";
 
 function initSourcesActions() {
   function resetSourceForm() {
@@ -23,7 +25,8 @@ function initSourcesActions() {
         }),
       });
       renderSources(items);
-      renderSourcesOverview(items);
+    renderSourcesOverview(items);
+    await load();
       resetSourceForm();
       showToast(id ? "Источник обновлён" : "Источник добавлен");
     } catch (error) {
@@ -47,11 +50,12 @@ function initSourcesActions() {
       return;
     }
     const remove = event.target.closest("[data-source-delete]");
-    if (!remove || !window.confirm("Удалить источник дохода? История останется сохранена.")) return;
+    if (!remove || !await requestConfirmation("Удалить источник дохода? История останется сохранена.")) return;
     try {
       const items = await api(`/api/income-sources/${remove.dataset.sourceDelete}/delete`, { method: "POST" });
       renderSources(items);
       renderSourcesOverview(items);
+      await load();
       showToast("Источник удалён");
     } catch (error) {
       showToast(error.message);

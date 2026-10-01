@@ -1,0 +1,40 @@
+<div class="tab-panel" id="tab-expenses" data-tab-panel="expenses" role="tabpanel" aria-labelledby="nav-expenses" hidden>
+      <section class="weekly-section">
+        <div class="section-heading"><h2>Итоги недели</h2><small id="week-period">—</small></div>
+        <div id="week-metrics" class="week-metrics"></div>
+        <ul id="week-insights" class="week-insights"></ul>
+      </section>
+      <section class="undo-section">
+        <h2>Последняя ручная операция</h2>
+        <p id="undo-summary" class="undo-summary">—</p>
+        <button class="secondary" id="open-undo" type="button" disabled><i data-lucide="undo-2" aria-hidden="true"></i>Отменить операцию</button>
+      </section>
+      <section class="limits-section">
+        <h2>Лимиты категорий</h2>
+        <form id="category-limit-form">
+          <div class="form-row">
+            <label><span>Категория</span><input id="limit-category" list="expense-categories" maxlength="80" placeholder="Например, Кафе" required><datalist id="expense-categories"></datalist></label>
+            <label><span>Лимит на период</span><input id="limit-amount" type="number" min="0.01" max="1000000000" step="0.01" inputmode="decimal" required></label>
+          </div>
+          <button class="secondary" type="submit"><i data-lucide="gauge" aria-hidden="true"></i>Сохранить лимит</button>
+        </form>
+        <div id="category-limits-list" class="planning-list"></div>
+      </section>
+      <section class="category-section">
+        <div class="section-heading">
+          <h2>Расходы по категориям</h2>
+          <span id="days-left"></span>
+        </div>
+        <div id="categories" class="categories" aria-live="polite"></div>
+      </section>
+
+      <section class="chart-section">
+        <h2>Расходы по дням</h2>
+        <div id="daily-chart" class="daily-chart" aria-label="График расходов по дням"></div>
+      </section>
+
+      <details class="history-section history-details">
+        <summary>Все операции</summary>
+        <div id="history" class="history" aria-live="polite"></div>
+      </details>
+    </div>

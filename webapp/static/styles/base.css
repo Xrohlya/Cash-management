@@ -1,0 +1,122 @@
+:root {
+  color-scheme: dark;
+  --bg: #070a10;
+  --surface: #101722;
+  --surface-raised: #151f2d;
+  --text: #f2f7ff;
+  --muted: #8e9caf;
+  --accent: #35a9ff;
+  --accent-strong: #1688ff;
+  --accent-text: #03111e;
+  --line: rgba(125, 157, 197, 0.22);
+  --danger: #ff5f7f;
+  --positive: #25dfbd;
+  --gold: #ffd166;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-width: 280px;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0;
+  min-height: 100vh;
+}
+
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: max(18px, env(safe-area-inset-top)) 18px 14px;
+  border-bottom: 1px solid rgba(53, 169, 255, 0.16);
+  background: rgba(7, 10, 16, 0.94);
+}
+
+.profile-header { display: flex; align-items: center; min-width: 0; gap: 11px; }
+.avatar { display: grid; flex: 0 0 42px; width: 42px; height: 42px; place-items: center; border: 1px solid rgba(53, 169, 255, 0.42); border-radius: 50%; background: #10243a; color: #a8d8ff; font-size: 15px; font-weight: 750; box-shadow: 0 0 16px rgba(53, 169, 255, 0.18); }
+.profile-header > div { min-width: 0; }
+.period-line { overflow: hidden; margin: 2px 0 0; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+
+.eyebrow { margin: 0 0 1px; color: #79c7ff; font-size: 11px; }
+h1, h2, p { margin-top: 0; }
+h1 { margin-bottom: 0; color: var(--text); font-size: 22px; text-shadow: 0 0 18px rgba(53, 169, 255, 0.3); }
+h2 { margin-bottom: 14px; font-size: 17px; }
+
+.icon-button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface-raised);
+  color: var(--accent);
+  font-size: 24px;
+  box-shadow: 0 0 18px rgba(53, 169, 255, 0.13);
+}
+
+.icon-button:active { transform: scale(0.96); }
+
+main { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+
+.tab-panel[hidden] { display: none; }
+
+.balance-band {
+  padding: 22px 18px 20px;
+  border-bottom: 1px solid rgba(53, 169, 255, 0.32);
+  background: #0d1928;
+  color: var(--text);
+  box-shadow: inset 0 -16px 40px rgba(22, 136, 255, 0.08), 0 12px 34px rgba(0, 87, 168, 0.13);
+}
+
+.balance-band p { margin-bottom: 4px; color: #83caff; }
+.balance-band > strong { display: block; margin-bottom: 18px; font-size: 38px; line-height: 1.1; text-shadow: 0 0 22px rgba(53, 169, 255, 0.38); }
+.limit-row { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; }
+.limit-row span { min-width: 0; color: var(--muted); }
+.limit-row b { display: block; margin-top: 2px; color: var(--text); font-size: 15px; }
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.metrics article { min-width: 0; padding: 14px 18px; background: var(--surface); }
+.metrics span { display: block; color: var(--muted); font-size: 12px; }
+.metrics b { display: block; overflow: hidden; margin-top: 3px; color: #b9dcff; text-overflow: ellipsis; white-space: nowrap; }
+.metrics article:nth-child(2) b { color: var(--danger); text-shadow: 0 0 14px rgba(255, 95, 127, 0.2); }
+.metrics article:nth-child(3) b { color: var(--accent); }
+.metrics article:nth-child(4) b { color: var(--positive); }
+.metrics article:nth-child(5) b { color: var(--gold); text-shadow: 0 0 14px rgba(255, 209, 102, 0.15); }
+
+.upcoming-payment { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 15px 18px; border-bottom: 1px solid var(--line); background: #0a111b; }
+.upcoming-payment > div { min-width: 0; }
+.upcoming-payment > div:last-child { flex: 0 0 auto; text-align: right; }
+.upcoming-payment span, .upcoming-payment small { display: block; color: var(--muted); font-size: 11px; }
+.upcoming-payment strong { display: block; overflow: hidden; margin-top: 2px; color: #b9dcff; text-overflow: ellipsis; white-space: nowrap; }
+.upcoming-payment b { display: block; color: var(--accent); }
+
+.operation-section, .goal-section, .category-section, .chart-section, .history-section, .settings-section, .sources-section, .recurring-section, .danger-section, .accounts-overview, .sources-overview, .accounts-settings, .radar-section, .money-calendar { padding: 22px 18px 0; }
+
+.operation-section h2, .goal-section h2, .category-section h2, .chart-section h2, .settings-section h2, .sources-section h2, .recurring-section h2, .accounts-overview h2, .sources-overview h2, .accounts-settings h2, .radar-section h2, .money-calendar h2 {
+  position: relative;
+  padding-left: 12px;
+}
+
+.operation-section h2::before, .goal-section h2::before, .category-section h2::before, .chart-section h2::before, .settings-section h2::before, .sources-section h2::before, .recurring-section h2::before, .accounts-overview h2::before, .sources-overview h2::before, .accounts-settings h2::before, .radar-section h2::before, .money-calendar h2::before {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 10px rgba(53, 169, 255, 0.65);
+  content: "";
+}

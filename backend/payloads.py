@@ -25,6 +25,7 @@ def state(user_id: int):
         "period_start": snapshot["start"].isoformat(),
         "period_end": (end - timedelta(days=1)).isoformat(),
         "profile": {
+            "id": user_id,
             "first_name": profile["first_name"] or "Пользователь",
             "username": profile["username"] or "",
         },

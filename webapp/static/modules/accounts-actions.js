@@ -1,5 +1,6 @@
-import { api, showToast } from "./core.js?v=20261001-1";
-import { load } from "./dashboard.js?v=20261001-1";
+import { api, showToast } from "./core.js?v=20261001-2";
+import { load } from "./dashboard.js?v=20261001-2";
+import { requestConfirmation } from "./ui.js?v=20261001-2";
 
 function initAccountsActions() {
   document.getElementById("account-form").addEventListener("submit", async (event) => {
@@ -23,7 +24,7 @@ function initAccountsActions() {
 
   document.getElementById("accounts-settings-list").addEventListener("click", async (event) => {
     const button = event.target.closest("[data-account-delete]");
-    if (!button || !window.confirm("Удалить дополнительный счёт?")) return;
+    if (!button || !await requestConfirmation("Удалить дополнительный счёт?")) return;
     try {
       await api(`/api/accounts/${button.dataset.accountDelete}/delete`, { method: "POST" });
       await load();

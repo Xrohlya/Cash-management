@@ -1,0 +1,43 @@
+.quick-expenses { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.quick-expenses button { min-height: 40px; border: 1px solid rgba(53, 169, 255, 0.3); border-radius: 7px; background: #0d1826; color: #a8d8ff; }
+.quick-expenses button:active { border-color: var(--accent); background: #10243a; }
+
+.radar-section { padding-bottom: 20px; border-bottom: 1px solid var(--line); background: #09111c; }
+.radar-section .section-heading { align-items: center; }
+.risk-pill { flex: 0 0 auto; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); font-size: 11px; }
+.risk-green { border-color: rgba(37, 223, 189, 0.38); background: rgba(37, 223, 189, 0.08); color: var(--positive); }
+.risk-yellow { border-color: rgba(255, 209, 102, 0.4); background: rgba(255, 209, 102, 0.08); color: var(--gold); }
+.risk-red { border-color: rgba(255, 95, 127, 0.42); background: rgba(255, 95, 127, 0.08); color: var(--danger); }
+.radar-hero { display: flex; align-items: end; justify-content: space-between; gap: 18px; padding: 14px 0 17px; }
+.radar-hero > div { min-width: 0; }
+.radar-hero span { display: block; color: var(--muted); font-size: 11px; }
+.radar-hero strong { display: block; margin-top: 3px; color: #b9dcff; font-size: 29px; line-height: 1.1; text-shadow: 0 0 18px rgba(53, 169, 255, 0.3); }
+.radar-hero p { max-width: 190px; margin: 0; color: var(--muted); font-size: 11px; text-align: right; }
+.radar-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; border: 1px solid var(--line); background: var(--line); }
+.radar-stats article { min-width: 0; padding: 11px 9px; background: #0d1723; }
+.radar-stats span, .radar-stats small { display: block; overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.radar-stats b { display: block; overflow: hidden; margin: 4px 0 2px; color: var(--text); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.radar-stats .trend-better { color: var(--positive); }
+.radar-stats .trend-worse { color: var(--danger); }
+
+.money-calendar { padding-bottom: 5px; border-bottom: 1px solid var(--line); }
+.money-calendar-list { border-top: 1px solid var(--line); }
+.calendar-event { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 58px; border-bottom: 1px solid var(--line); }
+.calendar-event:last-child { border-bottom: 0; }
+.calendar-event time { text-align: center; }
+.calendar-event time b, .calendar-event time span { display: block; }
+.calendar-event time b { color: #b9dcff; font-size: 17px; }
+.calendar-event time span { color: var(--muted); font-size: 9px; text-transform: uppercase; }
+.calendar-event div { min-width: 0; }
+.calendar-event strong, .calendar-event small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calendar-event small { color: var(--muted); font-size: 10px; }
+.calendar-event > b { color: var(--danger); font-size: 13px; }
+.calendar-income > b { color: var(--positive); }
+.calendar-period { opacity: 0.78; }
+.calendar-period time b { color: var(--gold); }
+
+.receipt-scan { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 5px 10px; }
+.receipt-button { min-height: 40px; padding: 0 12px; border: 1px solid rgba(53, 169, 255, 0.32); border-radius: 7px; background: #0d1826; color: #a8d8ff; }
+.receipt-button span { margin-right: 5px; color: var(--accent); }
+.receipt-button:disabled { cursor: wait; opacity: 0.6; }
+.receipt-scan small { color: var(--muted); font-size: 10px; }

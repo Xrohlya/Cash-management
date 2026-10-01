@@ -1,14 +1,15 @@
 import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 from database.db import init_db
 from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from config import settings
 from backend.auth import verify_init_data
-from backend.routes import dashboard, operations, settings as settings_routes, accounts, sources, recurring, siri
+from backend.webapp import webapp_html
+from backend.routes import dashboard, operations, settings as settings_routes, accounts, sources, recurring, siri, planning
 
 WEBAPP_DIR = Path(__file__).resolve().parent.parent / "webapp"
 
@@ -30,14 +31,14 @@ if settings.ALLOWED_ORIGINS:
     )
 app.mount("/static", StaticFiles(directory=WEBAPP_DIR / "static"), name="static")
 
-for routes in (dashboard, operations, settings_routes, accounts, sources, recurring, siri):
+for routes in (dashboard, operations, settings_routes, accounts, sources, recurring, siri, planning):
     app.include_router(routes.router)
 
 
 @app.get("/", include_in_schema=False)
 def webapp():
-    return FileResponse(
-        WEBAPP_DIR / "index.html",
+    return HTMLResponse(
+        webapp_html(),
         headers={"Cache-Control": "no-store, max-age=0"},
     )
 

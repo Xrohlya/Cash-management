@@ -1,0 +1,47 @@
+<div class="tab-panel" id="tab-plans" data-tab-panel="plans" role="tabpanel" aria-labelledby="nav-plans" hidden>
+  <section class="planning-section planning-forecast">
+    <div class="section-heading"><h2>Горизонт бюджета</h2><span class="status-label">До конца периода</span></div>
+    <div class="forecast-grid">
+      <div><span>Без новых доходов</span><strong id="forecast-confirmed">—</strong></div>
+      <div><span>С ожидаемыми доходами</span><strong id="forecast-planned">—</strong></div>
+    </div>
+    <p class="financial-note">Ожидаемые поступления не входят в текущий баланс.</p>
+  </section>
+  <section class="planning-section" id="afford-section">
+    <h2>Могу себе позволить?</h2>
+    <form id="afford-form" class="inline-form">
+      <label><span>Цена покупки</span><div class="amount-input"><input id="afford-amount" type="number" min="0.01" max="1000000000" step="0.01" inputmode="decimal" required><b>₽</b></div></label>
+      <button class="primary" type="submit"><i data-lucide="calculator" aria-hidden="true"></i>Проверить</button>
+    </form>
+    <div id="afford-result" class="calculation-result" role="status" hidden></div>
+  </section>
+  <section class="planning-section" id="scenario-section">
+    <h2>А что, если…</h2>
+    <form id="scenario-form">
+      <div class="form-row">
+        <label><span>Действие</span><select id="scenario-kind"><option value="expense">Покупка</option><option value="save">Накопления</option></select></label>
+        <label><span>Сумма</span><input id="scenario-amount" type="number" min="0.01" max="1000000000" step="0.01" inputmode="decimal" required></label>
+      </div>
+      <label class="check-label"><input id="scenario-income" type="checkbox"><span>Ожидаемые доходы в прогнозе</span></label>
+      <button class="secondary" type="submit"><i data-lucide="git-branch" aria-hidden="true"></i>Рассчитать сценарий</button>
+    </form>
+    <div id="scenario-result" class="calculation-result" role="status" hidden></div>
+  </section>
+  <section class="planning-section">
+    <div class="section-heading"><h2>Ожидаемые доходы</h2><small id="expected-total">—</small></div>
+    <form id="planned-income-form">
+      <input id="planned-income-id" type="hidden">
+      <label><span>Название</span><input id="planned-income-title" maxlength="80" placeholder="Например, зарплата" required></label>
+      <div class="form-row">
+        <label><span>Сумма до удержания</span><input id="planned-income-amount" type="number" min="0.01" max="1000000000" step="0.01" inputmode="decimal" required></label>
+        <label><span>Дата поступления</span><input id="planned-income-date" type="date" required></label>
+      </div>
+      <label><span>Источник</span><select id="planned-income-source"><option value="">Без удержания</option></select></label>
+      <div class="form-actions"><button class="secondary" id="save-planned-income" type="submit"><i data-lucide="plus" aria-hidden="true"></i>Добавить поступление</button><button class="text-button" id="cancel-planned-income-edit" type="button" hidden>Отмена</button></div>
+    </form>
+    <div id="planned-income-list" class="planning-list"></div>
+  </section>
+  $calendar
+  $recurring
+  $goal
+</div>

@@ -1,6 +1,7 @@
-import { recurringDay, api, showToast } from "./core.js?v=20261001-1";
-import { load } from "./dashboard.js?v=20261001-1";
-import { renderRecurring } from "./recurring.js?v=20261001-1";
+import { recurringDay, api, showToast } from "./core.js?v=20261001-2";
+import { load } from "./dashboard.js?v=20261001-2";
+import { requestConfirmation } from "./ui.js?v=20261001-2";
+import { renderRecurring } from "./recurring.js?v=20261001-2";
 
 function initRecurringActions() {
   document.getElementById("recurring-form").addEventListener("submit", async (event) => {
@@ -31,10 +32,11 @@ function initRecurringActions() {
 
   document.getElementById("recurring-list").addEventListener("click", async (event) => {
     const button = event.target.closest("[data-recurring-delete]");
-    if (!button || !window.confirm("Удалить регулярный платёж?")) return;
+    if (!button || !await requestConfirmation("Удалить регулярный платёж?")) return;
     try {
       const items = await api(`/api/recurring/${button.dataset.recurringDelete}/delete`, { method: "POST" });
       renderRecurring(items);
+      await load();
       showToast("Платёж удалён");
     } catch (error) {
       showToast(error.message);

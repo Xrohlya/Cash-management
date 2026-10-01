@@ -20,12 +20,13 @@ const kindLabels = {
   save: "Накопления",
   account_transfer: "Перевод на счёт",
   account_return: "Возврат на основной",
+  cancelled: "Отмена операции",
 };
 
 const operation = { kind: "expense" };
 let toastTimer;
 
-const tabs = new Set(["budget", "expenses", "settings"]);
+const tabs = new Set(["budget", "expenses", "plans", "settings"]);
 
 function selectTab(tabName, remember = true) {
   const selected = tabs.has(tabName) ? tabName : "budget";
