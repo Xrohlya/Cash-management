@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 import logging
+import os
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -284,7 +285,11 @@ def webapp():
 
 @app.get("/health")
 def health():
-    return {"ok": True, "version": "2.0.0"}
+    return {
+        "ok": True,
+        "version": "2.0.0",
+        "commit": os.getenv("RENDER_GIT_COMMIT", "local")[:7],
+    }
 
 
 @app.get("/api/state")
