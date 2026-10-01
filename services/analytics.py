@@ -191,7 +191,8 @@ def financial_radar(
     period_spending = sum(
         float(row["amount"])
         for row in spend_rows
-        if start <= date.fromisoformat(row["created_at"][:10]) <= today
+        if row["kind"] == "expense"
+        and start <= date.fromisoformat(row["created_at"][:10]) <= today
     )
     daily_pace = period_spending / elapsed
     projected_balance = float(remaining) - reserved - daily_pace * max(0, days_left - 1)

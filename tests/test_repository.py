@@ -254,6 +254,23 @@ class RepositoryTest(unittest.TestCase):
         self.assertIn("ФИНАНСОВЫЙ РАДАР", status_text)
         self.assertIn("Желаемый остаток: <b>2 500 ₽</b>", status_text)
 
+    def test_radar_does_not_repeat_one_time_rent_in_daily_forecast(self):
+        from datetime import date
+
+        today = date(2026, 9, 25)
+        repository.ensure_user(101)
+        with db.get_connection() as conn:
+            conn.execute(
+                "INSERT INTO transactions(user_id,created_at,kind,amount,description) "
+                "VALUES (?, ?, 'rent', 50000, 'Квартира')",
+                (101, today.isoformat()),
+            )
+
+        radar = financial_radar(101, 10000, [], today, target_balance=2000)
+
+        self.assertEqual(radar["safe_today"], 320)
+        self.assertEqual(radar["projected_balance"], 10000)
+
 
 if __name__ == "__main__":
     unittest.main()
