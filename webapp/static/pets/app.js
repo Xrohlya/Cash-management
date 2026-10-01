@@ -2,9 +2,9 @@ import { api, initData, money, showToast } from "../modules/core.js?v=20261001-3
 import { bindForm, requestConfirmation, runAction } from "../modules/ui.js?v=20261001-3";
 import { store } from "../modules/store.js?v=20261001-3";
 import { load } from "../modules/dashboard.js?v=20261001-3";
-import { renderWorld, renderPetFinance } from "./view.js?v=20261001-3";
-import { reactToPet } from "./animation.js?v=20261001-3";
-import { petStore } from "./store.js?v=20261001-3";
+import { renderWorld, renderPetFinance } from "./view.js?v=20261001-4";
+import { reactToPet } from "./animation.js?v=20261001-4";
+import { petStore } from "./store.js?v=20261001-4";
 
 function receive(world) {
   petStore.world = world;
@@ -48,7 +48,10 @@ export function initPetWorld() {
       runAction(button, async () => {
         const response = await post(action, { id: button.dataset[selector] });
         receive(response.world);
-        if (response.created) { reactToPet(); showToast(action === "claim" ? "Награда получена" : "Украшение появилось в комнате"); }
+        if (response.created) {
+          reactToPet();
+          showToast(button.dataset.petClaim === "feed" ? "Питомец поел. Настоящие деньги не списаны." : action === "claim" ? "Награда получена" : "Украшение появилось в комнате");
+        }
       });
     });
   }

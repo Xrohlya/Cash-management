@@ -16,6 +16,7 @@ ITEMS = {
     "trophy": {"name": "Награда", "cost": 30, "icon": "trophy"},
 }
 MISSIONS = {
+    "feed": {"title": "Кормление", "xp": 10, "coins": 0},
     "visit": {"title": "Заглянуть в свой мир", "xp": 10, "coins": 5},
     "record": {"title": "Вести учёт сегодня", "xp": 15, "coins": 5},
     "save": {"title": "Пополнить накопления", "xp": 20, "coins": 10},

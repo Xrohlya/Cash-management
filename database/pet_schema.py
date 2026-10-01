@@ -1,4 +1,8 @@
 def create_pet_schema(conn):
+    conn.execute("""CREATE TABLE IF NOT EXISTS pet_daily_budget (
+        user_id BIGINT NOT NULL, day TEXT NOT NULL, allowance DOUBLE PRECISION NOT NULL,
+        PRIMARY KEY(user_id, day)
+    )""")
     conn.execute("""CREATE TABLE IF NOT EXISTS pet_world (
         user_id BIGINT PRIMARY KEY, pet TEXT NOT NULL DEFAULT 'robot',
         name TEXT NOT NULL DEFAULT '', xp INTEGER NOT NULL DEFAULT 0,

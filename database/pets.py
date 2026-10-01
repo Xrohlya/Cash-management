@@ -4,6 +4,7 @@ from datetime import date
 from database import db
 from database.db import get_connection
 from services.pet_catalog import ITEMS, MISSIONS, PETS, progression
+from database.pet_feeding import feeding_status
 
 
 def _profile(conn, user_id, lock=False):
@@ -21,7 +22,9 @@ def _missions(conn, user_id, day):
     claimed = {row["mission"] for row in conn.execute("SELECT mission FROM pet_rewards WHERE user_id=? AND day=?", (user_id, day)).fetchall()}
     eligible = {"visit": True, "record": any(row["kind"] in {"income", "expense", "rent", "save", "account_transfer", "account_return"} for row in entries),
                 "save": any(row["kind"] == "save" and float(row["amount"]) > 0 for row in entries) and bool(savings and float(savings["savings"]) > 0)}
-    return [{"id": key, **value, "eligible": eligible[key], "claimed": key in claimed} for key, value in MISSIONS.items()]
+    feeding = feeding_status(conn, user_id, day)
+    eligible["feed"] = feeding["eligible"]
+    return [{"id": key, **value, **(feeding if key == "feed" else {}), "eligible": eligible[key], "claimed": key in claimed} for key, value in MISSIONS.items()]
 
 
 def get_world(user_id):

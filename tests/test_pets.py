@@ -116,3 +116,33 @@ class PetWorldTests(unittest.TestCase):
         for path, body in (("/api/pet/settings", {"pet": "cat"}), ("/api/pet/claim", {"id": "visit"}), ("/api/pet/buy", {"id": "plant"})):
             self.assertEqual(self.client.post(path, json=body).status_code, 401)
         self.assertEqual(self.client.get("/api/pet").status_code, 401)
+
+    def test_feeding_uses_completed_day_once_without_spending_money(self):
+        yesterday = (date.today() - timedelta(days=1)).isoformat()
+        repository.add_income(101, 1000, 0)
+        with db.get_connection() as conn:
+            conn.execute("INSERT INTO pet_daily_budget(user_id,day,allowance) VALUES (?,?,?)", (101, yesterday, 100))
+            conn.execute("INSERT INTO transactions(user_id,created_at,kind,amount,description) VALUES (?,?,?,?,?)", (101, yesterday + "T12:00:00", "expense", 40, "test"))
+        task = next(item for item in get_world(101)["missions"] if item["id"] == "feed")
+        self.assertEqual((task["eligible"], task["remaining"], task["title"]), (True, 60, "Лакомство"))
+        before = repository.get_status_snapshot(101)["remaining"]
+        self.assertTrue(claim_reward(101, "feed"))
+        self.assertFalse(claim_reward(101, "feed"))
+        self.assertEqual(repository.get_status_snapshot(101)["remaining"], before)
+
+    def test_no_feed_without_recorded_day_or_remaining_allowance(self):
+        with self.assertRaises(ValueError):
+            claim_reward(101, "feed")
+        yesterday = (date.today() - timedelta(days=1)).isoformat()
+        with db.get_connection() as conn:
+            conn.execute("INSERT INTO pet_daily_budget(user_id,day,allowance) VALUES (?,?,?)", (101, yesterday, 0))
+        with self.assertRaises(ValueError):
+            claim_reward(101, "feed")
+
+    def test_recorded_allowance_is_not_increased_by_refresh(self):
+        from database.pet_feeding import remember_daily_limit
+        remember_daily_limit(101, 100, 20)
+        remember_daily_limit(101, 900, 30)
+        with db.get_connection() as conn:
+            row = conn.execute("SELECT allowance FROM pet_daily_budget WHERE user_id=?", (101,)).fetchone()
+        self.assertEqual(row["allowance"], 120)

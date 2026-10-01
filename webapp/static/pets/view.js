@@ -1,7 +1,7 @@
 import { money } from "../modules/core.js?v=20261001-3";
 import { element, refreshIcons } from "../modules/ui.js?v=20261001-3";
-import { decorations } from "./decorations.js?v=20261001-3";
-import { roomEvolution } from "./evolution.js?v=20261001-3";
+import { decorations } from "./decorations.js?v=20261001-4";
+import { roomEvolution } from "./evolution.js?v=20261001-4";
 
 const node = (id) => document.getElementById(id);
 
@@ -41,8 +41,8 @@ export function renderWorld(world) {
   node("pet-missions").replaceChildren(...world.missions.map((task) => {
     const row = element("article", "pet-mission");
     const info = element("div");
-    info.append(element("strong", "", task.title), element("small", "", `+${task.xp} опыта · +${task.coins} монет`));
-    const button = element("button", "", task.claimed ? "Получено" : "Забрать");
+    info.append(element("strong", "", task.title), element("small", "", task.note || `+${task.xp} опыта · +${task.coins} монет`));
+    const button = element("button", "", task.claimed ? "Получено" : task.id === "feed" ? "Покормить" : "Забрать");
     button.type = "button";
     button.dataset.petClaim = task.id;
     button.disabled = task.claimed || !task.eligible;
