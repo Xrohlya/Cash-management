@@ -2,9 +2,10 @@ import { api, initData, money, showToast } from "../modules/core.js?v=20261001-3
 import { bindForm, requestConfirmation, runAction } from "../modules/ui.js?v=20261001-3";
 import { store } from "../modules/store.js?v=20261001-3";
 import { load } from "../modules/dashboard.js?v=20261001-3";
-import { renderWorld, renderPetFinance } from "./view.js?v=20261002-1";
-import { reactToPet } from "./animation.js?v=20261002-1";
-import { petStore } from "./store.js?v=20261002-1";
+import { renderWorld, renderPetFinance } from "./view.js?v=20261002-2";
+import { reactToPet } from "./animation.js?v=20261002-2";
+import { petStore } from "./store.js?v=20261002-2";
+import { previewColor, selectedColor } from "./appearance.js?v=20261002-2";
 
 function receive(world) {
   petStore.world = world;
@@ -28,6 +29,8 @@ export function initPetWorld() {
   const settingsDialog = document.getElementById("pet-settings-dialog");
   document.getElementById("pet-open-settings").addEventListener("click", () => settingsDialog.showModal());
   document.getElementById("pet-close-settings").addEventListener("click", () => settingsDialog.close());
+  document.getElementById("pet-colors").addEventListener("change", () => previewColor(selectedColor()));
+  settingsDialog.addEventListener("close", () => { if (petStore.world) previewColor(petStore.world.color); });
   document.addEventListener("cash:tab", (event) => { if (event.detail === "pets") refreshWorld(); });
   document.addEventListener("cash:dashboard", (event) => {
     renderPetFinance(event.detail);
@@ -37,11 +40,11 @@ export function initPetWorld() {
   document.getElementById("pet-picker").addEventListener("click", (event) => {
     const button = event.target.closest("[data-pet-choice]");
     if (!button || !petStore.world) return;
-    runAction(button, async () => receive(await post("settings", { pet: button.dataset.petChoice, name: "", motion: Boolean(petStore.world.motion) })));
+    runAction(button, async () => receive(await post("settings", { pet: button.dataset.petChoice, name: "", motion: Boolean(petStore.world.motion), color: selectedColor() })));
   });
   bindForm("pet-settings-form", async () => {
     if (!petStore.world) return;
-    receive(await post("settings", { pet: petStore.world.pet, name: document.getElementById("pet-custom-name").value, motion: document.getElementById("pet-motion").checked }));
+    receive(await post("settings", { pet: petStore.world.pet, name: document.getElementById("pet-custom-name").value, motion: document.getElementById("pet-motion").checked, color: selectedColor() }));
     showToast("Настройки питомца сохранены");
     settingsDialog.close();
   });

@@ -1,4 +1,7 @@
 def create_pet_schema(conn):
+    conn.execute("""CREATE TABLE IF NOT EXISTS pet_appearance (
+        user_id BIGINT PRIMARY KEY, color TEXT NOT NULL DEFAULT 'original'
+    )""")
     conn.execute("""CREATE TABLE IF NOT EXISTS pet_item_upgrades (
         user_id BIGINT NOT NULL, item TEXT NOT NULL, level INTEGER NOT NULL,
         PRIMARY KEY(user_id, item)

@@ -4,6 +4,7 @@ from datetime import date
 from database import db
 from database.db import get_connection
 from services.pet_catalog import ITEMS, MISSIONS, PETS, progression, item_price
+from services.pet_appearance import COLORS
 from database.pet_feeding import feeding_status
 
 
@@ -33,9 +34,12 @@ def get_world(user_id):
         inventory = {row["item"] for row in conn.execute("SELECT item FROM pet_inventory WHERE user_id=?", (user_id,)).fetchall()}
         upgrades = {row["item"]: int(row["level"]) for row in conn.execute("SELECT item,level FROM pet_item_upgrades WHERE user_id=?", (user_id,)).fetchall()}
         missions = _missions(conn, user_id, date.today().isoformat())
+        cosmetic = conn.execute("SELECT color FROM pet_appearance WHERE user_id=?", (user_id,)).fetchone()
     pet = PETS[profile["pet"]]
     progress = progression(profile["xp"])
-    return {**profile, **progress, "display_name": profile["name"] or pet["name"],
+    return {**profile, **progress, "color": cosmetic["color"] if cosmetic else "original",
+            "colors": [{"id": key, **value} for key, value in COLORS.items()],
+            "display_name": profile["name"] or pet["name"],
             "room": pet["rooms"][progress["stage"] - 1], "pets": [{"id": key, **value} for key, value in PETS.items()],
             "shop": [{"id": key, **value, "owned": key in inventory,
                       "tier": upgrades.get(key, 1 if key in inventory else 0),
@@ -43,12 +47,16 @@ def get_world(user_id):
             "inventory": sorted(inventory), "upgrades": upgrades, "missions": missions}
 
 
-def update_world(user_id, pet, name, motion):
+def update_world(user_id, pet, name, motion, color=None):
     if pet not in PETS:
         raise ValueError("Неизвестный питомец")
+    if color is not None and color not in COLORS:
+        raise ValueError("Неизвестный цвет")
     with get_connection() as conn:
         _profile(conn, user_id)
         conn.execute("UPDATE pet_world SET pet=?,name=?,motion=? WHERE user_id=?", (pet, name.strip()[:24], int(motion), user_id))
+        if color is not None:
+            conn.execute("INSERT INTO pet_appearance(user_id,color) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET color=excluded.color", (user_id, color))
 
 
 def claim_reward(user_id, mission):

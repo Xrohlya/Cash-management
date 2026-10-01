@@ -1,7 +1,8 @@
 import { money } from "../modules/core.js?v=20261001-3";
 import { element, refreshIcons } from "../modules/ui.js?v=20261001-3";
-import { decorations } from "./decorations.js?v=20261002-1";
-import { roomEvolution } from "./evolution.js?v=20261002-1";
+import { decorations } from "./decorations.js?v=20261002-2";
+import { roomEvolution } from "./evolution.js?v=20261002-2";
+import { renderAppearance } from "./appearance.js?v=20261002-2";
 
 const node = (id) => document.getElementById(id);
 
@@ -11,7 +12,6 @@ export function renderWorld(world) {
   node("pet-room").textContent = world.room;
   node("pet-level").textContent = `Уровень ${world.level}`;
   node("pet-growth").textContent = `${world.age} · Глава ${world.chapter} · Рост ${Math.round(world.size / 1.05 * 100)}%`;
-  node("pet-image").style.transform = `scale(${world.size})`;
   node("pet-xp").textContent = `${world.xp} опыта`;
   node("pet-next-stage").textContent = `${world.stage === 3 ? "Следующая глава" : "Следующий этап"}: ${world.next_stage_xp}`;
   node("pet-progress").value = world.progress;
@@ -21,7 +21,7 @@ export function renderWorld(world) {
   node("pet-stage").dataset.motion = Boolean(world.motion);
   node("pet-stage").setAttribute("aria-busy", "false");
   node("pet-character").disabled = false;
-  node("pet-image").src = `/static/pets/images/${world.pet}.png`;
+  renderAppearance(world);
   node("pet-room-image").src = `/static/pets/rooms/${world.pet}.svg`;
   node("pet-evolution").innerHTML = roomEvolution(world.pet);
   node("pet-custom-name").value = world.name;

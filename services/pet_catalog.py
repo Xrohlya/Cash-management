@@ -1,4 +1,5 @@
 """Shared, server-owned game rules. Coins never represent real money."""
+from services.pet_appearance import appearance
 
 PETS = {
     "robot": {"name": "Робот", "rooms": ["Мастерская", "Лаборатория", "Космическая станция"]},
@@ -36,7 +37,6 @@ def progression(xp):
     ceiling = STAGES[stage] if stage < len(STAGES) else STAGES[-1] + (chapter + 1) * 18000
     if stage == 3:
         floor = STAGES[-1] + chapter * 18000
-    age = "Малыш" if xp < 1000 else "Подросток" if xp < 6000 else "Взрослеет" if xp < 20000 else "Взрослый" if xp < 60000 else "Легенда"
     return {"stage": stage, "level": 1 + xp // 50, "next_stage_xp": ceiling,
-            "chapter": chapter + 1, "age": age, "size": round(0.65 + min(1, xp / 60000) * 0.4, 3),
+            **appearance(xp), "chapter": chapter + 1, "size": round(0.65 + min(1, xp / 60000) * 0.4, 3),
             "progress": min(100, round((xp - floor) / (ceiling - floor) * 100))}

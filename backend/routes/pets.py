@@ -13,6 +13,7 @@ class WorldSettings(BaseModel):
     pet: str = Field(max_length=16)
     name: str = Field(default="", max_length=24)
     motion: bool = True
+    color: str | None = Field(default=None, max_length=16)
 
 
 class GameAction(BaseModel):
@@ -36,7 +37,7 @@ def world(user_id: int = Depends(current_user)):
 
 @router.post("/settings")
 def settings(data: WorldSettings, user_id: int = Depends(current_user)):
-    action(update_world, user_id, data.pet, data.name, data.motion)
+    action(update_world, user_id, data.pet, data.name, data.motion, data.color)
     return get_world(user_id)
 
 

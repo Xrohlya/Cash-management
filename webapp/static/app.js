@@ -14,7 +14,7 @@ import { initLimitsActions } from "./modules/limits-actions.js?v=20261001-3";
 import { initUndoActions } from "./modules/undo-actions.js?v=20261001-3";
 import { initCalculators } from "./modules/calculators.js?v=20261001-3";
 import { refreshIcons } from "./modules/ui.js?v=20261001-3";
-import { initPetWorld } from "./pets/app.js?v=20261002-1";
+import { initPetWorld } from "./pets/app.js?v=20261002-2";
 
 initSourcesActions();
 initAccountsActions();
