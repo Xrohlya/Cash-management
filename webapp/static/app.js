@@ -749,13 +749,7 @@ document.getElementById("operation-form").addEventListener("submit", async (even
     };
     const state = await api(`/api/${operationKind}`, { method: "POST", body: JSON.stringify(payload) });
     renderState(state);
-    const [history, analytics] = await Promise.all([
-      api("/api/transactions?limit=30"),
-      api("/api/analytics"),
-    ]);
-    renderHistory(history);
-    renderCategories(analytics.categories);
-    renderDaily(analytics.daily);
+    await load();
     event.target.reset();
     telegram?.HapticFeedback?.notificationOccurred("success");
     showToast("Операция сохранена");

@@ -81,6 +81,7 @@ def status(user_id: int, snapshot: dict | None = None) -> str:
         snapshot["remaining"],
         [dict(row) for row in list_recurring_payments(user_id)],
         target_balance=snapshot["target_balance"],
+        period=(snapshot["start"], snapshot["end"]),
     )
     text += (
         "\n\n🧭 <b>ФИНАНСОВЫЙ РАДАР</b>\n"

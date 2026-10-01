@@ -115,10 +115,15 @@ def financial_radar(
     recurring_payments: list,
     today: date | None = None,
     target_balance: float = 0,
+    period: tuple[date, date] | None = None,
 ):
     today = today or date.today()
-    start = financial_period_start(user_id, today)
-    end = financial_period_end(user_id, today)
+    if period is None:
+        start = financial_period_start(user_id, today)
+        from database.repository import financial_period_end_for_start
+        end = financial_period_end_for_start(start)
+    else:
+        start, end = period
     upcoming = []
     for payment in recurring_payments:
         if not int(payment["active"]):

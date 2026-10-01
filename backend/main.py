@@ -1,4 +1,5 @@
 import hashlib
+import asyncio
 import hmac
 import json
 import logging
@@ -221,10 +222,10 @@ async def refresh_telegram_status(user_id: int):
     from database.repository import clear_status_message, get_status_message, set_status_message
     from services.budget import status
 
-    saved = get_status_message(user_id)
+    saved = await asyncio.to_thread(get_status_message, user_id)
     bot = Bot(settings.BOT_TOKEN)
     try:
-        text = status(user_id)
+        text = await asyncio.to_thread(status, user_id)
         if saved:
             await bot.edit_message_text(
                 chat_id=saved[0],
@@ -237,18 +238,18 @@ async def refresh_telegram_status(user_id: int):
             sent = await bot.send_message(
                 user_id, text, parse_mode="HTML", reply_markup=main_menu()
             )
-            set_status_message(user_id, sent.chat.id, sent.message_id)
+            await asyncio.to_thread(set_status_message, user_id, sent.chat.id, sent.message_id)
     except TelegramBadRequest as exc:
         message = str(exc).casefold()
         if "message is not modified" not in message:
             logging.warning("Mini App could not refresh Telegram summary: %s", exc)
         if "message to edit not found" in message:
-            clear_status_message(user_id)
+            await asyncio.to_thread(clear_status_message, user_id)
             try:
                 sent = await bot.send_message(
-                    user_id, status(user_id), parse_mode="HTML", reply_markup=main_menu()
+                    user_id, text, parse_mode="HTML", reply_markup=main_menu()
                 )
-                set_status_message(user_id, sent.chat.id, sent.message_id)
+                await asyncio.to_thread(set_status_message, user_id, sent.chat.id, sent.message_id)
             except Exception:
                 logging.exception("Mini App could not recreate Telegram summary")
     except Exception:
@@ -314,6 +315,10 @@ def api_dashboard(user_id: int = Depends(current_user)):
             current_state["available"],
             recurring,
             target_balance=current_state["target_balance"],
+            period=(
+                date.fromisoformat(current_state["period_start"]),
+                date.fromisoformat(current_state["period_end"]) + timedelta(days=1),
+            ),
         ),
         "recurring": recurring,
         "income_sources": [dict(row) for row in list_income_sources(user_id)],
