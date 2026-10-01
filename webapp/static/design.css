@@ -1,7 +1,7 @@
-@import url("./styles/base.css?v=20261001-2");
-@import url("./styles/charts.css?v=20261001-2");
-@import url("./styles/lists.css?v=20261001-2");
-@import url("./styles/navigation.css?v=20261001-2");
+@import url("./styles/base.css?v=20261001-3");
+@import url("./styles/charts.css?v=20261001-3");
+@import url("./styles/lists.css?v=20261001-3");
+@import url("./styles/navigation.css?v=20261001-3");
 
 :root {
   --bg: #080b10;

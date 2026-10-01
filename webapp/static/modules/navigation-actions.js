@@ -1,5 +1,5 @@
-import { telegram, operation, selectTab, showToast } from "./core.js?v=20261001-2";
-import { load } from "./dashboard.js?v=20261001-2";
+import { telegram, operation, selectTab, showToast } from "./core.js?v=20261001-3";
+import { load } from "./dashboard.js?v=20261001-3";
 
 function initNavigationActions() {
   document.querySelectorAll("button[data-tab-target]").forEach((button) => {

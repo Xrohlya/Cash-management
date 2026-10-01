@@ -1,0 +1,14 @@
+@keyframes pet-breathe { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-3px) scale(1.015,1.03); } }
+@keyframes pet-hover { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-7px) rotate(1deg); } }
+@keyframes pet-waddle { 0%,100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+@keyframes pet-play { 0%,100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-18px) rotate(-6deg); } 55% { transform: translateY(-5px) rotate(6deg); } 80% { transform: translateY(-10px) rotate(-2deg); } }
+@keyframes room-light { 0%,100% { filter: drop-shadow(0 0 2px #90ecff55); } 50% { filter: drop-shadow(0 0 7px #90ecff99); } }
+@media (prefers-reduced-motion: no-preference) {
+  .pet-world .world-stage[data-motion="true"] .pet-character { animation: pet-breathe 3.6s ease-in-out infinite; }
+  .pet-world [data-pet="robot"][data-motion="true"] .pet-character,
+  .pet-world [data-pet="owl"][data-motion="true"] .pet-character { animation-name: pet-hover; }
+  .pet-world [data-pet="penguin"][data-motion="true"] .pet-character { animation-name: pet-waddle; }
+  .pet-world .world-stage[data-motion="true"].is-playing .pet-character { animation: pet-play 800ms ease-in-out 2; }
+  .pet-world [data-motion="true"] .room-item-stars, .pet-world [data-motion="true"] .room-item-lamp { animation: room-light 4s ease-in-out infinite; }
+  .pet-world[hidden] *, .pet-world .world-stage[data-motion="false"] * { animation: none !important; }
+}

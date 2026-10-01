@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <title>Мой бюджет</title>
-  <link rel="stylesheet" href="/static/design.css?v=20261001-2">
+  <link rel="stylesheet" href="/static/design.css?v=20261001-3">
+  <link rel="stylesheet" href="/static/pets/design.css?v=20261001-3">
   <script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
@@ -27,6 +28,7 @@
     <button id="nav-expenses" type="button" role="tab" data-tab-target="expenses" aria-controls="tab-expenses" aria-selected="false"><i data-lucide="arrow-left-right" aria-hidden="true"></i><span>Операции</span></button>
     <button id="nav-plans" type="button" role="tab" data-tab-target="plans" aria-controls="tab-plans" aria-selected="false"><i data-lucide="calendar-days" aria-hidden="true"></i><span>Планы</span></button>
     <button id="nav-settings" type="button" role="tab" data-tab-target="settings" aria-controls="tab-settings" aria-selected="false"><i data-lucide="settings-2" aria-hidden="true"></i><span>Настройки</span></button>
+    <button id="nav-pets" type="button" role="tab" data-tab-target="pets" aria-controls="tab-pets" aria-selected="false"><i data-lucide="paw-print" aria-hidden="true"></i><span>Мой мир</span></button>
   </nav>
 
   <main>
@@ -34,6 +36,7 @@ $budget
 $operations
 $plans
 $settings
+$pets
   </main>
 
   <button class="quick-add" id="quick-add" type="button" aria-label="Добавить операцию" title="Добавить операцию" hidden>+</button>
@@ -44,6 +47,6 @@ $settings
     <h2>Откройте приложение из Telegram</h2>
     <p>Авторизация доступна через кнопку меню вашего бота.</p>
   </div>
-  <script src="/static/app.js?v=20261001-2" type="module"></script>
+  <script src="/static/app.js?v=20261001-3" type="module"></script>
 </body>
 </html>

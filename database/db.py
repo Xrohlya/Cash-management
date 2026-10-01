@@ -6,6 +6,7 @@ import time
 
 from config.settings import DATABASE_URL, DB_POOL_MAX, SQLITE_PATH
 from database.planning_schema import create_planning_schema
+from database.pet_schema import create_pet_schema
 
 
 _PG_POOL = None
@@ -230,6 +231,7 @@ def _init_db_once():
             conn.execute("PRAGMA journal_mode=WAL")
         _create_schema(conn)
         create_planning_schema(conn, bool(DATABASE_URL))
+        create_pet_schema(conn)
         if DATABASE_URL:
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT NOT NULL DEFAULT ''")
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT NOT NULL DEFAULT ''")

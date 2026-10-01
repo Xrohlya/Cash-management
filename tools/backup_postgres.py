@@ -14,6 +14,9 @@ from config.settings import DATABASE_URL
 
 
 TABLES = {
+    "pet_world": "*",
+    "pet_rewards": "*",
+    "pet_inventory": "*",
     "users": "*",
     "months": "user_id, month, budget, spent, rent, saved",
     "transactions": "id, user_id, created_at, kind, amount, description, income_source_id",

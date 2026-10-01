@@ -6,7 +6,7 @@ WEBAPP_DIR = Path(__file__).resolve().parent.parent / "webapp"
 
 def webapp_html():
     sections = WEBAPP_DIR / "sections"
-    names = ("budget", "operations", "plans", "settings", "dialogs")
+    names = ("budget", "operations", "plans", "settings", "dialogs", "pets")
     fragments = {name: (sections / f"{name}.html").read_text(encoding="utf-8") for name in names}
     fragments["plans"] = Template(fragments["plans"]).substitute({
         name: (sections / f"{name}.html").read_text(encoding="utf-8")

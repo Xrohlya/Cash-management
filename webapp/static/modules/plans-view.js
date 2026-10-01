@@ -1,5 +1,5 @@
-import { money } from "./core.js?v=20261001-2";
-import { element, iconButton, dateLabel } from "./ui.js?v=20261001-2";
+import { money } from "./core.js?v=20261001-3";
+import { element, iconButton, dateLabel } from "./ui.js?v=20261001-3";
 
 export function renderPlans(planning, sources) {
   document.getElementById("forecast-planned").textContent = money(planning.projected_with_income);

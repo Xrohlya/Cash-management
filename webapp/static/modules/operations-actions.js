@@ -1,6 +1,6 @@
-import { renderState } from "./budget.js?v=20261001-2";
-import { telegram, operationLabels, operation, api, showToast } from "./core.js?v=20261001-2";
-import { load } from "./dashboard.js?v=20261001-2";
+import { renderState } from "./budget.js?v=20261001-3";
+import { telegram, operationLabels, operation, api, showToast } from "./core.js?v=20261001-3";
+import { load } from "./dashboard.js?v=20261001-3";
 
 function initOperationsActions() {
   document.querySelectorAll("[data-quick-expense]").forEach((button) => {

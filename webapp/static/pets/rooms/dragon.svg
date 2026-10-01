@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+ <defs><radialGradient id="cave"><stop stop-color="#315552"/><stop offset="1" stop-color="#122828"/></radialGradient><linearGradient id="gem" x2="1" y2="1"><stop stop-color="#b1f2dc"/><stop offset="1" stop-color="#247884"/></linearGradient></defs>
+ <path fill="url(#cave)" d="M0 0h800v600H0z"/>
+ <path fill="#263f40" d="m0 0 166 0-41 120 59 111-39 196L0 477zM800 0H657l33 128-49 135 45 188 114 22z"/>
+ <path d="m16 36 78 67-18 103 67 77-60 109M787 34l-82 96 27 134-39 139" fill="none" stroke="#4b6c62" stroke-width="4"/>
+ <path fill="#172b30" d="M242 298V153q0-130 158-130t158 130v145z" stroke="#557b72" stroke-width="9"/>
+ <path fill="#325956" d="m248 265 50-52 36 13 70-95 68 75 32-7 46 69v23H248z"/><circle cx="446" cy="79" r="24" fill="#c1dbc3"/>
+ <path fill="#324c44" d="m0 453 197-27 185 17 211-26 207 36v147H0z"/>
+ <path d="m0 501 167-17 160 32 168-21 140 25 165-17" fill="none" stroke="#607d65" opacity=".5" stroke-width="3"/>
+ <g fill="url(#gem)" stroke="#8ae3c9" stroke-width="2"><path d="m63 402 15-99 34-18 21 106-39 33z"/><path d="m97 418 40-83 26 26-17 58z"/><path d="m654 418 27-100 33 15 15 86z"/><path d="m719 427 17-61 27 13 9 55z"/></g>
+ <path d="M77 308l17 109M681 324l15 92" stroke="#d2ffe9" opacity=".6" stroke-width="3"/>
+ <ellipse cx="400" cy="505" rx="140" ry="30" fill="#63725b"/><path d="M286 504h228" stroke="#b7c789" opacity=".5" stroke-width="3"/>
+ <g fill="#e9d17a"><circle cx="162" cy="445" r="9"/><circle cx="179" cy="439" r="7"/><circle cx="624" cy="448" r="9"/></g>
+</svg>

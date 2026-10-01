@@ -26,7 +26,7 @@ const kindLabels = {
 const operation = { kind: "expense" };
 let toastTimer;
 
-const tabs = new Set(["budget", "expenses", "plans", "settings"]);
+const tabs = new Set(["budget", "expenses", "plans", "settings", "pets"]);
 
 function selectTab(tabName, remember = true) {
   const selected = tabs.has(tabName) ? tabName : "budget";
@@ -41,8 +41,9 @@ function selectTab(tabName, remember = true) {
     button.setAttribute("aria-selected", String(active));
   });
   const quickAdd = document.getElementById("quick-add");
-  if (quickAdd) quickAdd.hidden = selected === "budget";
+  if (quickAdd) quickAdd.hidden = selected === "budget" || selected === "pets";
   if (remember) sessionStorage.setItem("cash-management-tab", selected);
+  document.dispatchEvent(new CustomEvent("cash:tab", { detail: selected }));
 }
 
 const financialDay = document.getElementById("financial-day");

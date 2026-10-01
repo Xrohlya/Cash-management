@@ -1,4 +1,4 @@
-import { financialDay, targetBalance, money } from "./core.js?v=20261001-2";
+import { financialDay, targetBalance, money } from "./core.js?v=20261001-3";
 
 function renderState(state) {
   document.getElementById("available").textContent = money(state.available);

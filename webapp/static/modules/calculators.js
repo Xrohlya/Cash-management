@@ -1,7 +1,7 @@
-import { money, selectTab, showToast } from "./core.js?v=20261001-2";
-import { store } from "./store.js?v=20261001-2";
-import { calculateScenario } from "./scenario-math.js?v=20261001-2";
-import { element } from "./ui.js?v=20261001-2";
+import { money, selectTab, showToast } from "./core.js?v=20261001-3";
+import { store } from "./store.js?v=20261001-3";
+import { calculateScenario } from "./scenario-math.js?v=20261001-3";
+import { element } from "./ui.js?v=20261001-3";
 
 function renderResult(id, amount, kind, includeIncome) {
   if (!store.dashboard) throw new Error("Сначала дождитесь загрузки бюджета");
