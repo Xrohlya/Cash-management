@@ -3,7 +3,7 @@ from datetime import date
 
 from database import db
 from database.db import get_connection
-from services.pet_catalog import ITEMS, MISSIONS, PETS, progression
+from services.pet_catalog import ITEMS, MISSIONS, PETS, progression, item_price
 from database.pet_feeding import feeding_status
 
 
@@ -31,13 +31,16 @@ def get_world(user_id):
     with get_connection() as conn:
         profile = _profile(conn, user_id)
         inventory = {row["item"] for row in conn.execute("SELECT item FROM pet_inventory WHERE user_id=?", (user_id,)).fetchall()}
+        upgrades = {row["item"]: int(row["level"]) for row in conn.execute("SELECT item,level FROM pet_item_upgrades WHERE user_id=?", (user_id,)).fetchall()}
         missions = _missions(conn, user_id, date.today().isoformat())
     pet = PETS[profile["pet"]]
     progress = progression(profile["xp"])
     return {**profile, **progress, "display_name": profile["name"] or pet["name"],
             "room": pet["rooms"][progress["stage"] - 1], "pets": [{"id": key, **value} for key, value in PETS.items()],
-            "shop": [{"id": key, **value, "owned": key in inventory} for key, value in ITEMS.items()],
-            "inventory": sorted(inventory), "missions": missions}
+            "shop": [{"id": key, **value, "owned": key in inventory,
+                      "tier": upgrades.get(key, 1 if key in inventory else 0),
+                      "cost": item_price(key, upgrades.get(key, 1 if key in inventory else 0))} for key, value in ITEMS.items()],
+            "inventory": sorted(inventory), "upgrades": upgrades, "missions": missions}
 
 
 def update_world(user_id, pet, name, motion):
@@ -69,17 +72,23 @@ def claim_reward(user_id, mission):
     return True
 
 
-def buy_item(user_id, item):
+def buy_item(user_id, item, expected_level=0):
     if item not in ITEMS:
         raise ValueError("Неизвестное украшение")
     with get_connection() as conn:
         if not db.DATABASE_URL:
             conn.execute("BEGIN IMMEDIATE")
         profile = _profile(conn, user_id, lock=True)
-        if conn.execute("SELECT item FROM pet_inventory WHERE user_id=? AND item=?", (user_id, item)).fetchone():
+        owned = conn.execute("SELECT item FROM pet_inventory WHERE user_id=? AND item=?", (user_id, item)).fetchone()
+        upgrade = conn.execute("SELECT level FROM pet_item_upgrades WHERE user_id=? AND item=?", (user_id, item)).fetchone()
+        level = int(upgrade["level"]) if upgrade else 1 if owned else 0
+        if level != expected_level or level >= 3:
             return False
-        if profile["coins"] < ITEMS[item]["cost"]:
+        cost = item_price(item, level)
+        if profile["coins"] < cost:
             raise ValueError("Пока недостаточно игровых монет")
-        conn.execute("INSERT INTO pet_inventory(user_id,item) VALUES (?,?)", (user_id, item))
-        conn.execute("UPDATE pet_world SET coins=coins-? WHERE user_id=?", (ITEMS[item]["cost"], user_id))
+        if not owned:
+            conn.execute("INSERT INTO pet_inventory(user_id,item) VALUES (?,?)", (user_id, item))
+        conn.execute("INSERT INTO pet_item_upgrades(user_id,item,level) VALUES (?,?,?) ON CONFLICT(user_id,item) DO UPDATE SET level=excluded.level", (user_id, item, level + 1))
+        conn.execute("UPDATE pet_world SET coins=coins-? WHERE user_id=?", (cost, user_id))
     return True

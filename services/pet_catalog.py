@@ -8,12 +8,12 @@ PETS = {
     "owl": {"name": "Совёнок", "rooms": ["Гнездо", "Домик на дереве", "Волшебная башня"]},
 }
 ITEMS = {
-    "plant": {"name": "Растение", "cost": 10, "icon": "sprout"},
-    "lamp": {"name": "Неоновый светильник", "cost": 15, "icon": "lamp"},
-    "books": {"name": "Книги", "cost": 12, "icon": "book-open"},
-    "rug": {"name": "Уютный коврик", "cost": 10, "icon": "rectangle-horizontal"},
-    "stars": {"name": "Звёздная гирлянда", "cost": 20, "icon": "sparkles"},
-    "trophy": {"name": "Награда", "cost": 30, "icon": "trophy"},
+    "plant": {"name": "Растение", "cost": 300, "icon": "sprout"},
+    "lamp": {"name": "Неоновый светильник", "cost": 750, "icon": "lamp"},
+    "books": {"name": "Книги", "cost": 500, "icon": "book-open"},
+    "rug": {"name": "Уютный коврик", "cost": 400, "icon": "rectangle-horizontal"},
+    "stars": {"name": "Звёздная гирлянда", "cost": 1500, "icon": "sparkles"},
+    "trophy": {"name": "Награда", "cost": 4000, "icon": "trophy"},
 }
 MISSIONS = {
     "feed": {"title": "Кормление", "xp": 10, "coins": 0},
@@ -21,12 +21,22 @@ MISSIONS = {
     "record": {"title": "Вести учёт сегодня", "xp": 15, "coins": 5},
     "save": {"title": "Пополнить накопления", "xp": 20, "coins": 10},
 }
-STAGES = (0, 100, 250)
+STAGES = (0, 3000, 18000)
+
+
+def item_price(item, level):
+    return round(ITEMS[item]["cost"] * 1.5 ** level)
 
 
 def progression(xp):
     stage = 1 + sum(xp >= threshold for threshold in STAGES[1:])
     floor = STAGES[stage - 1]
-    ceiling = STAGES[stage] if stage < len(STAGES) else None
+    # New chapters continue indefinitely after the final architectural upgrade.
+    chapter = max(0, (xp - STAGES[-1]) // 18000) if stage == 3 else 0
+    ceiling = STAGES[stage] if stage < len(STAGES) else STAGES[-1] + (chapter + 1) * 18000
+    if stage == 3:
+        floor = STAGES[-1] + chapter * 18000
+    age = "Малыш" if xp < 1000 else "Подросток" if xp < 6000 else "Взрослеет" if xp < 20000 else "Взрослый" if xp < 60000 else "Легенда"
     return {"stage": stage, "level": 1 + xp // 50, "next_stage_xp": ceiling,
-            "progress": min(100, round((xp - floor) / (ceiling - floor) * 100)) if ceiling else 100}
+            "chapter": chapter + 1, "age": age, "size": round(0.65 + min(1, xp / 60000) * 0.4, 3),
+            "progress": min(100, round((xp - floor) / (ceiling - floor) * 100))}

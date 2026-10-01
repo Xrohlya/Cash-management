@@ -14,6 +14,7 @@ from config.settings import DATABASE_URL
 
 
 TABLES = {
+    "pet_item_upgrades": "*",
     "pet_daily_budget": "*",
     "pet_world": "*",
     "pet_rewards": "*",

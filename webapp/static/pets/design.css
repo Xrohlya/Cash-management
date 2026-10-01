@@ -6,12 +6,22 @@
 .pet-world h2 { font-size: 19px; margin: 0; }
 .world-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 20px 0 14px; }
 .world-heading h2 { font-size: 25px; overflow-wrap: anywhere; }
+.world-heading > div:first-child { flex: 1; min-width: 0; }
+.world-heading > .icon-button { width: 34px; height: 34px; min-height: 34px; flex-shrink: 0; }
+.world-heading > .icon-button svg { width: 18px; height: 18px; }
+.pet-growth { font-size: 12px; color: #a8cbd0; margin: 0 0 15px; }
+#pet-settings-dialog { width: min(520px, calc(100vw - 32px)); max-height: 85vh; overflow: auto; padding: 18px; }
+.pet-character img { transform-origin: center 92%; transition: transform 500ms ease; }
 .world-coins { display: grid; grid-template-columns: 20px auto; align-items: center; gap: 4px 7px; flex-shrink: 0; color: #f6d77b; }
 .world-coins svg { width: 20px; height: 20px; }
 .world-coins b { font-size: 23px; }
 .world-coins span { grid-column: 1 / -1; font-size: 10px; color: #c9bc91; }
 .world-stage { position: relative; aspect-ratio: 4 / 3; margin-inline: -18px; overflow: hidden; isolation: isolate; background: #111d2b; }
 .room-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.room-image { filter: hue-rotate(var(--chapter-hue, 0deg)); transition: filter 500ms; }
+.room-item[data-tier="2"] { transform: scale(1.08); filter: drop-shadow(0 0 5px #9aefd3aa); }
+.room-item[data-tier="3"] { transform: scale(1.15); filter: drop-shadow(0 0 7px #ffdb7dcc); }
+.pet-shop-item small { font-size: 10px; color: #93aebc; }
 .pet-character { position: absolute; z-index: 3; width: 42%; height: 66%; left: 29%; bottom: 10%; padding: 0; border: 0; background: none; touch-action: manipulation; transform-origin: center 92%; filter: drop-shadow(0 0 9px #80e5f633); }
 .pet-character:hover, .pet-character:focus-visible { background: none; box-shadow: none; }
 .pet-character:focus-visible { outline: 2px solid #90edf2; outline-offset: 2px; }
@@ -54,7 +64,7 @@
 .pet-shop-item { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 5px 9px; border: 1px solid #283442; border-radius: 6px; background: #11171f; text-align: center; }
 .pet-shop-item > svg { width: 25px; height: 25px; color: #8cdcde; }
 .pet-shop-item strong { font-size: 11px; min-height: 28px; display: grid; place-items: center; }
-.pet-shop-item button { width: 100%; min-height: 32px; font-size: 10px; padding: 5px 2px; }
+.pet-shop-item button { width: 100%; height: 40px; min-height: 40px; font-size: 10px; padding: 5px 2px; }
 .pet-error { border-left: 2px solid #f8b978; padding: 8px 10px; color: #ffd6af; font-size: 12px; }
 .pet-reaction { position: absolute; left: 12%; right: 12%; top: 6%; text-align: center; font-size: 12px; color: #f4ffff; text-shadow: 0 1px 5px #000; z-index: 5; }
 .pet-reaction:not(:empty) { background: #0b172ad9; padding: 8px; border-radius: 6px; }

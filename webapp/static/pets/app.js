@@ -2,9 +2,9 @@ import { api, initData, money, showToast } from "../modules/core.js?v=20261001-3
 import { bindForm, requestConfirmation, runAction } from "../modules/ui.js?v=20261001-3";
 import { store } from "../modules/store.js?v=20261001-3";
 import { load } from "../modules/dashboard.js?v=20261001-3";
-import { renderWorld, renderPetFinance } from "./view.js?v=20261001-4";
-import { reactToPet } from "./animation.js?v=20261001-4";
-import { petStore } from "./store.js?v=20261001-4";
+import { renderWorld, renderPetFinance } from "./view.js?v=20261002-1";
+import { reactToPet } from "./animation.js?v=20261002-1";
+import { petStore } from "./store.js?v=20261002-1";
 
 function receive(world) {
   petStore.world = world;
@@ -25,6 +25,9 @@ async function refreshWorld() {
 const post = (path, body) => api(`/api/pet/${path}`, { method: "POST", body: JSON.stringify(body) });
 
 export function initPetWorld() {
+  const settingsDialog = document.getElementById("pet-settings-dialog");
+  document.getElementById("pet-open-settings").addEventListener("click", () => settingsDialog.showModal());
+  document.getElementById("pet-close-settings").addEventListener("click", () => settingsDialog.close());
   document.addEventListener("cash:tab", (event) => { if (event.detail === "pets") refreshWorld(); });
   document.addEventListener("cash:dashboard", (event) => {
     renderPetFinance(event.detail);
@@ -40,13 +43,14 @@ export function initPetWorld() {
     if (!petStore.world) return;
     receive(await post("settings", { pet: petStore.world.pet, name: document.getElementById("pet-custom-name").value, motion: document.getElementById("pet-motion").checked }));
     showToast("Настройки питомца сохранены");
+    settingsDialog.close();
   });
   for (const [id, selector, action] of [["pet-missions", "petClaim", "claim"], ["pet-shop", "petBuy", "buy"]]) {
     document.getElementById(id).addEventListener("click", (event) => {
       const button = event.target.closest("button");
       if (!button?.dataset[selector]) return;
       runAction(button, async () => {
-        const response = await post(action, { id: button.dataset[selector] });
+        const response = await post(action, { id: button.dataset[selector], expected_level: Number(button.dataset.petTier || 0) });
         receive(response.world);
         if (response.created) {
           reactToPet();

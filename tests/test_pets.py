@@ -75,6 +75,8 @@ class PetWorldTests(unittest.TestCase):
         claim_reward(101, "visit")
         repository.add_income(101, 500, 0)
         claim_reward(101, "record")
+        with db.get_connection() as conn:
+            conn.execute("UPDATE pet_world SET coins=300 WHERE user_id=?", (101,))
         self.assertTrue(buy_item(101, "plant"))
         self.assertFalse(buy_item(101, "plant"))
         self.assertEqual(get_world(101)["coins"], 0)
@@ -84,11 +86,11 @@ class PetWorldTests(unittest.TestCase):
     def test_concurrent_purchase_only_charges_once(self):
         get_world(101)
         with db.get_connection() as conn:
-            conn.execute("UPDATE pet_world SET coins=20 WHERE user_id=?", (101,))
+            conn.execute("UPDATE pet_world SET coins=600 WHERE user_id=?", (101,))
         with ThreadPoolExecutor(max_workers=3) as pool:
             purchased = list(pool.map(lambda _: buy_item(101, "plant"), range(3)))
         self.assertEqual(sum(purchased), 1)
-        self.assertEqual(get_world(101)["coins"], 10)
+        self.assertEqual(get_world(101)["coins"], 300)
 
     def test_switch_and_settings_preserve_progress_and_isolation(self):
         claim_reward(101, "visit")
@@ -99,8 +101,34 @@ class PetWorldTests(unittest.TestCase):
         self.assertEqual(self.client.post("/api/pet/settings", json={"pet": "invalid"}).status_code, 409)
 
     def test_room_progress_thresholds_and_no_decay(self):
-        self.assertEqual([progression(xp)["stage"] for xp in (0, 99, 100, 249, 250)], [1, 1, 2, 2, 3])
-        self.assertEqual(progression(350)["progress"], 100)
+        self.assertEqual([progression(xp)["stage"] for xp in (0, 2999, 3000, 17999, 18000)], [1, 1, 2, 2, 3])
+        self.assertEqual(progression(18000)["next_stage_xp"], 36000)
+        self.assertEqual(progression(36000)["chapter"], 2)
+        self.assertEqual(progression(36000)["progress"], 0)
+
+    def test_upgrades_charge_once_per_tier_and_preserve_legacy_items(self):
+        get_world(101)
+        with db.get_connection() as conn:
+            conn.execute("UPDATE pet_world SET coins=2000 WHERE user_id=?", (101,))
+            conn.execute("INSERT INTO pet_inventory(user_id,item) VALUES (?,?)", (101, "plant"))
+        plant = next(item for item in get_world(101)["shop"] if item["id"] == "plant")
+        self.assertEqual((plant["tier"], plant["cost"]), (1, 450))
+        self.assertTrue(buy_item(101, "plant", 1))
+        self.assertFalse(buy_item(101, "plant", 1))
+        self.assertTrue(buy_item(101, "plant", 2))
+        self.assertFalse(buy_item(101, "plant", 3))
+        self.assertEqual(get_world(101)["coins"], 875)
+        self.assertEqual(get_world(101)["upgrades"]["plant"], 3)
+        self.assertEqual(get_world(101)["inventory"], ["plant"])
+        self.assertEqual(get_world(202)["upgrades"], {})
+
+    def test_growth_is_bounded_and_rewards_are_unchanged(self):
+        from services.pet_catalog import MISSIONS
+        sizes = [progression(xp)["size"] for xp in (0, 1000, 6000, 20000, 60000, 1000000)]
+        self.assertEqual(sizes, sorted(sizes))
+        self.assertEqual((sizes[0], sizes[-1]), (0.65, 1.05))
+        self.assertEqual({key: (value["xp"], value["coins"]) for key, value in MISSIONS.items()},
+                         {"feed": (10, 0), "visit": (10, 5), "record": (15, 5), "save": (20, 10)})
 
     def test_reset_and_repeat_schema_preserve_other_user(self):
         claim_reward(101, "visit")

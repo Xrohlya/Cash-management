@@ -1,7 +1,7 @@
 import { money } from "../modules/core.js?v=20261001-3";
 import { element, refreshIcons } from "../modules/ui.js?v=20261001-3";
-import { decorations } from "./decorations.js?v=20261001-4";
-import { roomEvolution } from "./evolution.js?v=20261001-4";
+import { decorations } from "./decorations.js?v=20261002-1";
+import { roomEvolution } from "./evolution.js?v=20261002-1";
 
 const node = (id) => document.getElementById(id);
 
@@ -10,11 +10,14 @@ export function renderWorld(world) {
   node("pet-coins").textContent = world.coins;
   node("pet-room").textContent = world.room;
   node("pet-level").textContent = `Уровень ${world.level}`;
+  node("pet-growth").textContent = `${world.age} · Глава ${world.chapter} · Рост ${Math.round(world.size / 1.05 * 100)}%`;
+  node("pet-image").style.transform = `scale(${world.size})`;
   node("pet-xp").textContent = `${world.xp} опыта`;
-  node("pet-next-stage").textContent = world.next_stage_xp ? `Следующий этап: ${world.next_stage_xp}` : "Мир полностью открыт";
+  node("pet-next-stage").textContent = `${world.stage === 3 ? "Следующая глава" : "Следующий этап"}: ${world.next_stage_xp}`;
   node("pet-progress").value = world.progress;
   node("pet-stage").dataset.pet = world.pet;
   node("pet-stage").dataset.stage = world.stage;
+  node("pet-stage").style.setProperty("--chapter-hue", `${((world.chapter - 1) % 12) * 12}deg`);
   node("pet-stage").dataset.motion = Boolean(world.motion);
   node("pet-stage").setAttribute("aria-busy", "false");
   node("pet-character").disabled = false;
@@ -23,7 +26,11 @@ export function renderWorld(world) {
   node("pet-evolution").innerHTML = roomEvolution(world.pet);
   node("pet-custom-name").value = world.name;
   node("pet-motion").checked = Boolean(world.motion);
-  node("pet-decorations").replaceChildren(...world.inventory.map(decorations));
+  node("pet-decorations").replaceChildren(...world.inventory.map((id) => {
+    const decoration = decorations(id);
+    decoration.dataset.tier = world.upgrades?.[id] || 1;
+    return decoration;
+  }));
   node("pet-picker").replaceChildren(...world.pets.map((pet) => {
     const button = element("button", "pet-choice");
     button.type = "button";
@@ -54,11 +61,13 @@ export function renderWorld(world) {
     const row = element("article", "pet-shop-item");
     const icon = element("i");
     icon.dataset.lucide = item.icon;
-    const button = element("button", "", item.owned ? "В комнате" : `${item.cost} монет`);
+    const button = element("button", "", item.tier >= 3 ? "Максимум" : `${item.tier ? "Улучшить · " : ""}${item.cost}`);
     button.type = "button";
     button.dataset.petBuy = item.id;
-    button.disabled = item.owned || world.coins < item.cost;
-    row.append(icon, element("strong", "", item.name), button);
+    button.dataset.petTier = item.tier;
+    button.title = item.tier >= 3 ? "Все три уровня открыты" : `Стоимость: ${item.cost} игровых монет`;
+    button.disabled = item.tier >= 3 || world.coins < item.cost;
+    row.append(icon, element("strong", "", item.name), element("small", "", `Уровень ${item.tier}/3 · монеты`), button);
     return row;
   }));
   refreshIcons();

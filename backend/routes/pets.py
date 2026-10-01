@@ -17,6 +17,7 @@ class WorldSettings(BaseModel):
 
 class GameAction(BaseModel):
     id: str = Field(min_length=1, max_length=20)
+    expected_level: int = Field(default=0, ge=0, le=3)
 
 
 def action(function, *args):
@@ -47,5 +48,5 @@ def claim(data: GameAction, user_id: int = Depends(current_user)):
 
 @router.post("/buy")
 def buy(data: GameAction, user_id: int = Depends(current_user)):
-    created = action(buy_item, user_id, data.id)
+    created = action(buy_item, user_id, data.id, data.expected_level)
     return {"created": created, "world": get_world(user_id)}

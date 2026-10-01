@@ -2,6 +2,7 @@
       <header class="world-heading">
         <div><p class="eyebrow">Твой маленький мир</p><h2 id="pet-name">Знакомимся…</h2></div>
         <div class="world-coins"><i data-lucide="coins" aria-hidden="true"></i><b id="pet-coins">0</b><span>игровых монет</span></div>
+        <button id="pet-open-settings" class="icon-button" type="button" title="Настройки питомца" aria-label="Настройки питомца"><i data-lucide="settings-2"></i></button>
       </header>
       <p id="pet-error" class="pet-error" role="status" hidden></p>
       <div class="world-stage" id="pet-stage" data-pet="robot" data-stage="1" data-motion="true" aria-busy="true">
@@ -15,13 +16,17 @@
         <span id="pet-reaction" class="pet-reaction" role="status"></span>
         <div class="room-caption"><span id="pet-room">Мастерская</span><span id="pet-level">Уровень 1</span></div>
       </div>
-      <div class="world-progress"><span id="pet-xp">0 опыта</span><span id="pet-next-stage">Следующий этап: 100</span><progress id="pet-progress" max="100" value="0" aria-label="Развитие комнаты"></progress></div>
+      <div class="world-progress"><span id="pet-xp">0 опыта</span><span id="pet-next-stage">Следующий этап: 3000</span><progress id="pet-progress" max="100" value="0" aria-label="Развитие комнаты"></progress></div>
+      <p id="pet-growth" class="pet-growth"></p>
+      <dialog id="pet-settings-dialog" aria-labelledby="pet-settings-title">
+      <div class="section-heading"><h2 id="pet-settings-title">Настройки питомца</h2><button id="pet-close-settings" class="icon-button" type="button" title="Закрыть" aria-label="Закрыть настройки питомца"><i data-lucide="x"></i></button></div>
       <div id="pet-picker" class="pet-picker" role="group" aria-label="Выбрать питомца"></div>
       <form id="pet-settings-form" class="pet-settings">
         <label>Имя питомца<input id="pet-custom-name" maxlength="24" placeholder="Придумай имя"></label>
         <label class="motion-switch"><input type="checkbox" id="pet-motion" checked> Анимация</label>
         <button type="submit" class="icon-button" title="Сохранить имя и анимацию" aria-label="Сохранить имя и анимацию"><i data-lucide="check"></i></button>
       </form>
+      </dialog>
       <section class="world-missions"><div class="section-heading"><h2>Миссии дня</h2><span>Без штрафов</span></div><div id="pet-missions"></div></section>
       <section class="world-finance">
         <div class="section-heading"><h2>Настоящие деньги</h2><i data-lucide="wallet" aria-hidden="true"></i></div>
