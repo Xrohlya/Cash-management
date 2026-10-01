@@ -1,4 +1,7 @@
-import re
+from database.accounts import list_extra_accounts, create_extra_account, delete_extra_account, transfer_extra_account
+from database.income_sources import list_income_sources, create_income_source, update_income_source, delete_income_source, find_income_source, add_income_from_source
+from services.categories import normalize_expense_category
+import logging
 from calendar import monthrange
 from datetime import date, datetime, timedelta
 
@@ -8,79 +11,8 @@ from database.db import get_connection
 
 DEFAULT_FINANCIAL_DAY = 20
 
-CATEGORY_ALIASES = {
-    "еда": "Еда",
-    "продукты": "Еда",
-    "продукты питания": "Еда",
-    "питание": "Еда",
-    "обед": "Еда",
-    "ужин": "Еда",
-    "завтрак": "Еда",
-    "кафе": "Кафе",
-    "кофейня": "Кафе",
-    "ресторан": "Кафе",
-    "доставка": "Кафе",
-    "сигареты": "Сигареты",
-    "сигарета": "Сигареты",
-    "сиги": "Сигареты",
-    "бензин": "Бензин",
-    "топливо": "Бензин",
-    "заправка": "Бензин",
-    "такси": "Такси",
-    "магазин": "Магазин",
-    "аптека": "Здоровье",
-    "лекарства": "Здоровье",
-    "транспорт": "Транспорт",
-    "метро": "Транспорт",
-    "подписка": "Подписки",
-    "подписки": "Подписки",
-    "ai": "Подписки",
-    "кредит": "Кредиты",
-    "ипотека": "Кредиты",
-    "жкх": "Дом и связь",
-    "коммуналка": "Дом и связь",
-    "интернет": "Дом и связь",
-    "телефон": "Дом и связь",
-    "одежда": "Одежда",
-    "развлечения": "Развлечения",
-    "расход": "Разное",
-    "разное": "Разное",
-    "прочее": "Разное",
-}
 
 
-def normalize_expense_category(description: str) -> str:
-    value = " ".join((description or "").strip().split())
-    if not value:
-        return "Расход"
-    value = re.sub(r"^[\W_]+|[\W_]+$", "", value, flags=re.UNICODE).strip()
-    if not value:
-        return "Разное"
-    key = value.casefold()
-    if key in CATEGORY_ALIASES:
-        return CATEGORY_ALIASES[key]
-    tokens = re.findall(r"[a-zа-яё0-9]+", key)
-    token_categories = {CATEGORY_ALIASES[token] for token in tokens if token in CATEGORY_ALIASES}
-    if tokens and len(token_categories) == 1 and all(token in CATEGORY_ALIASES for token in tokens):
-        return token_categories.pop()
-    keyword_categories = {
-        "Еда": ("пятероч", "перекрест", "магнит", "лента", "ашан", "вкусвилл", "дикси", "продукт"),
-        "Кафе": ("кафе", "ресторан", "бар", "столов", "кофейн", "доставка еды"),
-        "Бензин": ("бензин", "топливо", "заправ", "азс", "газпромнефть", "лукойл", "роснефть"),
-        "Такси": ("такси", "яндекс го", "uber", "ситимобил"),
-        "Сигареты": ("сигарет", "табак", "вейп", "vape"),
-        "Здоровье": ("аптек", "лекар", "врач", "анализ", "стоматолог"),
-        "Транспорт": ("метро", "автобус", "проезд", "транспорт", "электричк"),
-        "Подписки": ("подписк", "яндекс плюс", "icloud", "netflix", "spotify", "оплата ai", "openai", "chatgpt"),
-        "Кредиты": ("кредит", "ипотек", "рассрочк", "заём", "займ"),
-        "Дом и связь": ("жкх", "коммунал", "электричеств", "квартплат", "интернет", "мобильн", "телефон"),
-        "Одежда": ("одежд", "обув", "куртк", "футболк", "брюк", "джинс"),
-        "Развлечения": ("кино", "театр", "игр", "концерт", "развлеч"),
-    }
-    for category, keywords in keyword_categories.items():
-        if any(keyword in key for keyword in keywords):
-            return category
-    return value[:1].upper() + value[1:]
 
 
 def ensure_user(user_id: int, first_name: str = "", username: str = ""):
@@ -114,6 +46,7 @@ def list_user_summaries():
         try:
             balance = get_status_snapshot(int(user["user_id"]))["remaining"]
         except Exception:
+            logging.exception("Could not load startup balance for user %s", user["user_id"])
             balance = None
         summaries.append({
             "user_id": int(user["user_id"]),
@@ -124,17 +57,8 @@ def list_user_summaries():
     return summaries
 
 
-def get_percent(user_id: int) -> float:
-    ensure_user(user_id)
-    with get_connection() as conn:
-        row = conn.execute("SELECT mandatory_percent FROM users WHERE user_id=?", (user_id,)).fetchone()
-        return float(row["mandatory_percent"])
 
 
-def set_percent(user_id: int, percent: float):
-    ensure_user(user_id)
-    with get_connection() as conn:
-        conn.execute("UPDATE users SET mandatory_percent=? WHERE user_id=?", (percent, user_id))
 
 
 def get_savings(user_id: int) -> float:
@@ -484,217 +408,24 @@ def add_income(user_id: int, gross: float, percent: float, description="Дохо
     return fee, net, True
 
 
-def list_income_sources(user_id: int):
-    ensure_user(user_id)
-    start = financial_period_start(user_id)
-    end = financial_period_end_for_start(start)
-    with get_connection() as conn:
-        return conn.execute(
-            "SELECT s.id,s.name,s.withholding_percent,s.active,"
-            "COALESCE(SUM(CASE WHEN t.kind='income' AND t.created_at>=? AND t.created_at<? THEN t.amount ELSE 0 END),0) gross_total,"
-            "COALESCE(SUM(CASE WHEN t.kind='mandatory' AND t.created_at>=? AND t.created_at<? THEN t.amount ELSE 0 END),0) withheld_total "
-            "FROM income_sources s LEFT JOIN transactions t ON t.income_source_id=s.id "
-            "WHERE s.user_id=? GROUP BY s.id,s.name,s.withholding_percent,s.active ORDER BY s.id",
-            (start.isoformat(), end.isoformat(), start.isoformat(), end.isoformat(), user_id),
-        ).fetchall()
 
 
-def create_income_source(user_id: int, name: str, withholding_percent: float):
-    ensure_user(user_id)
-    clean_name = " ".join(name.split())[:80]
-    with get_connection() as conn:
-        if conn.execute(
-            "SELECT 1 FROM income_sources WHERE user_id=? AND lower(name)=lower(?)",
-            (user_id, clean_name),
-        ).fetchone():
-            raise ValueError("Источник с таким названием уже существует")
-        conn.execute(
-            "INSERT INTO income_sources(user_id,name,withholding_percent) VALUES (?, ?, ?)",
-            (user_id, clean_name, round(withholding_percent, 2)),
-        )
 
 
-def update_income_source(user_id: int, source_id: int, name: str, withholding_percent: float):
-    clean_name = " ".join(name.split())[:80]
-    with get_connection() as conn:
-        duplicate = conn.execute(
-            "SELECT 1 FROM income_sources WHERE user_id=? AND lower(name)=lower(?) AND id<>?",
-            (user_id, clean_name, source_id),
-        ).fetchone()
-        if duplicate:
-            raise ValueError("Источник с таким названием уже существует")
-        cursor = conn.execute(
-            "UPDATE income_sources SET name=?,withholding_percent=? WHERE user_id=? AND id=?",
-            (clean_name, round(withholding_percent, 2), user_id, source_id),
-        )
-        if cursor.rowcount != 1:
-            raise ValueError("Источник не найден")
 
 
-def delete_income_source(user_id: int, source_id: int):
-    with get_connection() as conn:
-        used = conn.execute(
-            "SELECT 1 FROM transactions WHERE user_id=? AND income_source_id=? LIMIT 1",
-            (user_id, source_id),
-        ).fetchone()
-        if used:
-            conn.execute(
-                "UPDATE income_sources SET active=0 WHERE user_id=? AND id=?", (user_id, source_id)
-            )
-        else:
-            conn.execute("DELETE FROM income_sources WHERE user_id=? AND id=?", (user_id, source_id))
 
 
-def list_extra_accounts(user_id: int):
-    ensure_user(user_id)
-    with get_connection() as conn:
-        return conn.execute(
-            "SELECT id,name,balance FROM extra_accounts "
-            "WHERE user_id=? AND active=1 ORDER BY id",
-            (user_id,),
-        ).fetchall()
 
 
-def create_extra_account(user_id: int, name: str):
-    ensure_user(user_id)
-    clean_name = " ".join(name.split())[:80]
-    if not clean_name:
-        raise ValueError("Введите название счёта")
-    with get_connection() as conn:
-        count = conn.execute(
-            "SELECT COUNT(*) count FROM extra_accounts WHERE user_id=? AND active=1",
-            (user_id,),
-        ).fetchone()["count"]
-        if int(count) >= 3:
-            raise ValueError("Можно создать не больше трёх дополнительных счетов")
-        if conn.execute(
-            "SELECT 1 FROM extra_accounts WHERE user_id=? AND active=1 AND lower(name)=lower(?)",
-            (user_id, clean_name),
-        ).fetchone():
-            raise ValueError("Счёт с таким названием уже существует")
-        conn.execute(
-            "INSERT INTO extra_accounts(user_id,name,balance) VALUES (?, ?, 0)",
-            (user_id, clean_name),
-        )
 
 
-def delete_extra_account(user_id: int, account_id: int):
-    with get_connection() as conn:
-        account = conn.execute(
-            "SELECT balance FROM extra_accounts WHERE id=? AND user_id=? AND active=1",
-            (account_id, user_id),
-        ).fetchone()
-        if not account:
-            raise ValueError("Счёт не найден")
-        if abs(float(account["balance"])) > 0.005:
-            raise ValueError("Сначала верните остаток на основной счёт")
-        conn.execute(
-            "UPDATE extra_accounts SET active=0 WHERE id=? AND user_id=?",
-            (account_id, user_id),
-        )
 
 
-def transfer_extra_account(user_id: int, account_id: int, amount: float, direction: str, request_id=None):
-    if direction not in {"to_account", "to_main"}:
-        raise ValueError("Некорректное направление перевода")
-    amount = round(float(amount), 2)
-    if amount <= 0:
-        raise ValueError("Сумма должна быть больше нуля")
-    ensure_month(user_id)
-    key = month_key(user_id)
-    now = datetime.now().isoformat(timespec="seconds")
-    with get_connection() as conn:
-        account = conn.execute(
-            "SELECT name,balance FROM extra_accounts WHERE id=? AND user_id=? AND active=1",
-            (account_id, user_id),
-        ).fetchone()
-        if not account:
-            raise ValueError("Счёт не найден")
-        if not _claim_request(conn, user_id, request_id):
-            return
-        if direction == "to_account":
-            cursor = conn.execute(
-                "UPDATE months SET spent=spent+? WHERE user_id=? AND month=? "
-                "AND (budget-spent-rent-saved)>=?",
-                (amount, user_id, key, amount),
-            )
-            if cursor.rowcount != 1:
-                if request_id:
-                    conn.execute(
-                        "DELETE FROM operation_requests WHERE user_id=? AND request_id=?",
-                        (user_id, request_id[:100]),
-                    )
-                raise ValueError("Недостаточно денег на основном счёте")
-            conn.execute(
-                "UPDATE extra_accounts SET balance=balance+? WHERE id=? AND user_id=?",
-                (amount, account_id, user_id),
-            )
-            global_kind, account_kind = "account_transfer", "in"
-            description = f"На счёт «{account['name']}»"
-        else:
-            cursor = conn.execute(
-                "UPDATE extra_accounts SET balance=balance-? "
-                "WHERE id=? AND user_id=? AND balance>=?",
-                (amount, account_id, user_id, amount),
-            )
-            if cursor.rowcount != 1:
-                if request_id:
-                    conn.execute(
-                        "DELETE FROM operation_requests WHERE user_id=? AND request_id=?",
-                        (user_id, request_id[:100]),
-                    )
-                raise ValueError("Недостаточно денег на дополнительном счёте")
-            conn.execute(
-                "UPDATE months SET spent=spent-? WHERE user_id=? AND month=?",
-                (amount, user_id, key),
-            )
-            global_kind, account_kind = "account_return", "out"
-            description = f"Со счёта «{account['name']}»"
-        conn.execute(
-            "INSERT INTO transactions(user_id,created_at,kind,amount,description) VALUES (?, ?, ?, ?, ?)",
-            (user_id, now, global_kind, amount, description),
-        )
-        conn.execute(
-            "INSERT INTO account_transactions(account_id,user_id,created_at,kind,amount) VALUES (?, ?, ?, ?, ?)",
-            (account_id, user_id, now, account_kind, amount),
-        )
 
 
-def find_income_source(user_id: int, text: str):
-    normalized = " ".join(text.casefold().split())
-    sources = list_income_sources(user_id)
-    matches = [source for source in sources if int(source["active"]) and source["name"].casefold() in normalized]
-    return max(matches, key=lambda source: len(source["name"])) if matches else None
 
 
-def add_income_from_source(user_id: int, gross: float, source_id: int, description="Доход", request_id=None):
-    ensure_month(user_id)
-    key = month_key(user_id)
-    now = datetime.now().isoformat(timespec="seconds")
-    with get_connection() as conn:
-        source = conn.execute(
-            "SELECT name,withholding_percent FROM income_sources WHERE id=? AND user_id=? AND active=1",
-            (source_id, user_id),
-        ).fetchone()
-        if not source:
-            raise ValueError("Источник дохода не найден")
-        fee = round(gross * float(source["withholding_percent"]) / 100, 2)
-        net = round(gross - fee, 2)
-        if not _claim_request(conn, user_id, request_id):
-            return fee, net, False
-        conn.execute(
-            "INSERT INTO transactions(user_id,created_at,kind,amount,description,income_source_id) "
-            "VALUES (?, ?, 'income', ?, ?, ?)",
-            (user_id, now, gross, description or source["name"], source_id),
-        )
-        if fee:
-            conn.execute(
-                "INSERT INTO transactions(user_id,created_at,kind,amount,description,income_source_id) "
-                "VALUES (?, ?, 'mandatory', ?, ?, ?)",
-                (user_id, now, fee, f"Удержание {float(source['withholding_percent']):g}% · {source['name']}", source_id),
-            )
-        conn.execute("UPDATE months SET budget=budget+? WHERE user_id=? AND month=?", (net, user_id, key))
-    return fee, net, True
 
 
 def _add_budget_reduction(user_id, kind, column, amount, description, request_id=None, created_at=None):

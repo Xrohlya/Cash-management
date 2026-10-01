@@ -32,7 +32,6 @@ from database.repository import (
     apply_due_recurring_payments,
     delete_recurring_payment,
     ensure_user,
-    get_percent,
     get_status_snapshot,
     get_user_profile,
     list_recurring_payments,
@@ -217,23 +216,32 @@ async def refresh_telegram_status(user_id: int):
     if not settings.BOT_TOKEN:
         return
     from aiogram import Bot
-    from aiogram.exceptions import TelegramBadRequest
+    from aiogram.exceptions import TelegramBadRequest, TelegramNetworkError, TelegramRetryAfter
     from bot.keyboards import main_menu
     from database.repository import clear_status_message, get_status_message, set_status_message
     from services.budget import status
 
-    saved = await asyncio.to_thread(get_status_message, user_id)
     bot = Bot(settings.BOT_TOKEN)
     try:
+        saved = await asyncio.to_thread(get_status_message, user_id)
         text = await asyncio.to_thread(status, user_id)
         if saved:
-            await bot.edit_message_text(
-                chat_id=saved[0],
-                message_id=saved[1],
-                text=text,
-                parse_mode="HTML",
-                reply_markup=main_menu(),
-            )
+            for attempt in range(3):
+                try:
+                    await bot.edit_message_text(
+                        chat_id=saved[0], message_id=saved[1], text=text,
+                        parse_mode="HTML", reply_markup=main_menu(),
+                    )
+                    break
+                except (TelegramNetworkError, TelegramRetryAfter) as exc:
+                    if attempt == 2:
+                        raise
+                    delay = getattr(exc, "retry_after", 2 * (attempt + 1))
+                    if delay > 30:
+                        raise
+                    logging.warning("Telegram refresh retry for user %s", user_id)
+                    await asyncio.sleep(delay)
+                    text = await asyncio.to_thread(status, user_id)
         else:
             sent = await bot.send_message(
                 user_id, text, parse_mode="HTML", reply_markup=main_menu()
@@ -570,7 +578,7 @@ def api_income(
     add_income(
         user_id,
         op.amount,
-        get_percent(user_id),
+        0,
         op.description or "Доход",
         op.request_id,
     )

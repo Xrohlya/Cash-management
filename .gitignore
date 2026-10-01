@@ -12,3 +12,4 @@ data/*.db-*
 backups/
 data/reports/
 .pytest_cache/
+.bot.pid
