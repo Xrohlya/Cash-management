@@ -13,16 +13,13 @@ class RepositoryTest(unittest.TestCase):
         self.tempdir = tempfile.TemporaryDirectory()
         self.original_path = db.SQLITE_PATH
         self.original_url = db.DATABASE_URL
-        self.original_repository_url = repository.DATABASE_URL
         db.SQLITE_PATH = Path(self.tempdir.name) / "test.db"
         db.DATABASE_URL = ""
-        repository.DATABASE_URL = ""
         db.init_db()
 
     def tearDown(self):
         db.SQLITE_PATH = self.original_path
         db.DATABASE_URL = self.original_url
-        repository.DATABASE_URL = self.original_repository_url
         self.tempdir.cleanup()
 
     def test_users_have_isolated_balances_and_history(self):

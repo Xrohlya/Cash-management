@@ -1,6 +1,7 @@
 import unittest
 
 from bot import keyboards
+from config.settings import WEBAPP_RELEASE
 
 
 class MainMenuTest(unittest.TestCase):
@@ -13,7 +14,7 @@ class MainMenuTest(unittest.TestCase):
             keyboards.WEBAPP_URL = original_url
 
         self.assertEqual([button.text for button in rows[0]], ["Открыть приложение"])
-        self.assertEqual(rows[0][0].web_app.url, "https://example.com?v=20260930-1")
+        self.assertEqual(rows[0][0].web_app.url, f"https://example.com?v={WEBAPP_RELEASE}")
         self.assertEqual(
             [[button.callback_data for button in row] for row in rows[1:]],
             [

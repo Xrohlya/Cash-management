@@ -1,8 +1,10 @@
 from datetime import datetime
 from database.db import get_connection
+from database.operations import _claim_request
+from database.periods import ensure_month, financial_period_end_for_start, financial_period_start, month_key
+from database.users import ensure_user
 
 def list_income_sources(user_id: int):
-    from database.repository import ensure_user, financial_period_start, financial_period_end_for_start
     ensure_user(user_id)
     start = financial_period_start(user_id)
     end = financial_period_end_for_start(start)
@@ -18,7 +20,6 @@ def list_income_sources(user_id: int):
 
 
 def create_income_source(user_id: int, name: str, withholding_percent: float):
-    from database.repository import ensure_user
     ensure_user(user_id)
     clean_name = " ".join(name.split())[:80]
     with get_connection() as conn:
@@ -72,7 +73,6 @@ def find_income_source(user_id: int, text: str):
 
 
 def add_income_from_source(user_id: int, gross: float, source_id: int, description="Доход", request_id=None):
-    from database.repository import ensure_month, month_key, _claim_request
     ensure_month(user_id)
     key = month_key(user_id)
     now = datetime.now().isoformat(timespec="seconds")
@@ -100,4 +100,3 @@ def add_income_from_source(user_id: int, gross: float, source_id: int, descripti
             )
         conn.execute("UPDATE months SET budget=budget+? WHERE user_id=? AND month=?", (net, user_id, key))
     return fee, net, True
-

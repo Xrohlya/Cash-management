@@ -1,8 +1,10 @@
 from datetime import datetime
 from database.db import get_connection
+from database.operations import _claim_request
+from database.periods import ensure_month, month_key
+from database.users import ensure_user
 
 def list_extra_accounts(user_id: int):
-    from database.repository import ensure_user
     ensure_user(user_id)
     with get_connection() as conn:
         return conn.execute(
@@ -13,7 +15,6 @@ def list_extra_accounts(user_id: int):
 
 
 def create_extra_account(user_id: int, name: str):
-    from database.repository import ensure_user
     ensure_user(user_id)
     clean_name = " ".join(name.split())[:80]
     if not clean_name:
@@ -53,7 +54,6 @@ def delete_extra_account(user_id: int, account_id: int):
 
 
 def transfer_extra_account(user_id: int, account_id: int, amount: float, direction: str, request_id=None):
-    from database.repository import ensure_month, month_key, _claim_request
     if direction not in {"to_account", "to_main"}:
         raise ValueError("Некорректное направление перевода")
     amount = round(float(amount), 2)
@@ -117,4 +117,3 @@ def transfer_extra_account(user_id: int, account_id: int, amount: float, directi
             "INSERT INTO account_transactions(account_id,user_id,created_at,kind,amount) VALUES (?, ?, ?, ?, ?)",
             (account_id, user_id, now, account_kind, amount),
         )
-

@@ -47,7 +47,7 @@ class _PGConnection:
             try:
                 self._conn.close()
             except Exception:
-                pass
+                logging.warning("Could not close failed PostgreSQL connection", exc_info=True)
         finally:
             if self._release:
                 self._release(self._conn)

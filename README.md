@@ -21,8 +21,10 @@ Telegram-бот и Mini App для персонального бюджета. Ч
 ## Структура
 
 - `app.py` — polling-процесс Telegram-бота;
-- `backend/main.py` — API и раздача Mini App;
-- `webapp/` — интерфейс Mini App;
+- `bot/routes/` — команды и кнопки Telegram по назначению;
+- `backend/main.py` — сборка API и раздача Mini App;
+- `backend/routes/` — маршруты операций, счетов, источников и настроек;
+- `webapp/` — интерфейс Mini App, JavaScript-модули в `static/modules/`;
 - `database/` — схема и операции с данными;
 - `services/` — расчёты, аналитика и отчёты;
 - `tools/backup_postgres.py` — резервная копия PostgreSQL;
@@ -62,7 +64,9 @@ Mini App опубликован через Render. Локальный бот и 
 ## Проверка
 
 ```bash
+python -m pip install -r requirements-dev.txt
 python -m unittest discover -s tests -v
+find webapp/static -name '*.js' ! -name '._*' -exec node --check {} \;
 ```
 
 Перед важными изменениями запустите `BACKUP_DATABASE.command`.

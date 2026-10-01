@@ -10,7 +10,7 @@ load_dotenv(BASE_DIR / ".env")
 BOT_NAME = os.getenv("BOT_NAME", "Мой Бюджет").strip() or "Мой Бюджет"
 BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 WEBAPP_URL = os.getenv("WEBAPP_URL", "").strip().rstrip("/")
-WEBAPP_RELEASE = "20260930-1"
+WEBAPP_RELEASE = "20261001-1"
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 SQLITE_PATH = Path(os.getenv("SQLITE_PATH", str(BASE_DIR / "data" / "budget.db"))).expanduser()
 
