@@ -29,7 +29,7 @@ def action(function, *args):
 @router.get("")
 def world(user_id: int = Depends(current_user)):
     current = state(user_id)
-    remember_daily_limit(user_id, current["daily_limit"], current["today"])
+    remember_daily_limit(user_id, current["daily_limit"], current["today"], current["days_left"])
     return get_world(user_id)
 
 

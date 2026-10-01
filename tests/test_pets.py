@@ -146,3 +146,10 @@ class PetWorldTests(unittest.TestCase):
         with db.get_connection() as conn:
             row = conn.execute("SELECT allowance FROM pet_daily_budget WHERE user_id=?", (101,)).fetchone()
         self.assertEqual(row["allowance"], 120)
+
+    def test_spending_does_not_inflate_original_daily_limit(self):
+        from database.pet_feeding import remember_daily_limit
+        remember_daily_limit(101, 10, 900, 10)
+        with db.get_connection() as conn:
+            row = conn.execute("SELECT allowance FROM pet_daily_budget WHERE user_id=?", (101,)).fetchone()
+        self.assertEqual(row["allowance"], 100)

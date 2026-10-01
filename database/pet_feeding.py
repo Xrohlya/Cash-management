@@ -4,11 +4,11 @@ from datetime import date, timedelta
 from database.db import get_connection
 
 
-def remember_daily_limit(user_id, limit, spent_today):
+def remember_daily_limit(user_id, limit, spent_today, days_left=1):
     with get_connection() as conn:
         conn.execute("INSERT INTO pet_daily_budget(user_id,day,allowance) VALUES (?,?,?) "
                      "ON CONFLICT(user_id,day) DO NOTHING",
-                     (user_id, date.today().isoformat(), round(max(0, limit + spent_today), 2)))
+                     (user_id, date.today().isoformat(), round(max(0, limit + spent_today / max(1, days_left)), 2)))
 
 
 def feeding_status(conn, user_id, today):
