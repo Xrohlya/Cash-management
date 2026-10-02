@@ -1,7 +1,7 @@
 import { element, refreshIcons } from "../modules/ui.js?v=20261001-3";
-import { initLayout, renderLayout } from "./layout.js?v=20261002-3";
-import { initMinigame, renderGame } from "./minigame.js?v=20261002-3";
-import { renderModel } from "./appearance.js?v=20261002-3";
+import { initLayout, renderLayout } from "./layout.js?v=20261002-4";
+import { initMinigame, renderGame } from "./minigame.js?v=20261002-4";
+import { renderModel } from "./appearance.js?v=20261002-4";
 
 let clock, current;
 const ages = ["Малыш", "Подросток", "Молодой", "Взрослый", "Легенда"];
@@ -32,7 +32,9 @@ export function renderLife(world) {
     for (let index = 0; index < 9; index++) {
       const spark = element("i", "goal-spark"); spark.dataset.lucide = "sparkles";
       spark.style.left = `${8 + index * 10}%`; spark.style.animationDelay = `${index * 50}ms`;
-      spark.setAttribute("aria-hidden", "true"); stage.append(spark); setTimeout(() => spark.remove(), 2500);
+      spark.id = `pet-goal-spark-${Date.now()}-${index}`;
+      spark.setAttribute("aria-hidden", "true"); stage.append(spark);
+      const id = spark.id; setTimeout(() => document.getElementById(id)?.remove(), 2500);
     }
   }
   stage.querySelector(".goal-memento")?.remove();

@@ -2,11 +2,11 @@ import { api, initData, money, showToast } from "../modules/core.js?v=20261001-3
 import { bindForm, requestConfirmation, runAction } from "../modules/ui.js?v=20261001-3";
 import { store } from "../modules/store.js?v=20261001-3";
 import { load } from "../modules/dashboard.js?v=20261001-3";
-import { renderWorld, renderPetFinance } from "./view.js?v=20261002-3";
-import { reactToPet } from "./animation.js?v=20261002-3";
-import { petStore } from "./store.js?v=20261002-3";
-import { previewColor, selectedColor } from "./appearance.js?v=20261002-3";
-import { initLife } from "./life.js?v=20261002-3";
+import { renderWorld, renderPetFinance } from "./view.js?v=20261002-4";
+import { reactToPet } from "./animation.js?v=20261002-4";
+import { petStore } from "./store.js?v=20261002-4";
+import { previewColor, selectedColor } from "./appearance.js?v=20261002-4";
+import { initLife } from "./life.js?v=20261002-4";
 
 function receive(world) {
   petStore.world = world;

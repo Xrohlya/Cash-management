@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from typing import Annotated
 
 from backend.auth import current_user
 from database.pets import buy_item, claim_reward, get_world, update_world
@@ -33,7 +34,7 @@ class Layout(BaseModel):
 
 class Result(BaseModel):
     token: str = Field(min_length=1, max_length=64)
-    sequence: list[int] = Field(min_length=8, max_length=8)
+    sequence: list[Annotated[int, Field(ge=0, le=8)]] = Field(min_length=8, max_length=8)
 
 
 def action(function, *args):

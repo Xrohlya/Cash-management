@@ -1,5 +1,5 @@
 import { element } from "../modules/ui.js?v=20261001-3";
-import { seasonalShapes } from "./seasonal-art.js?v=20261002-3";
+import { seasonalShapes } from "./seasonal-art.js?v=20261002-4";
 
 const shapes = {
   plant: '<path d="M25 30C4 27 4 8 4 8s21 0 21 22M25 32C47 25 47 4 47 4S25 5 25 32" fill="#66dca9"/><path d="M25 17v25" stroke="#94efb8" stroke-width="3"/><path d="M12 35h26l-4 20H16z" fill="#de99b9"/>',
