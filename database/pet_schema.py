@@ -1,4 +1,16 @@
 def create_pet_schema(conn):
+    conn.execute("""CREATE TABLE IF NOT EXISTS pet_layout (
+        user_id BIGINT NOT NULL, item TEXT NOT NULL, x DOUBLE PRECISION NOT NULL,
+        y DOUBLE PRECISION NOT NULL, PRIMARY KEY(user_id,item)
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS pet_album (
+        user_id BIGINT NOT NULL, event TEXT NOT NULL, title TEXT NOT NULL,
+        recorded_at TEXT NOT NULL, PRIMARY KEY(user_id,event)
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS pet_minigame (
+        user_id BIGINT PRIMARY KEY, day TEXT NOT NULL, token TEXT NOT NULL,
+        sequence TEXT NOT NULL, started DOUBLE PRECISION NOT NULL
+    )""")
     conn.execute("""CREATE TABLE IF NOT EXISTS pet_appearance (
         user_id BIGINT PRIMARY KEY, color TEXT NOT NULL DEFAULT 'original'
     )""")

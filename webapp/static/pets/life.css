@@ -1,0 +1,27 @@
+.pet-life-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-bottom: 15px; }
+.pet-life-toolbar > span { flex: 1; font-size: 12px; color: #acd0c9; min-width: 90px; }
+.pet-life-toolbar .icon-button { width: 34px; height: 34px; min-height: 34px; }
+.pet-life-toolbar svg { width: 18px; height: 18px; }
+.world-stage[data-light="night"] .room-image { filter: hue-rotate(var(--chapter-hue)) brightness(.58); }
+.world-stage[data-light="evening"] .room-image { filter: hue-rotate(var(--chapter-hue)) brightness(.8) sepia(.15); }
+.world-stage[data-activity="sleep"] .pet-character { animation-duration: 8s; opacity: .8; }
+.world-stage[data-activity="study"] .pet-character { animation-duration: 2s; }
+.world-stage[data-goal="true"] { box-shadow: inset 0 0 35px #ffdf8055; }
+.goal-memento { position: absolute; right: 5%; top: 10%; color: #ffda77; width: 30px; height: 30px; z-index: 4; filter: drop-shadow(0 0 8px #ffda77); }
+.goal-spark { position: absolute; top: 15%; width: 20px; height: 20px; color: #ffdf83; z-index: 7; pointer-events: none; animation: goal-spark 2s both; }
+@keyframes goal-spark { from { transform: translateY(0) rotate(0); opacity: 1; } to { transform: translateY(180px) rotate(150deg); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .goal-spark { display: none; } }
+.room-item-leaf,.room-item-flower,.room-item-snow,.room-item-sun { left: 77%; top: 54%; }
+.world-stage.is-arranging .room-decorations { z-index: 6; pointer-events: auto; }
+.world-stage.is-arranging .room-item { pointer-events: auto; cursor: grab; touch-action: none; outline: 1px dashed #73dacf; }
+.world-stage.is-arranging .room-item:focus { outline: 2px solid #ffdb7d; }
+#pet-album-dialog,#pet-game-dialog { width: min(520px,calc(100vw - 32px)); max-height: 85vh; overflow: auto; padding: 18px; }
+.pet-album-entry { display: flex; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid #29414b; }
+.pet-album-entry .pet-model-frame { width: 75px; flex-shrink: 0; }
+.pet-album-entry small { display: block; color: #9fbbc5; margin-top: 5px; }
+.pet-game-board { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin: 15px 0; }
+.pet-game-board button { aspect-ratio: 1; min-height: 0; border-radius: 6px; background: #132631; padding: 0; }
+.pet-game-board button svg { width: 30px; height: 30px; opacity: 0; }
+.pet-game-board button.is-target svg { opacity: 1; color: #ddf983; filter: drop-shadow(0 0 8px #b5fb84); }
+.pet-game-board button.is-target { border-color: #b5fb84; }
+#pet-season { font-size: 12px; color: #e1c684; }

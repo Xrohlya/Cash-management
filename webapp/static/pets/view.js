@@ -1,8 +1,9 @@
 import { money } from "../modules/core.js?v=20261001-3";
 import { element, refreshIcons } from "../modules/ui.js?v=20261001-3";
-import { decorations } from "./decorations.js?v=20261002-2";
-import { roomEvolution } from "./evolution.js?v=20261002-2";
-import { renderAppearance } from "./appearance.js?v=20261002-2";
+import { decorations } from "./decorations.js?v=20261002-3";
+import { roomEvolution } from "./evolution.js?v=20261002-3";
+import { renderAppearance } from "./appearance.js?v=20261002-3";
+import { renderLife } from "./life.js?v=20261002-3";
 
 const node = (id) => document.getElementById(id);
 
@@ -66,10 +67,12 @@ export function renderWorld(world) {
     button.dataset.petBuy = item.id;
     button.dataset.petTier = item.tier;
     button.title = item.tier >= 3 ? "Все три уровня открыты" : `Стоимость: ${item.cost} игровых монет`;
-    button.disabled = item.tier >= 3 || world.coins < item.cost;
+    button.disabled = item.tier >= 3 || world.coins < item.cost || Boolean(item.season && item.season !== world.season.id);
+    if (item.season && item.season !== world.season.id) button.title = "Улучшения вернутся в своем сезоне";
     row.append(icon, element("strong", "", item.name), element("small", "", `Уровень ${item.tier}/3 · монеты`), button);
     return row;
   }));
+  renderLife(world);
   refreshIcons();
 }
 

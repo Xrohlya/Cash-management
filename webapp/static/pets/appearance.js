@@ -18,7 +18,7 @@ export function selectedColor() {
   return document.querySelector('input[name="pet-color"]:checked')?.value || "original";
 }
 
-function renderModel(frame, pet, stage) {
+export function renderModel(frame, pet, stage) {
   const image = frame.querySelector("img");
   image.src = `/static/pets/images/${pet}-ages.png`;
   image.style.left = `${-((stage - 1) % 3) * 100}%`;

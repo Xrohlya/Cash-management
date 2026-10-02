@@ -1,5 +1,6 @@
 """Shared, server-owned game rules. Coins never represent real money."""
 from services.pet_appearance import appearance
+from services.pet_seasons import SEASONS
 
 PETS = {
     "robot": {"name": "Робот", "rooms": ["Мастерская", "Лаборатория", "Космическая станция"]},
@@ -22,6 +23,7 @@ MISSIONS = {
     "record": {"title": "Вести учёт сегодня", "xp": 15, "coins": 5},
     "save": {"title": "Пополнить накопления", "xp": 20, "coins": 10},
 }
+ITEMS.update({entry["item"]: {"name": entry["title"], "cost": entry["cost"], "icon": entry["icon"], "season": entry["id"]} for entry in SEASONS})
 STAGES = (0, 3000, 18000)
 
 

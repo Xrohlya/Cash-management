@@ -5,6 +5,8 @@ from database import db
 from database.db import get_connection
 from services.pet_catalog import ITEMS, MISSIONS, PETS, progression, item_price
 from services.pet_appearance import COLORS
+from services.pet_seasons import season
+from database.pet_life import life
 from database.pet_feeding import feeding_status
 
 
@@ -35,15 +37,16 @@ def get_world(user_id):
         upgrades = {row["item"]: int(row["level"]) for row in conn.execute("SELECT item,level FROM pet_item_upgrades WHERE user_id=?", (user_id,)).fetchall()}
         missions = _missions(conn, user_id, date.today().isoformat())
         cosmetic = conn.execute("SELECT color FROM pet_appearance WHERE user_id=?", (user_id,)).fetchone()
+        extras = life(conn, user_id, profile["xp"])
     pet = PETS[profile["pet"]]
     progress = progression(profile["xp"])
-    return {**profile, **progress, "color": cosmetic["color"] if cosmetic else "original",
+    return {**profile, **progress, **extras, "color": cosmetic["color"] if cosmetic else "original",
             "colors": [{"id": key, **value} for key, value in COLORS.items()],
             "display_name": profile["name"] or pet["name"],
             "room": pet["rooms"][progress["stage"] - 1], "pets": [{"id": key, **value} for key, value in PETS.items()],
             "shop": [{"id": key, **value, "owned": key in inventory,
                       "tier": upgrades.get(key, 1 if key in inventory else 0),
-                      "cost": item_price(key, upgrades.get(key, 1 if key in inventory else 0))} for key, value in ITEMS.items()],
+                      "cost": item_price(key, upgrades.get(key, 1 if key in inventory else 0))} for key, value in ITEMS.items() if not value.get("season") or value["season"] == season()["id"] or key in inventory],
             "inventory": sorted(inventory), "upgrades": upgrades, "missions": missions}
 
 
@@ -83,6 +86,8 @@ def claim_reward(user_id, mission):
 def buy_item(user_id, item, expected_level=0):
     if item not in ITEMS:
         raise ValueError("Неизвестное украшение")
+    if ITEMS[item].get("season") and ITEMS[item]["season"] != season()["id"]:
+        raise ValueError("Этот предмет вернется в своем сезоне")
     with get_connection() as conn:
         if not db.DATABASE_URL:
             conn.execute("BEGIN IMMEDIATE")

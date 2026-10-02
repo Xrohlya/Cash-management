@@ -5,6 +5,7 @@ from backend.auth import current_user
 from database.pets import buy_item, claim_reward, get_world, update_world
 from database.pet_feeding import remember_daily_limit
 from backend.payloads import state
+from database.pet_life import save_layout, start_game, finish_game
 
 router = APIRouter(prefix="/api/pet", tags=["Pet world"])
 
@@ -19,6 +20,20 @@ class WorldSettings(BaseModel):
 class GameAction(BaseModel):
     id: str = Field(min_length=1, max_length=20)
     expected_level: int = Field(default=0, ge=0, le=3)
+
+
+class Position(BaseModel):
+    x: float = Field(ge=0, le=85, allow_inf_nan=False)
+    y: float = Field(ge=5, le=75, allow_inf_nan=False)
+
+
+class Layout(BaseModel):
+    positions: dict[str, Position] = Field(max_length=20)
+
+
+class Result(BaseModel):
+    token: str = Field(min_length=1, max_length=64)
+    sequence: list[int] = Field(min_length=8, max_length=8)
 
 
 def action(function, *args):
@@ -50,4 +65,21 @@ def claim(data: GameAction, user_id: int = Depends(current_user)):
 @router.post("/buy")
 def buy(data: GameAction, user_id: int = Depends(current_user)):
     created = action(buy_item, user_id, data.id, data.expected_level)
+    return {"created": created, "world": get_world(user_id)}
+
+
+@router.post("/layout")
+def layout(data: Layout, user_id: int = Depends(current_user)):
+    action(save_layout, user_id, {key: value.model_dump() for key, value in data.positions.items()})
+    return get_world(user_id)
+
+
+@router.post("/game/start")
+def game_start(user_id: int = Depends(current_user)):
+    return action(start_game, user_id)
+
+
+@router.post("/game/finish")
+def game_finish(data: Result, user_id: int = Depends(current_user)):
+    created = action(finish_game, user_id, data.token, data.sequence)
     return {"created": created, "world": get_world(user_id)}

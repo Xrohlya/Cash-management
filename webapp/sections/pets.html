@@ -19,6 +19,16 @@
       <div class="world-progress"><span id="pet-xp">0 опыта</span><span id="pet-next-stage">Следующий этап: 3000</span><progress id="pet-progress" max="100" value="0" aria-label="Развитие комнаты"></progress></div>
       <p id="pet-growth" class="pet-growth"></p>
       <div class="pet-age-progress"><span id="pet-next-age"></span><progress id="pet-age-progress" max="100" value="0" aria-label="Рост питомца"></progress></div>
+      <div class="pet-life-toolbar">
+        <span id="pet-mood" role="status"></span>
+        <button type="button" id="pet-arrange" class="icon-button" title="Расставить мебель" aria-label="Расставить мебель"><i data-lucide="move"></i></button>
+        <button type="button" id="pet-layout-save" class="icon-button" title="Сохранить расстановку" aria-label="Сохранить расстановку" hidden><i data-lucide="check"></i></button>
+        <button type="button" id="pet-layout-cancel" class="icon-button" title="Отменить расстановку" aria-label="Отменить расстановку" hidden><i data-lucide="x"></i></button>
+        <button type="button" id="pet-album-open" class="icon-button" title="Альбом взросления" aria-label="Альбом взросления"><i data-lucide="images"></i></button>
+        <button type="button" id="pet-game-open" class="icon-button" title="Игра со светлячком" aria-label="Игра со светлячком"><i data-lucide="gamepad-2"></i></button>
+      </div>
+      <dialog id="pet-album-dialog"><div class="section-heading"><h2>Альбом взросления</h2><button type="button" class="icon-button" data-close-dialog="pet-album-dialog" aria-label="Закрыть альбом" title="Закрыть"><i data-lucide="x"></i></button></div><div id="pet-album"></div></dialog>
+      <dialog id="pet-game-dialog"><div class="section-heading"><h2>Светлячок</h2><button type="button" class="icon-button" data-close-dialog="pet-game-dialog" aria-label="Закрыть игру" title="Закрыть"><i data-lucide="x"></i></button></div><p id="pet-game-status" role="status">Награда: 2 монеты</p><div id="pet-game-board" class="pet-game-board"></div><button type="button" id="pet-game-start">Начать</button></dialog>
       <dialog id="pet-settings-dialog" aria-labelledby="pet-settings-title">
       <div class="section-heading"><h2 id="pet-settings-title">Настройки питомца</h2><button id="pet-close-settings" class="icon-button" type="button" title="Закрыть" aria-label="Закрыть настройки питомца"><i data-lucide="x"></i></button></div>
       <div id="pet-picker" class="pet-picker" role="group" aria-label="Выбрать питомца"></div>
@@ -36,5 +46,5 @@
         <p id="pet-goal-note">—</p><progress id="pet-goal-progress" max="100" value="0" aria-label="Цель накоплений" hidden></progress>
         <form id="pet-save-form"><label>Пополнить накопления<input id="pet-save-amount" type="number" min="0.01" max="1000000000" step="0.01" inputmode="decimal" placeholder="Сумма в ₽" required></label><button type="submit"><i data-lucide="piggy-bank" aria-hidden="true"></i>Отложить</button></form>
       </section>
-      <section class="world-shop"><div class="section-heading"><h2>Обустроить комнату</h2><span>Только игровые монеты</span></div><div id="pet-shop" class="pet-shop"></div></section>
+      <section class="world-shop"><div class="section-heading"><h2>Обустроить комнату</h2><span>Только игровые монеты</span></div><p id="pet-season"></p><div id="pet-shop" class="pet-shop"></div></section>
     </section>

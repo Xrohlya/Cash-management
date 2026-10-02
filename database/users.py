@@ -94,7 +94,7 @@ def clear_status_message(user_id: int):
 
 def reset_user_data(user_id: int):
     with get_connection() as conn:
-        for table in ("pet_appearance", "pet_item_upgrades", "pet_daily_budget", "pet_inventory", "pet_rewards", "pet_world"):
+        for table in ("pet_layout", "pet_album", "pet_minigame", "pet_appearance", "pet_item_upgrades", "pet_daily_budget", "pet_inventory", "pet_rewards", "pet_world"):
             conn.execute(f"DELETE FROM {table} WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM expected_income WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM category_limits WHERE user_id=?", (user_id,))
