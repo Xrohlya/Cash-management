@@ -18,6 +18,7 @@ class AppearanceTests(unittest.TestCase):
 
     def test_color_is_persistent_free_and_isolated(self):
         repository.add_income(101, 1000, 0)
+        update_world(101, "dragon", "", True)
         claim_reward(101, "visit")
         before = repository.get_status_snapshot(101)
         update_world(101, "dragon", "Искра", True, "blue")
@@ -26,7 +27,7 @@ class AppearanceTests(unittest.TestCase):
         self.assertEqual((world["color"], world["xp"], world["coins"]), ("blue", 10, 5))
         self.assertEqual(get_world(202)["color"], "original")
         self.assertEqual(repository.get_status_snapshot(101)["remaining"], before["remaining"])
-        update_world(101, "cat", "", False)
+        update_world(101, "dragon", "", False)
         self.assertEqual(get_world(101)["color"], "blue")
         self.assertEqual(self.client.post("/api/pet/settings", json={"pet": "cat", "color": "bad"}).status_code, 409)
         self.assertEqual(get_world(101)["color"], "blue")
@@ -34,7 +35,7 @@ class AppearanceTests(unittest.TestCase):
         self.assertEqual(get_world(101)["color"], "original")
 
     def test_api_validates_color_and_derives_age_from_saved_experience(self):
-        get_world(101)
+        update_world(101, "owl", "", True)
         with db.get_connection() as conn:
             conn.execute("UPDATE pet_world SET xp=20000 WHERE user_id=?", (101,))
         response = self.client.post("/api/pet/settings", json={"pet": "owl", "color": "mint"})

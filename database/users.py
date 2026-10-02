@@ -93,9 +93,10 @@ def clear_status_message(user_id: int):
 
 
 def reset_user_data(user_id: int):
+    from database.pet_reset import clear_game
+
     with get_connection() as conn:
-        for table in ("pet_layout", "pet_album", "pet_minigame", "pet_appearance", "pet_item_upgrades", "pet_daily_budget", "pet_inventory", "pet_rewards", "pet_world"):
-            conn.execute(f"DELETE FROM {table} WHERE user_id=?", (user_id,))
+        clear_game(conn, user_id)
         conn.execute("DELETE FROM expected_income WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM category_limits WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM operation_undo WHERE user_id=?", (user_id,))
@@ -108,6 +109,6 @@ def reset_user_data(user_id: int):
         conn.execute("DELETE FROM transactions WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM months WHERE user_id=?", (user_id,))
         conn.execute(
-            "UPDATE users SET mandatory_percent=0,target_balance=0,savings=0,status_chat_id=NULL,status_message_id=NULL WHERE user_id=?",
+            "UPDATE users SET mandatory_percent=0,financial_day=20,target_balance=0,savings=0,status_chat_id=NULL,status_message_id=NULL WHERE user_id=?",
             (user_id,),
         )

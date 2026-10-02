@@ -92,7 +92,8 @@ class PetWorldTests(unittest.TestCase):
         self.assertEqual(sum(purchased), 1)
         self.assertEqual(get_world(101)["coins"], 300)
 
-    def test_switch_and_settings_preserve_progress_and_isolation(self):
+    def test_same_character_settings_preserve_progress_and_isolation(self):
+        update_world(101, "owl", "", True)
         claim_reward(101, "visit")
         update_world(101, "owl", "Луна", False)
         world = get_world(101)

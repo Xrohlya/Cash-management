@@ -33,6 +33,7 @@ def _missions(conn, user_id, day):
 def get_world(user_id):
     with get_connection() as conn:
         profile = _profile(conn, user_id)
+        selected = bool(profile["xp"] or conn.execute("SELECT user_id FROM pet_selection WHERE user_id=?", (user_id,)).fetchone())
         inventory = {row["item"] for row in conn.execute("SELECT item FROM pet_inventory WHERE user_id=?", (user_id,)).fetchall()}
         upgrades = {row["item"]: int(row["level"]) for row in conn.execute("SELECT item,level FROM pet_item_upgrades WHERE user_id=?", (user_id,)).fetchall()}
         missions = _missions(conn, user_id, date.today().isoformat())
@@ -40,7 +41,7 @@ def get_world(user_id):
         extras = life(conn, user_id, profile["xp"])
     pet = PETS[profile["pet"]]
     progress = progression(profile["xp"])
-    return {**profile, **progress, **extras, "color": cosmetic["color"] if cosmetic else "original",
+    return {**profile, **progress, **extras, "selected": selected, "color": cosmetic["color"] if cosmetic else "original",
             "colors": [{"id": key, **value} for key, value in COLORS.items()],
             "display_name": profile["name"] or pet["name"],
             "room": pet["rooms"][progress["stage"] - 1], "pets": [{"id": key, **value} for key, value in PETS.items()],
@@ -56,7 +57,13 @@ def update_world(user_id, pet, name, motion, color=None):
     if color is not None and color not in COLORS:
         raise ValueError("Неизвестный цвет")
     with get_connection() as conn:
-        _profile(conn, user_id)
+        if not db.DATABASE_URL:
+            conn.execute("BEGIN IMMEDIATE")
+        profile = _profile(conn, user_id, lock=True)
+        selected = bool(profile["xp"] or conn.execute("SELECT user_id FROM pet_selection WHERE user_id=?", (user_id,)).fetchone())
+        if selected and pet != profile["pet"]:
+            raise ValueError("Используйте «Сменить персонажа»: игровой прогресс будет сброшен")
+        conn.execute("INSERT INTO pet_selection(user_id) VALUES (?) ON CONFLICT(user_id) DO NOTHING", (user_id,))
         conn.execute("UPDATE pet_world SET pet=?,name=?,motion=? WHERE user_id=?", (pet, name.strip()[:24], int(motion), user_id))
         if color is not None:
             conn.execute("INSERT INTO pet_appearance(user_id,color) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET color=excluded.color", (user_id, color))

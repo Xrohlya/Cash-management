@@ -32,10 +32,16 @@ export function renderWorld(world) {
     decoration.dataset.tier = world.upgrades?.[id] || 1;
     return decoration;
   }));
+  node("pet-new-character").replaceChildren(...world.pets.filter((pet) => pet.id !== world.pet).map((pet) => {
+    const option = element("option", "", pet.name);
+    option.value = pet.id;
+    return option;
+  }));
   node("pet-picker").replaceChildren(...world.pets.map((pet) => {
     const button = element("button", "pet-choice");
     button.type = "button";
     button.dataset.petChoice = pet.id;
+    button.disabled = Boolean(world.selected);
     button.setAttribute("aria-pressed", String(pet.id === world.pet));
     const image = element("img");
     image.src = `/static/pets/images/${pet.id}.png`;

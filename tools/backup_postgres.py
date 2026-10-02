@@ -14,6 +14,7 @@ from config.settings import DATABASE_URL
 
 
 TABLES = {
+    "pet_selection": "*",
     "pet_layout": "*",
     "pet_album": "*",
     "pet_minigame": "*",

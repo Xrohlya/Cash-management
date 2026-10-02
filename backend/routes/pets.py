@@ -7,6 +7,7 @@ from database.pets import buy_item, claim_reward, get_world, update_world
 from database.pet_feeding import remember_daily_limit
 from backend.payloads import state
 from database.pet_life import save_layout, start_game, finish_game
+from database.pet_reset import change_character
 
 router = APIRouter(prefix="/api/pet", tags=["Pet world"])
 
@@ -21,6 +22,12 @@ class WorldSettings(BaseModel):
 class GameAction(BaseModel):
     id: str = Field(min_length=1, max_length=20)
     expected_level: int = Field(default=0, ge=0, le=3)
+
+
+class CharacterChange(BaseModel):
+    pet: str = Field(max_length=16)
+    expected_pet: str = Field(max_length=16)
+    confirmation: str = Field(max_length=32)
 
 
 class Position(BaseModel):
@@ -61,6 +68,12 @@ def settings(data: WorldSettings, user_id: int = Depends(current_user)):
 def claim(data: GameAction, user_id: int = Depends(current_user)):
     created = action(claim_reward, user_id, data.id)
     return {"created": created, "world": get_world(user_id)}
+
+
+@router.post("/character")
+def character(data: CharacterChange, user_id: int = Depends(current_user)):
+    action(change_character, user_id, data.pet, data.expected_pet, data.confirmation)
+    return get_world(user_id)
 
 
 @router.post("/buy")
