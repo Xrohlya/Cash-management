@@ -11,7 +11,7 @@ async def refresh_telegram_status(user_id: int):
     from aiogram import Bot
     from aiogram.exceptions import TelegramBadRequest, TelegramNetworkError, TelegramRetryAfter
     from bot.keyboards import main_menu
-    from database.repository import clear_status_message, get_status_message, set_status_message
+    from database.repository import get_status_message, set_status_message
     from services.budget import status
 
     bot = Bot(settings.BOT_TOKEN)
@@ -44,13 +44,17 @@ async def refresh_telegram_status(user_id: int):
         message = str(exc).casefold()
         if "message is not modified" not in message:
             logging.warning("Mini App could not refresh Telegram summary: %s", exc)
-        if "message to edit not found" in message:
-            await asyncio.to_thread(clear_status_message, user_id)
+        if any(reason in message for reason in ("message to edit not found", "message can't be edited", "there is no text in the message")):
             try:
                 sent = await bot.send_message(
                     user_id, text, parse_mode="HTML", reply_markup=main_menu()
                 )
                 await asyncio.to_thread(set_status_message, user_id, sent.chat.id, sent.message_id)
+                if saved:
+                    try:
+                        await bot.delete_message(saved[0], saved[1])
+                    except TelegramBadRequest:
+                        logging.info("New summary sent; previous message cannot be deleted")
             except Exception:
                 logging.exception("Mini App could not recreate Telegram summary")
     except Exception:
