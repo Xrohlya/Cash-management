@@ -6,6 +6,7 @@ from aiogram.types import Message, CallbackQuery
 from datetime import timedelta
 from database.repository import recent_transactions
 from services.budget import money
+from services.wallet_history import history_line
 from services.report import build_monthly_report, parse_report_period
 from aiogram import Router
 from bot.routes.common import answer_callback
@@ -67,7 +68,7 @@ async def cmd_history(message: Message):
     labels = {"income": "+ ДОХОД", "mandatory": "− 6%", "expense": "− РАСХОД", "recurring": "🔁 РЕГУЛЯРНЫЙ", "rent": "🏠 КВАРТИРА", "save": "🔒 НАКОПЛЕНИЯ"}
     lines = ["📋 <b>Последние операции</b>\n"]
     for row in rows:
-        lines.append(f"{labels.get(row['kind'], row['kind'])}: {money(row['amount'])} ₽ — {row['description']}")
+        lines.append(history_line(row, labels))
     await send_transient(message, "\n".join(lines), parse_mode="HTML")
 
 
@@ -103,7 +104,7 @@ async def cb_history(callback: CallbackQuery):
         labels = {"income": "+ ДОХОД", "mandatory": "− 6%", "expense": "− РАСХОД", "recurring": "🔁 РЕГУЛЯРНЫЙ", "rent": "🏠 КВАРТИРА", "save": "🔒 НАКОПЛЕНИЯ"}
         lines = ["📋 <b>Последние операции</b>\n"]
         for row in rows:
-            lines.append(f"{labels.get(row['kind'], row['kind'])}: {money(row['amount'])} ₽ — {row['description']}")
+            lines.append(history_line(row, labels))
         text = "\n".join(lines)
     try:
         await edit_interface(callback, text)

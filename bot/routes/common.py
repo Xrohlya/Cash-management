@@ -32,12 +32,13 @@ async def answer_callback(callback: CallbackQuery, text=None, **kwargs):
     return result
 
 
-def set_pending(user_id: int, kind: str, amount=None, items=None):
+def set_pending(user_id: int, kind: str, amount=None, items=None, **metadata):
     pending[user_id] = {"kind": kind}
     if amount is not None:
         pending[user_id]["amount"] = amount
     if items is not None:
         pending[user_id]["items"] = items
+    pending[user_id].update(metadata)
 
 
 def clear_pending(user_id: int):

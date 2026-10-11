@@ -1,4 +1,4 @@
-import { telegram, operationLabels, operation, showToast } from "./core.js?v=20261001-3";
+import { telegram, operationLabels, operation, showToast } from "./core.js?v=20261011-1";
 
 function initReceiptActions() {
   function loadReceiptOcr() {

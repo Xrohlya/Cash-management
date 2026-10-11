@@ -10,7 +10,7 @@ from config import settings
 from backend.auth import verify_init_data
 from backend.webapp import webapp_html
 from backend.routes import dashboard, operations, settings as settings_routes, accounts, sources, recurring, siri, planning
-from backend.routes import pets
+from backend.routes import pets, wallets
 
 WEBAPP_DIR = Path(__file__).resolve().parent.parent / "webapp"
 
@@ -32,7 +32,7 @@ if settings.ALLOWED_ORIGINS:
     )
 app.mount("/static", StaticFiles(directory=WEBAPP_DIR / "static"), name="static")
 
-for routes in (dashboard, operations, settings_routes, accounts, sources, recurring, siri, planning, pets):
+for routes in (dashboard, operations, settings_routes, accounts, sources, recurring, siri, planning, pets, wallets):
     app.include_router(routes.router)
 
 

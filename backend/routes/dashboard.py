@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from fastapi import Depends, Query
 from database.repository import list_recurring_payments, list_income_sources, list_extra_accounts, recent_transactions
 from services.analytics import financial_radar
+from database.wallets import refundable_expenses
 from services.planning import planning_payload
 from backend.auth import current_user
 from backend.payloads import analytics_payload, state
@@ -36,6 +37,7 @@ def api_dashboard(user_id: int = Depends(current_user)):
         "recurring": recurring,
         "income_sources": [dict(row) for row in list_income_sources(user_id)],
         "accounts": [dict(row) for row in list_extra_accounts(user_id)],
+        "refundable_expenses": refundable_expenses(user_id),
     }
     result["planning"] = planning_payload(user_id, current_state, result["radar"], result["analytics"])
     return result

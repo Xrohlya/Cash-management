@@ -1,5 +1,5 @@
-import { api, showToast } from "../modules/core.js?v=20261001-3";
-import { runAction } from "../modules/ui.js?v=20261001-3";
+import { api, showToast } from "../modules/core.js?v=20261011-1";
+import { runAction } from "../modules/ui.js?v=20261011-1";
 
 let editing = false, draft = {}, saved = {}, drag;
 const stage = () => document.getElementById("pet-stage");

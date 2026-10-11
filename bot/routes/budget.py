@@ -17,8 +17,8 @@ router = Router(name="budget")
 async def cmd_start(message: Message):
     user_id = message.from_user.id
     ensure_user(user_id, message.from_user.first_name or "", message.from_user.username or "")
+    await update_status(message, user_id, fresh=True)
     await delete_user_message(message)
-    await update_status(message, user_id)
 
 
 @router.message(Command("help"))

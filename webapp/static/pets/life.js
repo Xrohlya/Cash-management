@@ -1,7 +1,7 @@
-import { element, refreshIcons } from "../modules/ui.js?v=20261001-3";
-import { initLayout, renderLayout } from "./layout.js?v=20261002-4";
-import { initMinigame, renderGame } from "./minigame.js?v=20261002-4";
-import { renderModel } from "./appearance.js?v=20261002-4";
+import { element, refreshIcons } from "../modules/ui.js?v=20261011-1";
+import { initLayout, renderLayout } from "./layout.js?v=20261011-1";
+import { initMinigame, renderGame } from "./minigame.js?v=20261011-1";
+import { renderModel } from "./appearance.js?v=20261011-1";
 
 let clock, current;
 const ages = ["Малыш", "Подросток", "Молодой", "Взрослый", "Легенда"];

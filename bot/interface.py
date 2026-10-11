@@ -1,5 +1,5 @@
 import logging
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
 from aiogram.types import Message, CallbackQuery, FSInputFile
 from bot.keyboards import main_menu
 from database.repository import get_status_snapshot, get_status_message, set_status_message, clear_status_message
@@ -48,12 +48,28 @@ async def send_transient(message: Message, text: str, **kwargs):
     return sent
 
 
-async def update_status(message_or_callback, user_id: int):
+async def update_status(message_or_callback, user_id: int, *, fresh=False):
     """Keep one persistent status message per user and update it in place."""
     snapshot = get_status_snapshot(user_id)
     text = status(user_id, snapshot)
     markup = main_menu()
     saved = snapshot["status_message"]
+
+    if fresh and isinstance(message_or_callback, Message):
+        sent = await message_or_callback.answer(text, parse_mode="HTML", reply_markup=markup)
+        set_status_message(user_id, sent.chat.id, sent.message_id)
+        if saved and saved != (sent.chat.id, sent.message_id):
+            try:
+                await message_or_callback.bot.delete_message(saved[0], saved[1])
+            except TelegramBadRequest as exc:
+                reason = str(exc).casefold()
+                if "message can't be deleted" in reason or "message to delete not found" in reason:
+                    logging.info("New menu sent; previous message is unavailable for deletion")
+                else:
+                    logging.warning("Previous interface could not be deleted: %s", exc)
+            except TelegramAPIError:
+                logging.warning("Previous interface could not be deleted", exc_info=True)
+        return
 
     if saved:
         chat_id, message_id = saved

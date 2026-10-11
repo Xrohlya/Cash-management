@@ -1,7 +1,7 @@
 """Assemble Telegram workflows, keeping unrestricted text handling last."""
 from aiogram import F, Router
 from aiogram.types import CallbackQuery
-from bot.routes import budget, operations, reports, analytics, settings, messages
+from bot.routes import budget, operations, reports, analytics, settings, messages, wallets
 from bot.routes.common import answer_callback
 
 router = Router()
@@ -16,6 +16,6 @@ async def acknowledge_callback(handler, event: CallbackQuery, data):
 
 
 router.include_routers(
-    budget.router, operations.router, reports.router,
+    budget.router, wallets.router, operations.router, reports.router,
     analytics.router, settings.router, messages.router,
 )

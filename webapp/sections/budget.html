@@ -69,6 +69,7 @@
           <button type="button" data-kind="save">Отложить</button>
         </div>
         <form id="operation-form">
+          <label id="expense-wallet-control"><span>Счёт для расхода</span><select id="expense-wallet"><option value="main">Основной</option></select></label>
           <div class="receipt-scan">
             <input id="receipt-photo" type="file" accept="image/*" capture="environment" hidden>
             <button class="receipt-button" id="scan-receipt" type="button"><span aria-hidden="true">▣</span> Сканировать чек</button>
@@ -83,6 +84,22 @@
             <input id="description" name="description" maxlength="255" autocomplete="off" placeholder="Например, продукты">
           </label>
           <button class="primary" id="submit" type="submit">Записать расход</button>
+        </form>
+      </section>
+
+      <section class="wallet-operations">
+        <h2>Перевод между счетами</h2>
+        <form id="wallet-transfer-form">
+          <label>Откуда<select id="wallet-source"></select></label>
+          <label>Куда<select id="wallet-destination"></select></label>
+          <label>Сумма<input id="wallet-transfer-amount" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
+          <button type="submit" class="primary"><i data-lucide="arrow-right-left" aria-hidden="true"></i>Перевести</button>
+        </form>
+        <h2>Возврат покупки</h2>
+        <form id="wallet-refund-form">
+          <label>Исходный расход<select id="wallet-original" required></select></label>
+          <label>Сумма возврата<input id="wallet-refund-amount" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
+          <button type="submit" class="primary"><i data-lucide="undo-2" aria-hidden="true"></i>Вернуть на счёт</button>
         </form>
       </section>
 

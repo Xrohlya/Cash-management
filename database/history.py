@@ -42,7 +42,8 @@ def recent_transactions(user_id: int, limit=15):
     safe_limit = max(1, min(int(limit), 100))
     with get_connection() as conn:
         return conn.execute(
-            "SELECT id, created_at, kind, amount, description FROM transactions "
-            "WHERE user_id=? ORDER BY id DESC LIMIT ?",
+            "SELECT t.id,t.created_at,t.kind,t.amount,t.description,w.operation wallet_operation,w.source wallet "
+            "FROM transactions t LEFT JOIN wallet_entries w ON w.transaction_id=t.id AND w.user_id=t.user_id "
+            "WHERE t.user_id=? ORDER BY t.id DESC LIMIT ?",
             (user_id, safe_limit),
         ).fetchall()

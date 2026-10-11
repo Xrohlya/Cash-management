@@ -8,6 +8,7 @@ from bot.connection import create_bot, create_dispatcher
 from bot.console import ActivityMiddleware, configure_logging, show_startup
 from bot.handlers import router
 from bot.keyboards import main_menu
+from bot.polling import POLLING_BACKOFF
 from config.settings import DATABASE_URL, WEBAPP_URL, versioned_webapp_url
 from database.db import close_db_pool, init_db
 from database.repository import (
@@ -94,7 +95,10 @@ async def main():
     show_startup(bot_info, users, database_name, WEBAPP_URL)
     notification_task = asyncio.create_task(recurring_notification_loop(bot))
     try:
-        await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+        await dp.start_polling(
+            bot, allowed_updates=dp.resolve_used_update_types(),
+            polling_timeout=30, backoff_config=POLLING_BACKOFF,
+        )
     finally:
         notification_task.cancel()
         close_db_pool()

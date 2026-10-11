@@ -1,5 +1,5 @@
-import { selectTab, api, showToast } from "./core.js?v=20261001-3";
-import { load } from "./dashboard.js?v=20261001-3";
+import { selectTab, api, showToast } from "./core.js?v=20261011-1";
+import { load } from "./dashboard.js?v=20261011-1";
 
 function initResetActions() {
   document.getElementById("open-reset").addEventListener("click", () => {

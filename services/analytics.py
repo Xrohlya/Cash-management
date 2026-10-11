@@ -153,7 +153,7 @@ def financial_radar(
             (user_id, start.isoformat(), (today + timedelta(days=1)).isoformat()),
         ).fetchall()
 
-    spend_dates = {date.fromisoformat(row["created_at"][:10]) for row in spend_rows}
+    spend_dates = {date.fromisoformat(row["created_at"][:10]) for row in spend_rows if float(row["amount"]) > 0}
     first_activity = min(spend_dates) if spend_dates else today
     current_streak = 0
     cursor = today
@@ -199,7 +199,7 @@ def financial_radar(
         if row["kind"] == "expense"
         and start <= date.fromisoformat(row["created_at"][:10]) <= today
     )
-    daily_pace = period_spending / elapsed
+    daily_pace = max(0, period_spending / elapsed)
     projected_balance = float(remaining) - reserved - daily_pace * max(0, days_left - 1)
     target_gap = projected_balance - target_balance
     if target_gap < 0:

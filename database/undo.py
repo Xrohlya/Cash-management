@@ -14,6 +14,8 @@ def _last_rows(conn, user_id):
     if not rows:
         return []
     last = dict(rows[0])
+    if conn.execute("SELECT 1 FROM wallet_entries WHERE user_id=? AND ((transaction_id=? AND (operation<>'expense' OR source<>'main')) OR original_id=?)", (user_id, last["id"], last["id"])).fetchone():
+        raise ValueError("Для этой операции используйте возврат или обратный перевод")
     if last["kind"] != "mandatory":
         return [last]
     if len(rows) < 2:
@@ -79,9 +81,11 @@ def undo_last_operation(user_id, expected_id):
         if changed.rowcount != 1:
             raise ValueError("Доход уже потрачен: отмена сделает баланс отрицательным")
         payload = {"transactions": rows, "account_transaction": account_row}
+        payload["wallet_entries"] = [dict(row) for row in conn.execute("SELECT * FROM wallet_entries WHERE user_id=? AND transaction_id=?", (user_id, expected_id)).fetchall()]
         conn.execute("INSERT INTO operation_undo(user_id,created_at,transaction_id,original_data) VALUES (?,?,?,?)",
                      (user_id, datetime.now().isoformat(timespec="seconds"), expected_id, json.dumps(payload, ensure_ascii=False)))
         for row in rows:
+            conn.execute("DELETE FROM wallet_entries WHERE user_id=? AND transaction_id=?", (user_id, row["id"]))
             conn.execute("DELETE FROM transactions WHERE user_id=? AND id=?", (user_id, row["id"]))
         plan = conn.execute("SELECT id FROM expected_income WHERE user_id=? AND confirmed_transaction_id=? AND status='received'", (user_id, original["id"])).fetchone()
         if plan:

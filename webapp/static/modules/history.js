@@ -1,4 +1,4 @@
-import { kindLabels, money, shortDate, operationWord } from "./core.js?v=20261001-3";
+import { kindLabels, money, shortDate, operationWord } from "./core.js?v=20261011-1";
 
 function renderHistory(items) {
   const root = document.getElementById("history");
@@ -12,13 +12,23 @@ function renderHistory(items) {
     const title = document.createElement("strong");
     title.textContent = item.description || kindLabels[item.kind] || item.kind;
     const amount = document.createElement("b");
-    const positive = item.kind === "income";
-    amount.className = positive ? "positive" : "negative";
-    amount.textContent = `${item.kind === "cancelled" ? "" : positive ? "+" : "−"}${money(item.amount)}`;
+    const positive = item.kind === "income" || Number(item.amount) < 0;
+    const transfer = item.wallet_operation === "transfer" || ["account_transfer", "account_return", "wallet_transfer"].includes(item.kind);
+    amount.className = transfer ? "" : positive ? "positive" : "negative";
+    amount.textContent = `${item.kind === "cancelled" || transfer ? "" : positive ? "+" : "−"}${money(Math.abs(item.amount))}`;
     const meta = document.createElement("time");
-    meta.textContent = `${kindLabels[item.kind] || item.kind} · ${shortDate(item.created_at)}`;
+    const label = item.wallet_operation === "refund" ? "Возврат покупки" : item.wallet_operation === "transfer" ? "Перевод" : item.kind === "wallet_expense" ? "Расход с другого счёта" : kindLabels[item.kind] || item.kind;
+    meta.textContent = `${label} · ${shortDate(item.created_at)}`;
     row.append(title, amount, meta);
-    if (item.kind === "expense") {
+    if (["expense", "wallet_expense"].includes(item.kind) && item.amount > 0) {
+      const refund = document.createElement("button");
+      refund.type = "button";
+      refund.className = "history-edit";
+      refund.textContent = "Возврат";
+      refund.dataset.walletRefund = item.id;
+      row.append(refund);
+    }
+    if (item.kind === "expense" && item.amount > 0 && (!item.wallet_operation || item.wallet_operation === "expense" && item.wallet === "main")) {
       const edit = document.createElement("button");
       edit.type = "button";
       edit.className = "history-edit";

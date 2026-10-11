@@ -1,0 +1,7 @@
+.wallet-operations { padding: 20px 18px; border-top: 1px solid #294253; }
+.wallet-operations h2 { font-size: 18px; margin-block: 16px; border-left: 3px solid #4dbbff; padding-left: 10px; }
+.wallet-operations form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px; }
+.wallet-operations label { min-width: 0; }
+.wallet-operations select, #expense-wallet { width: 100%; min-width: 0; }
+.wallet-operations button { align-self: end; }
+@media (max-width: 420px) { .wallet-operations form { grid-template-columns: minmax(0, 1fr); } }

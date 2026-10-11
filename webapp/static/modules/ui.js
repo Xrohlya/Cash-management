@@ -1,4 +1,4 @@
-import { showToast } from "./core.js?v=20261001-3";
+import { showToast } from "./core.js?v=20261011-1";
 
 export function element(tag, className = "", text = "") {
   const node = document.createElement(tag);

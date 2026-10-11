@@ -1,5 +1,5 @@
-import { api, showToast } from "../modules/core.js?v=20261001-3";
-import { element, refreshIcons, runAction } from "../modules/ui.js?v=20261001-3";
+import { api, showToast } from "../modules/core.js?v=20261011-1";
+import { element, refreshIcons, runAction } from "../modules/ui.js?v=20261011-1";
 
 let run, index = 0, ready = false, stepTimer, endTimer, claimed = false;
 const node = id => document.getElementById(id);

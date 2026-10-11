@@ -97,6 +97,7 @@ def reset_user_data(user_id: int):
 
     with get_connection() as conn:
         clear_game(conn, user_id)
+        conn.execute("DELETE FROM wallet_entries WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM expected_income WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM category_limits WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM operation_undo WHERE user_id=?", (user_id,))

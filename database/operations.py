@@ -114,23 +114,27 @@ def add_bulk_expenses(user_id: int, items: list[tuple[float, str]], request_id=N
 
 
 def update_expense(user_id: int, transaction_id: int, amount: float, description: str):
+    from database.wallets import lock_user, amount_value
+    from database.periods import financial_period_start_for_day
+
+    amount = amount_value(amount)
     with get_connection() as conn:
+        lock_user(conn, user_id)
+        if conn.execute("SELECT 1 FROM wallet_entries WHERE user_id=? AND ((transaction_id=? AND (operation<>'expense' OR source<>'main')) OR original_id=?)", (user_id, transaction_id, transaction_id)).fetchone():
+            raise ValueError("Для операции со счётом или возвратом используйте возврат, затем внесите новый расход")
         row = conn.execute(
             "SELECT created_at,amount,kind FROM transactions WHERE id=? AND user_id=?",
             (transaction_id, user_id),
         ).fetchone()
-    if not row or row["kind"] != "expense":
-        raise ValueError("Можно изменять только обычные расходы")
-    created_at = datetime.fromisoformat(row["created_at"])
-    key = month_key(user_id, created_at)
-    month = get_month(user_id, key)
-    increase = round(amount - float(row["amount"]), 2)
-    available = float(month["budget"]) - float(month["spent"]) - float(month["rent"]) - float(month["saved"])
-    if increase > available:
-        raise ValueError("Недостаточно средств для увеличения расхода")
-    with get_connection() as conn:
+        if not row or row["kind"] != "expense" or float(row["amount"]) <= 0:
+            raise ValueError("Можно изменять только обычные расходы")
+        user = conn.execute("SELECT financial_day FROM users WHERE user_id=?", (user_id,)).fetchone()
+        key = financial_period_start_for_day(int(user["financial_day"]), datetime.fromisoformat(row["created_at"])).isoformat()
+        increase = round(amount - float(row["amount"]), 2)
+        changed = conn.execute("UPDATE months SET spent=spent+? WHERE user_id=? AND month=? AND budget-spent-rent-saved>=?", (increase, user_id, key, increase))
+        if changed.rowcount != 1:
+            raise ValueError("Недостаточно средств для увеличения расхода или период не найден")
         conn.execute(
             "UPDATE transactions SET amount=?,description=? WHERE id=? AND user_id=? AND kind='expense'",
             (round(amount, 2), normalize_expense_category(description), transaction_id, user_id),
         )
-    rebuild_month_from_transactions(user_id, financial_period_start(user_id, created_at))
