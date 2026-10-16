@@ -1,13 +1,13 @@
-import { api, initData, money, showToast } from "../modules/core.js?v=20261011-1";
-import { bindForm, requestConfirmation, runAction } from "../modules/ui.js?v=20261011-1";
-import { store } from "../modules/store.js?v=20261011-1";
-import { load } from "../modules/dashboard.js?v=20261011-1";
-import { renderWorld, renderPetFinance } from "./view.js?v=20261011-1";
-import { initCharacterChange } from "./character.js?v=20261011-1";
-import { reactToPet } from "./animation.js?v=20261011-1";
-import { petStore } from "./store.js?v=20261011-1";
-import { previewColor, selectedColor } from "./appearance.js?v=20261011-1";
-import { initLife } from "./life.js?v=20261011-1";
+import { api, initData, money, showToast } from "../modules/core.js?v=20261016-1";
+import { bindForm, requestConfirmation, runAction } from "../modules/ui.js?v=20261016-1";
+import { store } from "../modules/store.js?v=20261016-1";
+import { load } from "../modules/dashboard.js?v=20261016-1";
+import { renderWorld, renderPetFinance } from "./view.js?v=20261016-1";
+import { initCharacterChange } from "./character.js?v=20261016-1";
+import { reactToPet } from "./animation.js?v=20261016-1";
+import { petStore } from "./store.js?v=20261016-1";
+import { previewColor, selectedColor } from "./appearance.js?v=20261016-1";
+import { initLife } from "./life.js?v=20261016-1";
 
 function receive(world) {
   petStore.world = world;

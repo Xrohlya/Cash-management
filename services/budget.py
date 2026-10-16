@@ -65,7 +65,7 @@ def status_from_snapshot(snapshot: dict) -> str:
         f"🏠 Квартира: {money(rent)} ₽ <i>(отдельно)</i>\n"
         f"🔒 Отложено: {money(saved)} ₽ <i>(накопления)</i>\n"
         f"🏦 Накопления всего: {money(savings)} ₽\n"
-        f"📈 Прогноз остатка к 19-му: <b>{money(forecast)} ₽</b>"
+        f"📈 Прогноз остатка к {(end - timedelta(days=1)):%d.%m.%Y}: <b>{money(forecast)} ₽</b>"
         f"{goal_line}"
     )
 
@@ -97,6 +97,7 @@ def status(user_id: int, snapshot: dict | None = None) -> str:
     for source in sources:
         lines.append(
             f"• {escape(source['name'])} — <b>{money(source['gross_total'])} ₽</b> за месяц · удержание "
-            f"<b>{float(source['withholding_percent']):g}%</b>"
+            f"<b>{float(source['withholding_percent']):g}%</b>\n"
+            f"  Чистый доход: <b>{money(float(source['gross_total']) - float(source['withheld_total']))} ₽</b>"
         )
     return text + "\n".join(lines)

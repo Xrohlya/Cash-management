@@ -1,18 +1,18 @@
-import { renderAccounts } from "./accounts.js?v=20261011-1";
-import { renderState } from "./budget.js?v=20261011-1";
-import { api } from "./core.js?v=20261011-1";
-import { renderHistory, renderCategories, renderDaily } from "./history.js?v=20261011-1";
-import { renderRadar } from "./radar.js?v=20261011-1";
-import { renderRecurring, renderUpcomingPayment } from "./recurring.js?v=20261011-1";
-import { renderSources, renderSourcesOverview } from "./sources.js?v=20261011-1";
-import { store } from "./store.js?v=20261011-1";
-import { renderPlans } from "./plans-view.js?v=20261011-1";
-import { renderLimits } from "./limits-view.js?v=20261011-1";
-import { renderWeekly } from "./weekly-view.js?v=20261011-1";
-import { renderUndo } from "./undo-actions.js?v=20261011-1";
-import { refreshCalculators } from "./calculators.js?v=20261011-1";
-import { refreshIcons } from "./ui.js?v=20261011-1";
-import { renderCalendar } from "./calendar.js?v=20261011-1";
+import { renderAccounts } from "./accounts.js?v=20261016-1";
+import { renderState } from "./budget.js?v=20261016-1";
+import { api } from "./core.js?v=20261016-1";
+import { renderHistory, renderCategories, renderDaily } from "./history.js?v=20261016-1";
+import { renderRadar } from "./radar.js?v=20261016-1";
+import { renderRecurring, renderUpcomingPayment } from "./recurring.js?v=20261016-1";
+import { renderSources, renderSourcesOverview } from "./sources.js?v=20261016-1";
+import { store } from "./store.js?v=20261016-1";
+import { renderPlans } from "./plans-view.js?v=20261016-1";
+import { renderLimits } from "./limits-view.js?v=20261016-1";
+import { renderWeekly } from "./weekly-view.js?v=20261016-1";
+import { renderUndo } from "./undo-actions.js?v=20261016-1";
+import { refreshCalculators } from "./calculators.js?v=20261016-1";
+import { refreshIcons } from "./ui.js?v=20261016-1";
+import { renderCalendar } from "./calendar.js?v=20261016-1";
 
 let loadSequence = 0;
 

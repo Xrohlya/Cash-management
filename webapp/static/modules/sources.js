@@ -1,4 +1,4 @@
-import { money } from "./core.js?v=20261011-1";
+import { money } from "./core.js?v=20261016-1";
 
 function renderSources(items) {
   const root = document.getElementById("sources-list");
@@ -52,9 +52,9 @@ function renderSourcesOverview(items) {
     const name = document.createElement("strong");
     name.textContent = item.name;
     const percent = document.createElement("small");
-    percent.textContent = `Удержание ${Number(item.withholding_percent).toLocaleString("ru-RU")}%`;
+    percent.textContent = `Удержано ${money(item.withheld_total)} (${Number(item.withholding_percent).toLocaleString("ru-RU")}%) · чистый доход ${money(Number(item.gross_total) - Number(item.withheld_total))}`;
     const total = document.createElement("b");
-    total.textContent = money(item.gross_total);
+    total.textContent = `Доход ${money(item.gross_total)}`;
     row.append(name, total, percent);
     return row;
   }));

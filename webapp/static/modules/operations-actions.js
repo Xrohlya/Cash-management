@@ -1,6 +1,6 @@
-import { renderState } from "./budget.js?v=20261011-1";
-import { telegram, operationLabels, operation, api, showToast } from "./core.js?v=20261011-1";
-import { load } from "./dashboard.js?v=20261011-1";
+import { renderState } from "./budget.js?v=20261016-1";
+import { telegram, operationLabels, operation, api, showToast } from "./core.js?v=20261016-1";
+import { load } from "./dashboard.js?v=20261016-1";
 
 function initOperationsActions() {
   let pendingRequest;

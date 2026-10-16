@@ -43,6 +43,7 @@ def income_sources_text(user_id: int) -> str:
         lines.extend([
             f"• <b>{escape(source['name'])}</b> · удержание {float(source['withholding_percent']):g}%",
             f"  Доход: {money(source['gross_total'])} ₽ · удержано: {money(source['withheld_total'])} ₽",
+            f"  Чистый доход: <b>{money(float(source['gross_total']) - float(source['withheld_total']))} ₽</b>",
             f"  <code>получил 30000 {escape(source['name'].casefold())}</code>",
         ])
     lines.extend(["", "Без названия источника доход полностью поступает на основной счёт."])
