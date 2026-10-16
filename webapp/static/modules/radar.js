@@ -1,4 +1,4 @@
-import { money } from "./core.js?v=20261017-1";
+import { money } from "./core.js?v=20261017-2";
 
 function renderRadar(radar) {
   document.getElementById("safe-today").textContent = money(radar.safe_today);

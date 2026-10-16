@@ -1,5 +1,5 @@
-import { money } from "./core.js?v=20261017-1";
-import { element } from "./ui.js?v=20261017-1";
+import { money } from "./core.js?v=20261017-2";
+import { element } from "./ui.js?v=20261017-2";
 
 export function renderCalendar(events) {
   const calendar = document.getElementById("money-calendar-list");

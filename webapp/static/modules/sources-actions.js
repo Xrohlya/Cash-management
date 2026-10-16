@@ -1,7 +1,7 @@
-import { api, showToast } from "./core.js?v=20261017-1";
-import { renderSources, renderSourcesOverview } from "./sources.js?v=20261017-1";
-import { load } from "./dashboard.js?v=20261017-1";
-import { requestConfirmation } from "./ui.js?v=20261017-1";
+import { api, showToast } from "./core.js?v=20261017-2";
+import { renderSources, renderSourcesOverview } from "./sources.js?v=20261017-2";
+import { load } from "./dashboard.js?v=20261017-2";
+import { requestConfirmation } from "./ui.js?v=20261017-2";
 
 function initSourcesActions() {
   function resetSourceForm() {

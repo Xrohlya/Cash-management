@@ -71,7 +71,7 @@
         </div>
         <form id="operation-form">
           <label id="expense-wallet-control"><span>Счёт для расхода</span><select id="expense-wallet"><option value="main">Основной</option></select></label>
-          <div class="receipt-scan">
+          <div class="receipt-scan" id="operation-receipt-control">
             <input id="receipt-photo" type="file" accept="image/*" capture="environment" hidden>
             <button class="receipt-button" id="scan-receipt" type="button"><span aria-hidden="true">▣</span> Сканировать чек</button>
             <small id="receipt-status">Сумма и категория заполнятся автоматически</small>
@@ -80,10 +80,11 @@
             <span>Сумма</span>
             <div class="amount-input"><input id="amount" name="amount" type="number" min="0.01" step="0.01" inputmode="decimal" required><b>₽</b></div>
           </label>
-          <label>
+          <label id="operation-description-control">
             <span>Категория или комментарий</span>
             <input id="description" name="description" maxlength="255" autocomplete="off" placeholder="Например, продукты">
           </label>
+          <label id="save-destination-control" hidden><span>Куда перевести</span><select id="save-destination"><option value="savings">Накопления</option></select></label>
           <button class="primary" id="submit" type="submit">Записать расход</button>
         </form>
       </section>

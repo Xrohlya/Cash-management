@@ -1,6 +1,6 @@
-import { api, showToast } from "../modules/core.js?v=20261017-1";
-import { requestConfirmation, runAction } from "../modules/ui.js?v=20261017-1";
-import { petStore } from "./store.js?v=20261017-1";
+import { api, showToast } from "../modules/core.js?v=20261017-2";
+import { requestConfirmation, runAction } from "../modules/ui.js?v=20261017-2";
+import { petStore } from "./store.js?v=20261017-2";
 
 export function initCharacterChange(receive) {
   const button = document.getElementById("pet-change-character");

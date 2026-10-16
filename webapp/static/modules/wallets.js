@@ -1,6 +1,6 @@
-import { api, money, showToast } from "./core.js?v=20261017-1";
-import { bindForm, requestConfirmation } from "./ui.js?v=20261017-1";
-import { load } from "./dashboard.js?v=20261017-1";
+import { api, money, showToast } from "./core.js?v=20261017-2";
+import { bindForm, requestConfirmation } from "./ui.js?v=20261017-2";
+import { load } from "./dashboard.js?v=20261017-2";
 
 function fillSelect(id, options) {
   const select = document.getElementById(id);
@@ -27,6 +27,7 @@ export function initWallets() {
   document.addEventListener("cash:dashboard", ({ detail }) => {
     const options = [["main", `Основной · ${money(detail.state.available)}`], ["savings", `Накопления · ${money(detail.state.savings)}`], ...detail.accounts.map((row) => [`account:${row.id}`, `${row.name} · ${money(row.balance)}`])];
     for (const id of ["expense-wallet", "wallet-source", "wallet-destination"]) fillSelect(id, options);
+    fillSelect("save-destination", options.filter(([value]) => value !== "main"));
     refunds = detail.refundable_expenses || [];
     fillSelect("wallet-original", refunds.map((row) => [row.id, `#${row.id} · ${row.description} · ${row.created_at.slice(0, 10)} · ${money(row.refundable)}`]));
     setRefundAmount();

@@ -1,4 +1,4 @@
-import { telegram, operationLabels, operation, showToast } from "./core.js?v=20261017-1";
+import { telegram, operationLabels, operation, showToast } from "./core.js?v=20261017-2";
 
 function initReceiptActions() {
   function loadReceiptOcr() {
@@ -63,6 +63,7 @@ function initReceiptActions() {
       const amount = receiptAmount(text);
       if (!amount) throw new Error("Не удалось найти итоговую сумму. Введите её вручную.");
       operation.kind = "expense";
+      document.querySelector('#operation-kind button[data-kind="expense"]').click();
       document.querySelectorAll("#operation-kind button").forEach((item) => item.classList.toggle("active", item.dataset.kind === "expense"));
       document.getElementById("submit").textContent = operationLabels.expense[0];
       document.getElementById("amount").value = amount.toFixed(2);
