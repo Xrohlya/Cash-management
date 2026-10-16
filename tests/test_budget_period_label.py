@@ -15,3 +15,5 @@ class BudgetPeriodLabelTests(unittest.TestCase):
         text = status_from_snapshot(snapshot)
         self.assertIn("Прогноз остатка к 07.11.2026", text)
         self.assertNotIn("к 19-му", text)
+        self.assertNotIn("Отложено:", text)
+        self.assertIn("Накопления всего:", text)

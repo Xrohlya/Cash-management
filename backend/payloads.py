@@ -1,6 +1,7 @@
 from datetime import timedelta
 from database.repository import get_status_snapshot, get_user_profile
 from services.analytics import current_period_stats
+from database.db import get_connection
 
 
 def state(user_id: int):
@@ -8,6 +9,14 @@ def state(user_id: int):
     profile = get_user_profile(user_id)
     end = snapshot["end"]
     goal = snapshot.get("goal")
+    with get_connection() as conn:
+        transfers = conn.execute(
+            "SELECT COALESCE(SUM(t.amount),0) AS total FROM transactions t "
+            "LEFT JOIN wallet_entries w ON w.transaction_id=t.id AND w.user_id=t.user_id "
+            "WHERE t.user_id=? AND t.created_at>=? AND t.created_at<? "
+            "AND (t.kind='save' OR (w.operation='transfer' AND w.destination='savings'))",
+            (user_id, snapshot["start"].isoformat(), end.isoformat()),
+        ).fetchone()
     return {
         "available": round(snapshot["remaining"], 2),
         "today": round(snapshot["spent_today"], 2),
@@ -17,6 +26,7 @@ def state(user_id: int):
         "recurring": round(snapshot["recurring"], 2),
         "rent": round(snapshot["rent"], 2),
         "saved_this_month": round(snapshot["saved"], 2),
+        "transferred_to_savings": round(float(transfers["total"]), 2),
         "savings": round(snapshot["savings"], 2),
         "budget": round(snapshot["budget"], 2),
         "mandatory_percent": snapshot["mandatory_percent"],

@@ -1,7 +1,7 @@
-import { recurringDay, api, showToast } from "./core.js?v=20261016-1";
-import { load } from "./dashboard.js?v=20261016-1";
-import { requestConfirmation } from "./ui.js?v=20261016-1";
-import { renderRecurring } from "./recurring.js?v=20261016-1";
+import { recurringDay, api, showToast } from "./core.js?v=20261017-1";
+import { load } from "./dashboard.js?v=20261017-1";
+import { requestConfirmation } from "./ui.js?v=20261017-1";
+import { renderRecurring } from "./recurring.js?v=20261017-1";
 
 function initRecurringActions() {
   document.getElementById("recurring-form").addEventListener("submit", async (event) => {

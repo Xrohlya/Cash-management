@@ -1,7 +1,7 @@
-import { api, kindLabels, money, showToast } from "./core.js?v=20261016-1";
-import { load } from "./dashboard.js?v=20261016-1";
-import { store } from "./store.js?v=20261016-1";
-import { bindForm } from "./ui.js?v=20261016-1";
+import { api, kindLabels, money, showToast } from "./core.js?v=20261017-1";
+import { load } from "./dashboard.js?v=20261017-1";
+import { store } from "./store.js?v=20261017-1";
+import { bindForm } from "./ui.js?v=20261017-1";
 
 let confirmedId = null;
 

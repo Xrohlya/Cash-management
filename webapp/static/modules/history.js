@@ -1,4 +1,4 @@
-import { kindLabels, money, shortDate, operationWord } from "./core.js?v=20261016-1";
+import { kindLabels, money, shortDate, operationWord } from "./core.js?v=20261017-1";
 
 function renderHistory(items) {
   const root = document.getElementById("history");

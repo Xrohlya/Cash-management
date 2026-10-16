@@ -1,4 +1,4 @@
-import { financialDay, targetBalance, money } from "./core.js?v=20261016-1";
+import { financialDay, targetBalance, money } from "./core.js?v=20261017-1";
 
 function renderState(state) {
   document.getElementById("available").textContent = money(state.available);
@@ -9,6 +9,7 @@ function renderState(state) {
   document.getElementById("recurring").textContent = money(state.recurring);
   document.getElementById("rent").textContent = money(state.rent);
   document.getElementById("savings").textContent = money(state.savings);
+  document.getElementById("savings-transferred").textContent = money(state.transferred_to_savings ?? state.saved_this_month);
   document.getElementById("period").textContent = `${state.period_start.split("-").reverse().join(".")} — ${state.period_end.split("-").reverse().join(".")}`;
   document.getElementById("days-left").textContent = `${state.days_left} дн. до конца периода`;
   financialDay.value = String(state.financial_day || 20);

@@ -34,7 +34,6 @@ def status_from_snapshot(snapshot: dict) -> str:
     spent = snapshot["spent"]
     recurring = snapshot["recurring"]
     rent = snapshot["rent"]
-    saved = snapshot["saved"]
     remaining = snapshot["remaining"]
     days = snapshot["days_left"]
     daily = snapshot["daily_limit"]
@@ -63,7 +62,6 @@ def status_from_snapshot(snapshot: dict) -> str:
         f"💸 Потрачено: {money(spent)} ₽\n"
         f"🔁 Регулярные платежи: {money(recurring)} ₽ <i>(отдельно)</i>\n"
         f"🏠 Квартира: {money(rent)} ₽ <i>(отдельно)</i>\n"
-        f"🔒 Отложено: {money(saved)} ₽ <i>(накопления)</i>\n"
         f"🏦 Накопления всего: {money(savings)} ₽\n"
         f"📈 Прогноз остатка к {(end - timedelta(days=1)):%d.%m.%Y}: <b>{money(forecast)} ₽</b>"
         f"{goal_line}"

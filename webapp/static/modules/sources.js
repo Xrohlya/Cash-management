@@ -1,4 +1,4 @@
-import { money } from "./core.js?v=20261016-1";
+import { money } from "./core.js?v=20261017-1";
 
 function renderSources(items) {
   const root = document.getElementById("sources-list");
