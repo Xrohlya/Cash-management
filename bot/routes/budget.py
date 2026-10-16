@@ -5,6 +5,7 @@ from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 from datetime import datetime
 from bot.texts import HELP
+from bot.keyboards import help_menu
 from database.repository import ensure_user, get_savings, get_status_message, daily_expense_transactions, average_daily_expense
 from services.budget import money
 from aiogram import Router
@@ -24,7 +25,7 @@ async def cmd_start(message: Message):
 @router.message(Command("help"))
 async def cmd_help(message: Message):
     await delete_user_message(message)
-    sent = await send_transient(message, HELP, parse_mode="HTML")
+    await send_transient(message, HELP, parse_mode="HTML", reply_markup=help_menu())
 
 
 @router.message(Command("status"))
@@ -135,7 +136,7 @@ async def cb_savings(callback: CallbackQuery):
 @router.callback_query(F.data == "help")
 async def cb_help(callback: CallbackQuery):
     try:
-        await edit_interface(callback, HELP)
+        await edit_interface(callback, HELP, reply_markup=help_menu())
     except Exception:
         logging.warning("Telegram operation failed", exc_info=True)
     await answer_callback(callback)

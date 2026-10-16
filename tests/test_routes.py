@@ -96,4 +96,4 @@ class TelegramRoutesTest(unittest.IsolatedAsyncioTestCase):
     def test_fallback_is_last_and_all_workflows_are_registered(self):
         self.assertEqual(router.sub_routers[-1].message.handlers[-1].callback.__name__, "plain_text")
         self.assertEqual(sum(len(child.message.handlers) for child in router.sub_routers), 20)
-        self.assertEqual(sum(len(child.callback_query.handlers) for child in router.sub_routers), 18)
+        self.assertEqual(sum(len(child.callback_query.handlers) for child in router.sub_routers), 19)

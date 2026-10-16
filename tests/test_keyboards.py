@@ -19,14 +19,17 @@ class MainMenuTest(unittest.TestCase):
             [[button.callback_data for button in row] for row in rows[1:]],
             [
                 ["status", "today"],
-                ["history", "forecast"],
-                ["savings", "goal"],
-                ["recurring", "income_sources"],
-                ["analytics", "compare"],
-                ["help", "clear_chat"],
-                ["report", "status"],
+                ["history", "status"],
+                ["help"],
             ],
         )
+
+    def test_nested_actions_have_budget_return(self):
+        for menu, expected in ((keyboards.help_menu, ["clear_chat"]),
+                               (keyboards.history_menu, ["report", "excel"])):
+            with self.subTest(menu=menu.__name__):
+                rows = [row for row in menu().inline_keyboard if not any(b.web_app for b in row)]
+                self.assertEqual([[b.callback_data for b in row] for row in rows], [expected, ["status"]])
 
 
 if __name__ == "__main__":
