@@ -1,4 +1,4 @@
-import { money } from "./core.js?v=20261017-2";
+import { money } from "./core.js?v=20261017-3";
 
 function renderSources(items) {
   const root = document.getElementById("sources-list");
@@ -51,11 +51,22 @@ function renderSourcesOverview(items) {
     row.className = "source-overview-item";
     const name = document.createElement("strong");
     name.textContent = item.name;
-    const percent = document.createElement("small");
-    percent.textContent = `Удержано ${money(item.withheld_total)} (${Number(item.withholding_percent).toLocaleString("ru-RU")}%) · чистый доход ${money(Number(item.gross_total) - Number(item.withheld_total))}`;
-    const total = document.createElement("b");
-    total.textContent = `Доход ${money(item.gross_total)}`;
-    row.append(name, total, percent);
+    const amounts = document.createElement("dl");
+    amounts.className = "source-amounts";
+    for (const [label, value] of [
+      ["Доход", item.gross_total],
+      [`Удержано · ${Number(item.withholding_percent).toLocaleString("ru-RU")}%`, item.withheld_total],
+      ["Чистый доход", Number(item.gross_total) - Number(item.withheld_total)],
+    ]) {
+      const field = document.createElement("div");
+      const title = document.createElement("dt");
+      title.textContent = label;
+      const amount = document.createElement("dd");
+      amount.textContent = money(value);
+      field.append(title, amount);
+      amounts.append(field);
+    }
+    row.append(name, amounts);
     return row;
   }));
 }

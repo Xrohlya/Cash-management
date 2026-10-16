@@ -1,12 +1,13 @@
-import { renderState } from "./budget.js?v=20261017-2";
-import { telegram, operationLabels, operation, api, showToast } from "./core.js?v=20261017-2";
-import { load } from "./dashboard.js?v=20261017-2";
+import { renderState } from "./budget.js?v=20261017-3";
+import { telegram, operationLabels, operation, api, showToast } from "./core.js?v=20261017-3";
+import { load } from "./dashboard.js?v=20261017-3";
 
 function initOperationsActions() {
   let pendingRequest;
   function updateControls() {
     const saving = operation.kind === "save";
     document.getElementById("expense-wallet-control").hidden = operation.kind !== "expense";
+    document.getElementById("quick-expenses").hidden = operation.kind !== "expense";
     document.getElementById("operation-receipt-control").hidden = saving;
     document.getElementById("operation-description-control").hidden = saving;
     document.getElementById("description").disabled = saving;

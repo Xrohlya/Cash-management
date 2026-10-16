@@ -1,5 +1,5 @@
-import { api, showToast } from "./core.js?v=20261017-2";
-import { load } from "./dashboard.js?v=20261017-2";
+import { api, showToast } from "./core.js?v=20261017-3";
+import { load } from "./dashboard.js?v=20261017-3";
 
 function initHistoryActions() {
   document.getElementById("history").addEventListener("click", (event) => {

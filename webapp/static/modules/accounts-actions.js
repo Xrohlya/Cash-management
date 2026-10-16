@@ -1,6 +1,7 @@
-import { api, showToast } from "./core.js?v=20261017-2";
-import { load } from "./dashboard.js?v=20261017-2";
-import { requestConfirmation } from "./ui.js?v=20261017-2";
+import { api, showToast } from "./core.js?v=20261017-3";
+import { load } from "./dashboard.js?v=20261017-3";
+import { requestConfirmation } from "./ui.js?v=20261017-3";
+import { revealBudgetSection } from "./home-navigation.js?v=20261017-3";
 
 function initAccountsActions() {
   document.getElementById("account-form").addEventListener("submit", async (event) => {
@@ -37,37 +38,10 @@ function initAccountsActions() {
   document.getElementById("accounts-summary").addEventListener("click", (event) => {
     const button = event.target.closest("[data-account-transfer]");
     if (!button) return;
-    document.getElementById("account-transfer-form").reset();
-    document.getElementById("account-transfer-id").value = button.dataset.accountTransfer;
-    document.getElementById("account-transfer-title").textContent = `Счёт «${button.dataset.accountName}»`;
-    document.getElementById("account-transfer-dialog").showModal();
-  });
-
-  document.getElementById("cancel-account-transfer").addEventListener("click", () => {
-    document.getElementById("account-transfer-dialog").close();
-  });
-
-  document.getElementById("account-transfer-form").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const button = event.submitter;
-    button.disabled = true;
-    try {
-      await api(`/api/accounts/${document.getElementById("account-transfer-id").value}/transfer`, {
-        method: "POST",
-        body: JSON.stringify({
-          amount: Number(document.getElementById("account-transfer-amount").value),
-          direction: document.getElementById("account-transfer-direction").value,
-          request_id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-        }),
-      });
-      document.getElementById("account-transfer-dialog").close();
-      await load();
-      showToast("Перевод выполнен");
-    } catch (error) {
-      showToast(error.message);
-    } finally {
-      button.disabled = false;
-    }
+    document.getElementById("wallet-source").value = "main";
+    document.getElementById("wallet-destination").value = `account:${button.dataset.accountTransfer}`;
+    revealBudgetSection("wallet-transfer-panel");
+    document.getElementById("wallet-transfer-amount").focus({ preventScroll: true });
   });
 }
 

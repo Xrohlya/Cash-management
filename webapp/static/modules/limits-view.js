@@ -1,5 +1,5 @@
-import { money, showToast } from "./core.js?v=20261017-2";
-import { element, iconButton } from "./ui.js?v=20261017-2";
+import { money, showToast } from "./core.js?v=20261017-3";
+import { element, iconButton } from "./ui.js?v=20261017-3";
 
 export function renderLimits(planning, state) {
   const root = document.getElementById("category-limits-list");

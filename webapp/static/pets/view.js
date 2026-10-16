@@ -1,9 +1,9 @@
-import { money } from "../modules/core.js?v=20261017-2";
-import { element, refreshIcons } from "../modules/ui.js?v=20261017-2";
-import { decorations } from "./decorations.js?v=20261017-2";
-import { roomEvolution } from "./evolution.js?v=20261017-2";
-import { renderAppearance } from "./appearance.js?v=20261017-2";
-import { renderLife } from "./life.js?v=20261017-2";
+import { money } from "../modules/core.js?v=20261017-3";
+import { element, refreshIcons } from "../modules/ui.js?v=20261017-3";
+import { decorations } from "./decorations.js?v=20261017-3";
+import { roomEvolution } from "./evolution.js?v=20261017-3";
+import { renderAppearance } from "./appearance.js?v=20261017-3";
+import { renderLife } from "./life.js?v=20261017-3";
 
 const node = (id) => document.getElementById(id);
 

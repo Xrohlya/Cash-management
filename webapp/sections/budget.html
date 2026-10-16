@@ -4,18 +4,26 @@
         <strong id="available">—</strong>
         <div class="limit-row">
           <span>Лимит на день <b id="daily-limit">—</b></span>
-          <span>Сегодня <b id="today">—</b></span>
+          <span>Расходы сегодня <b id="today">—</b></span>
         </div>
       </section>
 
+      <div class="budget-actions" aria-label="Действия со счетами">
+        <button type="button" data-budget-jump="operation-section"><i data-lucide="plus" aria-hidden="true"></i>Операция</button>
+        <button type="button" data-budget-jump="wallet-transfer-panel"><i data-lucide="arrow-left-right" aria-hidden="true"></i>Перевод</button>
+        <button type="button" data-budget-jump="wallet-refund-panel"><i data-lucide="undo-2" aria-hidden="true"></i>Возврат</button>
+      </div>
+      <details class="budget-breakdown">
+        <summary>Сводка за период<i data-lucide="chevron-down" aria-hidden="true"></i></summary>
       <section class="metrics" aria-label="Сводка">
-        <article><span>Бюджет</span><b id="budget">—</b></article>
+        <article><span>Доход после удержаний</span><b id="budget">—</b></article>
         <article><span>Расходы</span><b id="spent">—</b></article>
         <article><span>Регулярные</span><b id="recurring">—</b></article>
         <article><span>Квартира</span><b id="rent">—</b></article>
         <article><span>Накопления</span><b id="savings">—</b></article>
         <article><span>В накопления за период</span><b id="savings-transferred">—</b></article>
       </section>
+      </details>
 
       <div class="home-actions">
         <button type="button" data-planning-jump="afford-section"><i data-lucide="shopping-bag" aria-hidden="true"></i>Могу позволить?</button>
@@ -31,12 +39,15 @@
           <div><span>Безопасно потратить сегодня</span><strong id="safe-today">—</strong></div>
           <p id="risk-text">Анализируем текущий темп расходов</p>
         </div>
+        <p class="radar-projection"><span>К концу периода при текущем темпе</span><b id="projected-balance">—</b></p>
+        <details class="radar-details"><summary>Подробности прогноза<i data-lucide="chevron-down" aria-hidden="true"></i></summary>
         <div class="radar-stats">
           <article><span>Без расходов</span><b id="streak-current">—</b><small id="streak-best">—</small></article>
           <article><span>Последние 7 дней</span><b id="weekly-total">—</b><small id="weekly-change">—</small></article>
-          <article><span>Резерв платежей</span><b id="reserved-total">—</b><small id="projected-balance">—</small></article>
+          <article><span>Резерв платежей</span><b id="reserved-total">—</b></article>
           <article><span>Оставить к концу</span><b id="target-balance-radar">—</b><small>Личный резерв</small></article>
         </div>
+        </details>
       </section>
 
       
@@ -58,7 +69,7 @@
 
       <section class="operation-section" id="operation-section">
         <h2>Новая операция</h2>
-        <div class="quick-expenses" aria-label="Частые расходы">
+        <div class="quick-expenses" id="quick-expenses" aria-label="Частые расходы">
           <button type="button" data-quick-expense="Кафе">Кофе</button>
           <button type="button" data-quick-expense="Еда">Продукты</button>
           <button type="button" data-quick-expense="Такси">Такси</button>
@@ -73,8 +84,8 @@
           <label id="expense-wallet-control"><span>Счёт для расхода</span><select id="expense-wallet"><option value="main">Основной</option></select></label>
           <div class="receipt-scan" id="operation-receipt-control">
             <input id="receipt-photo" type="file" accept="image/*" capture="environment" hidden>
-            <button class="receipt-button" id="scan-receipt" type="button"><span aria-hidden="true">▣</span> Сканировать чек</button>
-            <small id="receipt-status">Сумма и категория заполнятся автоматически</small>
+            <button class="receipt-button" id="scan-receipt" type="button"><i data-lucide="scan-line" aria-hidden="true"></i> Сканировать чек</button>
+            <small id="receipt-status" role="status"></small>
           </div>
           <label>
             <span>Сумма</span>
@@ -90,19 +101,21 @@
       </section>
 
       <section class="wallet-operations">
-        <h2>Перевод между счетами</h2>
+        <details id="wallet-transfer-panel"><summary><i data-lucide="arrow-left-right" aria-hidden="true"></i>Перевод между счетами<i data-lucide="chevron-down" aria-hidden="true"></i></summary>
         <form id="wallet-transfer-form">
           <label>Откуда<select id="wallet-source"></select></label>
           <label>Куда<select id="wallet-destination"></select></label>
           <label>Сумма<input id="wallet-transfer-amount" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
           <button type="submit" class="primary"><i data-lucide="arrow-right-left" aria-hidden="true"></i>Перевести</button>
         </form>
-        <h2>Возврат покупки</h2>
+        </details>
+        <details id="wallet-refund-panel"><summary><i data-lucide="undo-2" aria-hidden="true"></i>Возврат покупки<i data-lucide="chevron-down" aria-hidden="true"></i></summary>
         <form id="wallet-refund-form">
           <label>Исходный расход<select id="wallet-original" required></select></label>
           <label>Сумма возврата<input id="wallet-refund-amount" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
           <button type="submit" class="primary"><i data-lucide="undo-2" aria-hidden="true"></i>Вернуть на счёт</button>
         </form>
+        </details>
       </section>
 
       

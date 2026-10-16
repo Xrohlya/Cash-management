@@ -1,6 +1,7 @@
-import { api, money, showToast } from "./core.js?v=20261017-2";
-import { bindForm, requestConfirmation } from "./ui.js?v=20261017-2";
-import { load } from "./dashboard.js?v=20261017-2";
+import { api, money, showToast } from "./core.js?v=20261017-3";
+import { bindForm, requestConfirmation } from "./ui.js?v=20261017-3";
+import { load } from "./dashboard.js?v=20261017-3";
+import { revealBudgetSection } from "./home-navigation.js?v=20261017-3";
 
 function fillSelect(id, options) {
   const select = document.getElementById(id);
@@ -41,7 +42,7 @@ export function initWallets() {
     document.querySelector('[data-tab-target="budget"]').click();
     document.getElementById("wallet-original").value = String(row.id);
     setRefundAmount();
-    document.getElementById("wallet-refund-form").scrollIntoView({ behavior: "smooth", block: "center" });
+    revealBudgetSection("wallet-refund-panel");
     document.getElementById("wallet-refund-amount").focus({ preventScroll: true });
   });
   for (const [form, kind] of [["wallet-transfer-form", "transfer"], ["wallet-refund-form", "refund"]]) {

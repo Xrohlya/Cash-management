@@ -38,7 +38,7 @@ function selectTab(tabName, remember = true) {
   document.querySelectorAll("[data-tab-target]").forEach((button) => {
     const active = button.dataset.tabTarget === selected;
     button.classList.toggle("active", active);
-    button.setAttribute("aria-selected", String(active));
+    button.setAttribute(button.getAttribute("role") === "tab" ? "aria-selected" : "aria-pressed", String(active));
   });
   const quickAdd = document.getElementById("quick-add");
   if (quickAdd) quickAdd.hidden = selected === "budget" || selected === "pets";
