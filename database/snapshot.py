@@ -9,6 +9,8 @@ from database.users import ensure_user
 
 def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
     today = today or date.today()
+    from database.periods import ensure_month, financial_period_start
+    ensure_month(user_id, financial_period_start(user_id, today).isoformat(), today=today)
     apply_due_recurring_payments(user_id, today)
     if db.DATABASE_URL:
         with get_connection() as conn:
@@ -76,6 +78,7 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
                     g.target,
                     g.target_date,
                     (SELECT COUNT(*) FROM ins_month) AS inserted_months
+                    ,(SELECT amount FROM period_openings WHERE user_id=? AND month=period.start_date::text) AS opening_balance
                 FROM period
                 CROSS JOIN m
                 CROSS JOIN d
@@ -95,6 +98,7 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
                     user_id,
                     today.isoformat(),
                     (today + timedelta(days=1)).isoformat(),
+                    user_id,
                     user_id,
                 ),
             ).fetchone()
@@ -133,6 +137,7 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
             "target_balance": float(row["target_balance"] or 0),
             "mandatory_percent": float(row["mandatory_percent"]),
             "budget": budget,
+            "opening_balance": float(row["opening_balance"] or 0),
             "spent": spent,
             "recurring": recurring,
             "rent": rent,
@@ -153,6 +158,7 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
 
     ensure_user(user_id)
     with get_connection() as conn:
+        from database.openings import opening_amount
         user = conn.execute(
             "SELECT mandatory_percent, financial_day, target_balance, savings, status_chat_id, status_message_id "
             "FROM users WHERE user_id=?",
@@ -167,6 +173,7 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
             "SELECT budget, spent, rent, saved FROM months WHERE user_id=? AND month=?",
             (user_id, key),
         ).fetchone()
+        opening = opening_amount(conn, user_id, key)
         daily_row = conn.execute(
             "SELECT COALESCE(SUM(amount), 0) AS total FROM transactions "
             "WHERE user_id=? AND kind='expense' AND created_at>=? AND created_at<?",
@@ -206,6 +213,7 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
         "target_balance": float(user["target_balance"] or 0),
         "mandatory_percent": float(user["mandatory_percent"]),
         "budget": budget,
+        "opening_balance": opening,
         "spent": spent,
         "recurring": recurring,
         "rent": rent,

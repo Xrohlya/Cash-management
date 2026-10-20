@@ -1,5 +1,5 @@
-import { money } from "./core.js?v=20261017-3";
-import { element, dateLabel } from "./ui.js?v=20261017-3";
+import { money } from "./core.js?v=20261020-1";
+import { element, dateLabel } from "./ui.js?v=20261020-1";
 
 export function renderWeekly(weekly) {
   document.getElementById("week-period").textContent = `${dateLabel(weekly.start)} — ${dateLabel(weekly.end)}`;

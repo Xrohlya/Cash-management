@@ -32,7 +32,7 @@ def list_user_summaries(today=None):
         users = conn.execute(
             "SELECT user_id,first_name,username,financial_day,savings FROM users ORDER BY user_id"
         ).fetchall()
-        months = conn.execute("SELECT * FROM months ORDER BY user_id,month DESC").fetchall()
+        months = conn.execute("SELECT m.*,COALESCE(o.amount,0) opening FROM months m LEFT JOIN period_openings o ON o.user_id=m.user_id AND o.month=m.month ORDER BY m.user_id,m.month DESC").fetchall()
     by_user = {}
     for month in months:
         by_user.setdefault(int(month["user_id"]), []).append(month)
@@ -52,6 +52,7 @@ def list_user_summaries(today=None):
             "username": user["username"] or "",
             "balance": balance(current),
             "savings": float(user["savings"]),
+            "opening_balance": float(current["opening"]) if current is not None else 0.0,
             "period_start": start.isoformat(),
             "period_end": (financial_period_end_for_start(start) - timedelta(days=1)).isoformat(),
             "previous_period": previous["month"] if previous is not None else None,
@@ -110,6 +111,7 @@ def reset_user_data(user_id: int):
 
     with get_connection() as conn:
         clear_game(conn, user_id)
+        conn.execute("DELETE FROM period_openings WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM wallet_entries WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM expected_income WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM category_limits WHERE user_id=?", (user_id,))

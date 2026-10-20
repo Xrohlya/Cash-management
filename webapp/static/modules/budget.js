@@ -1,10 +1,11 @@
-import { financialDay, targetBalance, money } from "./core.js?v=20261017-3";
+import { financialDay, targetBalance, money } from "./core.js?v=20261020-1";
 
 function renderState(state) {
   document.getElementById("available").textContent = money(state.available);
   document.getElementById("daily-limit").textContent = money(state.daily_limit);
   document.getElementById("today").textContent = money(state.today);
   document.getElementById("budget").textContent = money(state.budget);
+  document.getElementById("opening-balance").textContent = money(state.opening_balance);
   document.getElementById("spent").textContent = money(state.spent);
   document.getElementById("recurring").textContent = money(state.recurring);
   document.getElementById("rent").textContent = money(state.rent);

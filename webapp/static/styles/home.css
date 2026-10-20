@@ -13,6 +13,9 @@ summary::-webkit-details-marker { display: none; }
 summary > svg:last-child { margin-left: auto; }
 details[open] > summary > svg:last-child { transform: rotate(180deg); }
 .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); border-bottom: 0; }
+.metrics article:nth-child(n) b { color: #b9dcff; text-shadow: none; }
+.metrics article #spent { color: var(--danger); }
+.metrics article #savings { color: var(--positive); }
 .radar-details { margin-top: 12px; border-top: 1px solid var(--line); }
 .radar-details > summary { color: var(--muted); font-size: 12px; }
 .radar-section { padding-bottom: 12px; border-bottom: 1px solid var(--line); }

@@ -1,7 +1,7 @@
-import { api, selectTab, showToast } from "./core.js?v=20261017-3";
-import { load } from "./dashboard.js?v=20261017-3";
-import { store } from "./store.js?v=20261017-3";
-import { bindForm, runAction, requestConfirmation } from "./ui.js?v=20261017-3";
+import { api, selectTab, showToast } from "./core.js?v=20261020-1";
+import { load } from "./dashboard.js?v=20261020-1";
+import { store } from "./store.js?v=20261020-1";
+import { bindForm, runAction, requestConfirmation } from "./ui.js?v=20261020-1";
 
 export function initLimitsActions() {
   document.getElementById("budget-limit-notice").addEventListener("click", () => {

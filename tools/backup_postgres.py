@@ -14,6 +14,7 @@ from config.settings import DATABASE_URL
 
 
 TABLES = {
+    "period_openings": "*",
     "wallet_entries": "*",
     "pet_selection": "*",
     "pet_layout": "*",

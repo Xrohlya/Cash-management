@@ -1,6 +1,6 @@
-import { telegram, operation, selectTab, showToast } from "./core.js?v=20261017-3";
-import { load } from "./dashboard.js?v=20261017-3";
-import { revealBudgetSection } from "./home-navigation.js?v=20261017-3";
+import { telegram, operation, selectTab, showToast } from "./core.js?v=20261020-1";
+import { load } from "./dashboard.js?v=20261020-1";
+import { revealBudgetSection } from "./home-navigation.js?v=20261020-1";
 
 function initNavigationActions() {
   document.querySelectorAll("button[data-tab-target]").forEach((button) => {

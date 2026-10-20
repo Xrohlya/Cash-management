@@ -28,7 +28,7 @@ class ConsoleTest(unittest.TestCase):
         text = output.getvalue()
         self.assertIn("160 000 ₽", text)
         self.assertIn("121 086,86 ₽", text)
-        self.assertIn("без автопереноса", text)
+        self.assertIn("Прошлый период", text)
 
     def test_startup_shows_bot_and_user_summary(self):
         bot_info = SimpleNamespace(username="cash_test_bot")

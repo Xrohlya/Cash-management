@@ -101,8 +101,10 @@ def show_startup(bot_info, users, database_name="PostgreSQL · Aiven", webapp_ur
             print(f"{str(item['user_id']):<16} {name:<34} {balance_color}{balance:>18}{Style.RESET} {savings:>18}")
             if item.get("period_start"):
                 print(f"{Style.DIM}  Период: {item['period_start']} — {item['period_end']}{Style.RESET}")
-            if item.get("previous_balance"):
-                print(f"{Style.YELLOW}  Прошлый период с {item['previous_period']}: остаток {_money(item['previous_balance'])} (без автопереноса){Style.RESET}")
+            if item.get("opening_balance"):
+                print(f"{Style.CYAN}  Входящий остаток: {_money(item['opening_balance'])} (не доход){Style.RESET}")
+            elif item.get("previous_balance"):
+                print(f"{Style.DIM}  Прошлый период с {item['previous_period']}: остаток {_money(item['previous_balance'])}{Style.RESET}")
     else:
         print(f"\n{Style.DIM}Пользователей пока нет.{Style.RESET}")
 

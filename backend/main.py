@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from database.db import init_db
+from database.openings import rollover_all_users
 from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -18,6 +19,7 @@ WEBAPP_DIR = Path(__file__).resolve().parent.parent / "webapp"
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     init_db()
+    rollover_all_users()
     yield
 
 

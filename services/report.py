@@ -67,6 +67,8 @@ def parse_report_period(user_id: int, value: str | None = None):
 def get_report_data(user_id: int, start: date, end: date):
     month = get_month(user_id, start.isoformat())
     with get_connection() as conn:
+        from database.openings import opening_amount
+        opening = opening_amount(conn, user_id, start.isoformat())
         rows = conn.execute(
             "SELECT created_at, kind, amount, description FROM transactions "
             "WHERE user_id=? AND created_at>=? AND created_at<? ORDER BY created_at ASC, id ASC",
@@ -96,6 +98,7 @@ def get_report_data(user_id: int, start: date, end: date):
 
     return {
         "month": month,
+        "opening_balance": opening,
         "rows": rows,
         "expenses": expenses,
         "recurring": recurring,
@@ -147,6 +150,7 @@ def _summary_table(data, styles):
     net_income = data["gross_income"] - data["mandatory_total"]
 
     items = [
+        ("Входящий остаток (не доход)", money(data.get("opening_balance", 0))),
         ("Доход брутто", money(data["gross_income"])),
         ("Обязательный вычет", money(data["mandatory_total"])),
         ("Бюджет после вычета", money(net_income)),

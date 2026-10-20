@@ -32,10 +32,13 @@ def add_income(user_id: int, gross: float, percent: float, description="Дохо
 
 
 def _add_budget_reduction(user_id, kind, column, amount, description, request_id=None, created_at=None):
+    from database.openings import require_unclosed_period, lock_period_user
     key = month_key(user_id, created_at)
     ensure_month(user_id, key)
     timestamp = (created_at or datetime.now()).isoformat(timespec="seconds")
     with get_connection() as conn:
+        lock_period_user(conn, user_id)
+        require_unclosed_period(conn, user_id, key)
         if not _claim_request(conn, user_id, request_id):
             return True
         cursor = conn.execute(
@@ -130,6 +133,8 @@ def update_expense(user_id: int, transaction_id: int, amount: float, description
             raise ValueError("Можно изменять только обычные расходы")
         user = conn.execute("SELECT financial_day FROM users WHERE user_id=?", (user_id,)).fetchone()
         key = financial_period_start_for_day(int(user["financial_day"]), datetime.fromisoformat(row["created_at"])).isoformat()
+        from database.openings import require_unclosed_period
+        require_unclosed_period(conn, user_id, key)
         increase = round(amount - float(row["amount"]), 2)
         changed = conn.execute("UPDATE months SET spent=spent+? WHERE user_id=? AND month=? AND budget-spent-rent-saved>=?", (increase, user_id, key, increase))
         if changed.rowcount != 1:

@@ -27,6 +27,18 @@ def build_excel_report(user_id: int, start=None, end=None):
     ws.auto_filter.ref = ws.dimensions
     for col, width in {"A":22,"B":14,"C":14,"D":32}.items(): ws.column_dimensions[col].width = width
     cats = wb.create_sheet("Категории"); cats.append(["Категория","Сумма"])
+    from database.openings import opening_amount
+    from database.periods import get_month
+    month = get_month(user_id, start.isoformat())
+    with get_connection() as conn:
+        opening = opening_amount(conn, user_id, start.isoformat())
+    summary = wb.create_sheet("Сводка")
+    summary.append(["Показатель", "Сумма"])
+    summary.append(["Входящий остаток (не доход)", opening])
+    summary.append(["Доход после удержаний", float(month["budget"]) - opening])
+    summary.append(["Доступно", float(month["budget"]) - float(month["spent"]) - float(month["rent"]) - float(month["saved"])])
+    summary.column_dimensions["A"].width = 36
+    summary.column_dimensions["B"].width = 20
     totals = {}
     for r in rows:
         if r["kind"] == "expense": totals[r["description"]] = totals.get(r["description"],0)+float(r["amount"])

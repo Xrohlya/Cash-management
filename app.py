@@ -11,6 +11,7 @@ from bot.keyboards import main_menu
 from bot.polling import POLLING_BACKOFF
 from config.settings import DATABASE_URL, WEBAPP_URL, versioned_webapp_url
 from database.db import close_db_pool, init_db
+from database.openings import rollover_all_users
 from database.repository import (
     apply_due_recurring_payments,
     due_recurring_notifications,
@@ -83,6 +84,7 @@ async def configure_bot(bot):
 async def main():
     configure_logging()
     init_db()
+    rollover_all_users()
     bot = create_bot()
     bot_info = await bot.get_me()
     await configure_bot(bot)

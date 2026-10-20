@@ -251,6 +251,8 @@ def _init_db_once():
         create_planning_schema(conn, bool(DATABASE_URL))
         create_pet_schema(conn)
         create_wallet_schema(conn)
+        from database.openings import create_opening_schema
+        create_opening_schema(conn)
         if DATABASE_URL:
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT NOT NULL DEFAULT ''")
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT NOT NULL DEFAULT ''")

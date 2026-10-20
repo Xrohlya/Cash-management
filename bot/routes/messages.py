@@ -58,12 +58,16 @@ async def plain_text(message: Message):
                 await delete_user_message(message)
                 await send_transient(message, f"⚠️ Расход {money(amount)} ₽ больше доступного бюджета ({money(available)} ₽).", parse_mode="HTML")
                 return
-            add_expense(
-                user_id,
-                amount,
-                clean_description,
-                created_at=datetime.combine(parsed_day, datetime.min.time()).replace(hour=12),
-            )
+            try:
+                add_expense(
+                    user_id, amount, clean_description,
+                    created_at=datetime.combine(parsed_day, datetime.min.time()).replace(hour=12),
+                )
+            except ValueError as error:
+                from html import escape
+                await delete_user_message(message)
+                await send_transient(message, escape(str(error)))
+                return
             await delete_user_message(message)
             await update_status(message, user_id)
             return
