@@ -1,4 +1,4 @@
-import logging
+from datetime import date, timedelta
 from config.settings import DEFAULT_MANDATORY_PERCENT
 from database.db import get_connection
 
@@ -24,25 +24,38 @@ def get_user_profile(user_id: int):
         ).fetchone()
 
 
-def list_user_summaries():
-    from database.snapshot import get_status_snapshot
+def list_user_summaries(today=None):
+    from database.periods import financial_period_start_for_day, financial_period_end_for_start
 
+    today = today or date.today()
     with get_connection() as conn:
         users = conn.execute(
-            "SELECT user_id,first_name,username FROM users ORDER BY user_id"
+            "SELECT user_id,first_name,username,financial_day,savings FROM users ORDER BY user_id"
         ).fetchall()
+        months = conn.execute("SELECT * FROM months ORDER BY user_id,month DESC").fetchall()
+    by_user = {}
+    for month in months:
+        by_user.setdefault(int(month["user_id"]), []).append(month)
+
+    def balance(row):
+        return round(float(row["budget"]) - float(row["spent"]) - float(row["rent"]) - float(row["saved"]), 2) if row is not None else 0.0
+
     summaries = []
     for user in users:
-        try:
-            balance = get_status_snapshot(int(user["user_id"]))["remaining"]
-        except Exception:
-            logging.exception("Could not load startup balance for user %s", user["user_id"])
-            balance = None
+        start = financial_period_start_for_day(int(user["financial_day"] or 20), today)
+        rows = by_user.get(int(user["user_id"]), [])
+        current = next((row for row in rows if row["month"] == start.isoformat()), None)
+        previous = next((row for row in rows if row["month"] < start.isoformat()), None)
         summaries.append({
             "user_id": int(user["user_id"]),
             "first_name": user["first_name"] or "",
             "username": user["username"] or "",
-            "balance": balance,
+            "balance": balance(current),
+            "savings": float(user["savings"]),
+            "period_start": start.isoformat(),
+            "period_end": (financial_period_end_for_start(start) - timedelta(days=1)).isoformat(),
+            "previous_period": previous["month"] if previous is not None else None,
+            "previous_balance": balance(previous),
         })
     return summaries
 

@@ -20,11 +20,28 @@ class Style:
     RED = "\033[38;5;203m" if USE_COLOR else ""
 
 
+class ConsoleFormatter(logging.Formatter):
+    def __init__(self, *, use_color=None):
+        super().__init__("%(asctime)s  %(levelname)-8s  %(message)s", datefmt="%H:%M:%S")
+        self.use_color = sys.stderr.isatty() if use_color is None else use_color
+
+    def format(self, record):
+        text = super().format(record)
+        if not self.use_color:
+            return text
+        color = "\033[38;5;203m" if record.levelno >= logging.ERROR else (
+            "\033[38;5;42m" if getattr(record, "connection_restored", False) else
+            "\033[38;5;220m" if record.levelno >= logging.WARNING else ""
+        )
+        return f"{color}{text}\033[0m" if color else text
+
+
 def configure_logging():
+    handler = logging.StreamHandler()
+    handler.setFormatter(ConsoleFormatter())
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s  %(levelname)-8s  %(message)s",
-        datefmt="%H:%M:%S",
+        handlers=[handler],
         force=True,
     )
     logging.getLogger("aiogram.event").setLevel(logging.WARNING)
@@ -74,13 +91,18 @@ def show_startup(bot_info, users, database_name="PostgreSQL · Aiven", webapp_ur
 
     if users:
         print(f"\n{Style.BOLD}ПОЛЬЗОВАТЕЛИ{Style.RESET}")
-        print(f"{Style.DIM}{'ID':<16} {'ИМЯ / НИК':<34} {'БАЛАНС':>18}{Style.RESET}")
-        print(f"{Style.DIM}{'─' * 16} {'─' * 34} {'─' * 18}{Style.RESET}")
+        print(f"{Style.DIM}{'ID':<16} {'ИМЯ / НИК':<34} {'ДОСТУПНО':>18} {'НАКОПЛЕНИЯ':>18}{Style.RESET}")
+        print(f"{Style.DIM}{'─' * 16} {'─' * 34} {'─' * 18} {'─' * 18}{Style.RESET}")
         for item in users:
             name = _display_name(item)[:34]
             balance = _money(item["balance"])
             balance_color = Style.RED if item["balance"] is None else Style.GREEN
-            print(f"{str(item['user_id']):<16} {name:<34} {balance_color}{balance:>18}{Style.RESET}")
+            savings = _money(item.get("savings", 0))
+            print(f"{str(item['user_id']):<16} {name:<34} {balance_color}{balance:>18}{Style.RESET} {savings:>18}")
+            if item.get("period_start"):
+                print(f"{Style.DIM}  Период: {item['period_start']} — {item['period_end']}{Style.RESET}")
+            if item.get("previous_balance"):
+                print(f"{Style.YELLOW}  Прошлый период с {item['previous_period']}: остаток {_money(item['previous_balance'])} (без автопереноса){Style.RESET}")
     else:
         print(f"\n{Style.DIM}Пользователей пока нет.{Style.RESET}")
 

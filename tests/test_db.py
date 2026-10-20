@@ -1,10 +1,28 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
+from psycopg import OperationalError
+from services.connection_status import ConnectionStatus
 
 from database import db
 
 
 class DatabaseStartupTest(unittest.TestCase):
+    def test_query_failure_and_recovery_are_reported_without_replaying_writes(self):
+        cursor = Mock()
+        cursor.execute.side_effect = [OperationalError("connection lost"), None]
+        connection = Mock()
+        connection.cursor.return_value = cursor
+        status = ConnectionStatus("Test database")
+        with patch.object(db, "database_connection", status), self.assertLogs(level="INFO") as logs:
+            wrapper = db._PGConnection(connection)
+            with self.assertRaises(OperationalError):
+                wrapper.execute("SELECT 1")
+            self.assertEqual(cursor.execute.call_count, 1)
+            wrapper.execute("SELECT 1")
+        self.assertEqual(len(logs.records), 2)
+        self.assertIn("СВЯЗЬ ПОТЕРЯНА", logs.records[0].getMessage())
+        self.assertTrue(logs.records[1].connection_restored)
+
     @patch("database.db.time.sleep")
     @patch("database.db.close_db_pool")
     @patch("database.db._init_db_once", side_effect=[RuntimeError("network"), None])

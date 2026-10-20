@@ -2,13 +2,28 @@ import asyncio
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from aiogram.exceptions import TelegramRetryAfter, TelegramServerError
+from aiogram.exceptions import TelegramRetryAfter, TelegramServerError, TelegramNetworkError
 from aiogram.methods import GetUpdates, SendMessage
 
 from bot.polling import PollingRateLimitMiddleware
 
 
 class PollingTests(unittest.IsolatedAsyncioTestCase):
+    async def test_lost_connection_and_recovery_are_logged_once(self):
+        middleware = PollingRateLimitMiddleware()
+        method = GetUpdates()
+        request = AsyncMock(side_effect=[TelegramNetworkError(method, "timeout"),
+                                        TelegramServerError(method, "Bad Gateway"), [], []])
+        with self.assertLogs(level="INFO") as logs:
+            for _ in range(2):
+                with self.assertRaises((TelegramNetworkError, TelegramServerError)):
+                    await middleware(request, None, method)
+            await middleware(request, None, method)
+            await middleware(request, None, method)
+        self.assertEqual(len(logs.records), 2)
+        self.assertEqual(logs.records[0].levelno, 40)
+        self.assertTrue(logs.records[1].connection_restored)
+
     async def test_waits_for_telegram_before_retrying_same_request(self):
         method = GetUpdates(offset=42)
         request = AsyncMock(side_effect=[

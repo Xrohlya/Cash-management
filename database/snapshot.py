@@ -46,9 +46,11 @@ def get_status_snapshot(user_id: int, today: date | None = None) -> dict:
                     RETURNING 1
                 ),
                 m AS (
-                    SELECT months.budget, months.spent, months.rent, months.saved
-                    FROM months, period
-                    WHERE months.user_id=? AND months.month=period.start_date::text
+                    -- A sibling CTE's newly inserted month is not visible yet.
+                    SELECT COALESCE(months.budget,0) budget, COALESCE(months.spent,0) spent,
+                           COALESCE(months.rent,0) rent, COALESCE(months.saved,0) saved
+                    FROM period LEFT JOIN months
+                    ON months.user_id=? AND months.month=period.start_date::text
                 ),
                 d AS (
                     SELECT COALESCE(SUM(amount), 0) AS spent_today

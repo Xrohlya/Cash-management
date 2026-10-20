@@ -8,6 +8,7 @@ from config.settings import DATABASE_URL, DB_POOL_MAX, SQLITE_PATH
 from database.planning_schema import create_planning_schema
 from database.pet_schema import create_pet_schema
 from database.wallet_schema import create_wallet_schema
+from services.connection_status import database_connection
 
 
 _PG_POOL = None
@@ -46,6 +47,9 @@ class _PGConnection:
             else:
                 self._conn.commit()
         except Exception as error:
+            from psycopg import InterfaceError, OperationalError
+            if isinstance(error, (InterfaceError, OperationalError)):
+                database_connection.failed()
             transaction_error = error
             try:
                 self._conn.close()
@@ -63,6 +67,7 @@ class _PGConnection:
             raise transaction_error
 
     def execute(self, sql, params=()):
+        from psycopg import InterfaceError, OperationalError
         from psycopg.rows import dict_row
 
         match = re.search(r"INSERT OR IGNORE INTO\s+(\w+)", sql, flags=re.I)
@@ -73,8 +78,13 @@ class _PGConnection:
             if keys:
                 sql += f" ON CONFLICT ({keys}) DO NOTHING"
         sql = sql.replace("?", "%s")
-        cur = self._conn.cursor(row_factory=dict_row)
-        cur.execute(sql, params)
+        try:
+            cur = self._conn.cursor(row_factory=dict_row)
+            cur.execute(sql, params)
+        except (InterfaceError, OperationalError):
+            database_connection.failed()
+            raise
+        database_connection.connected()
         return cur
 
 
@@ -114,7 +124,14 @@ def get_connection():
                 check=ConnectionPool.check_connection,
                 open=True,
             )
-        return _PGConnection(_PG_POOL.getconn(), release=_PG_POOL.putconn)
+        from psycopg import InterfaceError, OperationalError
+        from psycopg_pool import PoolTimeout
+        try:
+            conn = _PG_POOL.getconn()
+        except (InterfaceError, OperationalError, PoolTimeout):
+            database_connection.failed()
+            raise
+        return _PGConnection(conn, release=_PG_POOL.putconn)
 
     SQLITE_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(SQLITE_PATH, timeout=30)
