@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 from html import escape
+from services.formatting import money
 from database.repository import (
     get_month,
     financial_period_end,
@@ -24,10 +25,6 @@ def daily_limit(user_id: int):
     return remaining / days if days else remaining
 
 
-def money(value: float) -> str:
-    return f"{value:,.0f}".replace(",", " ")
-
-
 def status_from_snapshot(snapshot: dict) -> str:
     savings = snapshot["savings"]
     budget = snapshot["budget"]
@@ -36,9 +33,7 @@ def status_from_snapshot(snapshot: dict) -> str:
     rent = snapshot["rent"]
     remaining = snapshot["remaining"]
     days = snapshot["days_left"]
-    daily = snapshot["daily_limit"]
     spent_today = snapshot["spent_today"]
-    left_today = daily - spent_today
     start = snapshot["start"]
     end = snapshot["end"]
     goal = snapshot["goal"]
@@ -49,22 +44,19 @@ def status_from_snapshot(snapshot: dict) -> str:
         need = max(0, target - savings)
         days_to_goal = max(1, (target_date - date.today()).days)
         goal_line = f"\n🎯 Цель: {money(target)} ₽ к {target_date:%d.%m.%Y}\n   Осталось накопить: {money(need)} ₽ · {money(need/days_to_goal)} ₽/день"
-    forecast = max(0, snapshot["forecast"])
     return (
         "💰 <b>МОЙ БЮДЖЕТ</b>\n\n"
         f"📅 Финансовый месяц: <b>{start:%d.%m.%Y} — {(end - timedelta(days=1)):%d.%m.%Y}</b>\n"
         f"💳 Доступно: <b>{money(remaining)} ₽</b>\n"
         f"📅 Дней осталось: <b>{days}</b>\n"
         f"💸 Потрачено сегодня: <b>{money(spent_today)} ₽</b>\n"
-        f"🎯 Лимит сегодня: <b>{money(daily)} ₽</b>\n"
-        f"🟢 Осталось сегодня: <b>{money(left_today)} ₽</b>\n\n"
+        "\n"
         f"↪ Входящий остаток: {money(snapshot.get('opening_balance', 0))} ₽ <i>(не доход)</i>\n"
         f"💰 Доход после удержаний: {money(budget - snapshot.get('opening_balance', 0))} ₽\n"
         f"💸 Потрачено: {money(spent)} ₽\n"
         f"🔁 Регулярные платежи: {money(recurring)} ₽ <i>(отдельно)</i>\n"
         f"🏠 Квартира: {money(rent)} ₽ <i>(отдельно)</i>\n"
-        f"🏦 Накопления всего: {money(savings)} ₽\n"
-        f"📈 Прогноз остатка к {(end - timedelta(days=1)):%d.%m.%Y}: <b>{money(forecast)} ₽</b>"
+        f"🏦 Накопления всего: {money(savings)} ₽"
         f"{goal_line}"
     )
 
@@ -84,10 +76,11 @@ def status(user_id: int, snapshot: dict | None = None) -> str:
     )
     text += (
         "\n\n🧭 <b>ФИНАНСОВЫЙ РАДАР</b>\n"
-        f"• Желаемый остаток: <b>{money(radar['target_balance'])} ₽</b>\n"
-        f"• Безопасно сегодня: <b>{money(radar['safe_today'])} ₽</b>\n"
-        f"• Прогноз к концу периода: <b>{money(radar['projected_balance'])} ₽</b>\n"
-        f"• {radar['risk_title']}"
+        f"<b>{escape(radar['explanation']['title'])}</b>\n"
+        f"{escape(radar['explanation']['pace'])}\n"
+        f"{escape(radar['explanation']['guidance'])}\n"
+        f"{escape(radar['explanation']['target_gap'])}\n"
+        f"<i>{escape(radar['explanation']['notice'])}</i>"
     )
     sources = [source for source in list_income_sources(user_id) if int(source["active"])]
     if not sources:

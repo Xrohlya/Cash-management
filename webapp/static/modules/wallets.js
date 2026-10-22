@@ -1,7 +1,7 @@
-import { api, money, showToast } from "./core.js?v=20261020-1";
-import { bindForm, requestConfirmation } from "./ui.js?v=20261020-1";
-import { load } from "./dashboard.js?v=20261020-1";
-import { revealBudgetSection } from "./home-navigation.js?v=20261020-1";
+import { api, money, showToast } from "./core.js?v=20261022-1";
+import { bindForm, requestConfirmation } from "./ui.js?v=20261022-1";
+import { load } from "./dashboard.js?v=20261022-1";
+import { revealBudgetSection } from "./home-navigation.js?v=20261022-1";
 
 function fillSelect(id, options) {
   const select = document.getElementById(id);

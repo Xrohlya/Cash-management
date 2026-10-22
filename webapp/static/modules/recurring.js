@@ -1,4 +1,4 @@
-import { money } from "./core.js?v=20261020-1";
+import { money } from "./core.js?v=20261022-1";
 
 function renderRecurring(items) {
   const root = document.getElementById("recurring-list");

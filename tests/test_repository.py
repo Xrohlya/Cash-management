@@ -249,7 +249,7 @@ class RepositoryTest(unittest.TestCase):
         self.assertEqual(repository.get_status_snapshot(202)["target_balance"], 0)
         status_text = status(101)
         self.assertIn("ФИНАНСОВЫЙ РАДАР", status_text)
-        self.assertIn("Желаемый остаток: <b>2 500 ₽</b>", status_text)
+        self.assertIn("Чтобы сохранить 2 500 ₽", status_text)
 
     def test_radar_does_not_repeat_one_time_rent_in_daily_forecast(self):
         from datetime import date

@@ -3,7 +3,7 @@
         <p id="available-label">Доступно</p>
         <strong id="available">—</strong>
         <div class="limit-row">
-          <span>Лимит на день <b id="daily-limit">—</b></span>
+          <span>На день без резервов <b id="daily-limit">—</b></span>
           <span>Расходы сегодня <b id="today">—</b></span>
         </div>
       </section>
@@ -38,13 +38,27 @@
         </div>
         <div class="radar-hero">
           <div><span>Безопасно потратить сегодня</span><strong id="safe-today">—</strong></div>
-          <p id="risk-text">Анализируем текущий темп расходов</p>
         </div>
-        <p class="radar-projection"><span>К концу периода при текущем темпе</span><b id="projected-balance">—</b></p>
-        <details class="radar-details"><summary>Подробности прогноза<i data-lucide="chevron-down" aria-hidden="true"></i></summary>
+        <p class="radar-projection"><b id="projected-balance">—</b></p>
+        <p class="radar-explanation" id="radar-pace">—</p>
+        <p class="radar-guidance" id="radar-guidance">—</p>
+        <p class="radar-explanation" id="radar-target-gap" hidden></p>
+        <p class="radar-notice" id="radar-notice">—</p>
+        <details class="radar-details"><summary>Как рассчитано<i data-lucide="chevron-down" aria-hidden="true"></i></summary>
+        <dl class="radar-calculation">
+          <div><dt>Доступно сейчас</dt><dd id="radar-calc-available">—</dd></div>
+          <div><dt>Расходы с начала периода</dt><dd id="radar-calc-spending">—</dd></div>
+          <div><dt>Дней с начала периода</dt><dd id="radar-calc-elapsed">—</dd></div>
+          <div><dt>Средний расход в день</dt><dd id="radar-calc-average">—</dd></div>
+          <div><dt>Будущих дней после сегодня</dt><dd id="radar-calc-days">—</dd></div>
+          <div><dt>Будущие регулярные платежи</dt><dd id="radar-calc-reserved">—</dd></div>
+          <div><dt>Ожидаемые обычные расходы</dt><dd id="radar-calc-future">—</dd></div>
+        </dl>
+        <p class="radar-formula" id="radar-formula">—</p>
+        <p class="radar-notice">Средний темп учитывает только обычные расходы. Квартира и накопления повторно из прогноза не вычитаются.</p>
         <div class="radar-stats">
           <article><span>Без расходов</span><b id="streak-current">—</b><small id="streak-best">—</small></article>
-          <article><span>Последние 7 дней</span><b id="weekly-total">—</b><small id="weekly-change">—</small></article>
+          <article><span>Расходы и платежи за 7 дней</span><b id="weekly-total">—</b><small id="weekly-change">—</small></article>
           <article><span>Резерв платежей</span><b id="reserved-total">—</b></article>
           <article><span>Оставить к концу</span><b id="target-balance-radar">—</b><small>Личный резерв</small></article>
         </div>

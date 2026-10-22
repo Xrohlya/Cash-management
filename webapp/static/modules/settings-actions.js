@@ -1,6 +1,6 @@
-import { renderState } from "./budget.js?v=20261020-1";
-import { telegram, financialDay, targetBalance, api, showToast } from "./core.js?v=20261020-1";
-import { load } from "./dashboard.js?v=20261020-1";
+import { renderState } from "./budget.js?v=20261022-1";
+import { telegram, financialDay, targetBalance, api, showToast } from "./core.js?v=20261022-1";
+import { load } from "./dashboard.js?v=20261022-1";
 
 function initSettingsActions() {
   document.getElementById("period-form").addEventListener("submit", async (event) => {

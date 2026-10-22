@@ -22,6 +22,14 @@ details[open] > summary > svg:last-child { transform: rotate(180deg); }
 .radar-projection { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; font-size: 12px; }
 .radar-projection span { color: var(--muted); }
 .radar-projection b { overflow-wrap: anywhere; }
+.radar-explanation, .radar-notice { margin: 10px 0 0; color: var(--muted); font-size: 12px; }
+.radar-guidance { margin: 12px 0 0; color: var(--positive); font-size: 13px; }
+.radar-notice { font-size: 11px; }
+.radar-calculation { margin: 0 0 12px; }
+.radar-calculation > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(80px, auto); gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.radar-calculation dt { color: var(--muted); }
+.radar-calculation dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+.radar-formula { padding: 12px 0; margin: 0; color: #b9dcff; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
 .sources-overview, .accounts-overview { padding-bottom: 18px; border-bottom: 1px solid var(--line); }
 .source-overview-item { display: block; padding: 15px 0; }
 .source-overview-item > strong { display: block; white-space: normal; overflow-wrap: anywhere; }

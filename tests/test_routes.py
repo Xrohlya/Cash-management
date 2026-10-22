@@ -44,12 +44,17 @@ class ApiRoutesTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         dashboard = response.json()
         self.assertEqual(dashboard["state"]["available"], 875)
+        self.assertEqual(dashboard["radar"]["calculation"]["available"], 875)
+        self.assertEqual(dashboard["radar"]["calculation"]["period_spending"], 125)
+        self.assertIn("не долг", dashboard["radar"]["explanation"]["notice"])
         self.assertEqual(len(dashboard["transactions"]), 2)
         self.assertEqual(self.refresh_mock.await_count, 2)
         self.refresh_mock.assert_awaited_with(101)
         self.user_id = 202
         other = self.client.get("/api/dashboard").json()
         self.assertEqual(other["state"]["available"], 0)
+        self.assertEqual(other["radar"]["calculation"]["period_spending"], 0)
+        self.assertEqual(other["radar"]["calculation"]["available"], 0)
         self.assertEqual(other["transactions"], [])
 
     def test_account_transfer_keeps_expenses_separate(self):

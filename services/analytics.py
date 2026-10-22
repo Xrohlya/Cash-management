@@ -231,7 +231,7 @@ def financial_radar(
     })
     calendar_events.sort(key=lambda item: (item["date"], item["kind"] != "income"))
 
-    return {
+    result = {
         "safe_today": round(safe_today, 2),
         "reserved": reserved,
         "projected_balance": round(projected_balance, 2),
@@ -247,3 +247,14 @@ def financial_radar(
             "change_percent": weekly_change,
         },
     }
+    result["calculation"] = {
+        "available": round(float(remaining), 2),
+        "period_spending": round(period_spending, 2),
+        "elapsed_days": elapsed,
+        "daily_average": round(daily_pace, 2),
+        "forecast_days": max(0, days_left - 1),
+        "future_spending": round(daily_pace * max(0, days_left - 1), 2),
+    }
+    from services.radar_text import explain_radar
+    result["explanation"] = explain_radar(result)
+    return result

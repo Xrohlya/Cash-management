@@ -1,18 +1,18 @@
-import { renderAccounts } from "./accounts.js?v=20261020-1";
-import { renderState } from "./budget.js?v=20261020-1";
-import { api } from "./core.js?v=20261020-1";
-import { renderHistory, renderCategories, renderDaily } from "./history.js?v=20261020-1";
-import { renderRadar } from "./radar.js?v=20261020-1";
-import { renderRecurring, renderUpcomingPayment } from "./recurring.js?v=20261020-1";
-import { renderSources, renderSourcesOverview } from "./sources.js?v=20261020-1";
-import { store } from "./store.js?v=20261020-1";
-import { renderPlans } from "./plans-view.js?v=20261020-1";
-import { renderLimits } from "./limits-view.js?v=20261020-1";
-import { renderWeekly } from "./weekly-view.js?v=20261020-1";
-import { renderUndo } from "./undo-actions.js?v=20261020-1";
-import { refreshCalculators } from "./calculators.js?v=20261020-1";
-import { refreshIcons } from "./ui.js?v=20261020-1";
-import { renderCalendar } from "./calendar.js?v=20261020-1";
+import { renderAccounts } from "./accounts.js?v=20261022-1";
+import { renderState } from "./budget.js?v=20261022-1";
+import { api, money } from "./core.js?v=20261022-1";
+import { renderHistory, renderCategories, renderDaily } from "./history.js?v=20261022-1";
+import { renderRadar } from "./radar.js?v=20261022-1";
+import { renderRecurring, renderUpcomingPayment } from "./recurring.js?v=20261022-1";
+import { renderSources, renderSourcesOverview } from "./sources.js?v=20261022-1";
+import { store } from "./store.js?v=20261022-1";
+import { renderPlans } from "./plans-view.js?v=20261022-1";
+import { renderLimits } from "./limits-view.js?v=20261022-1";
+import { renderWeekly } from "./weekly-view.js?v=20261022-1";
+import { renderUndo } from "./undo-actions.js?v=20261022-1";
+import { refreshCalculators } from "./calculators.js?v=20261022-1";
+import { refreshIcons } from "./ui.js?v=20261022-1";
+import { renderCalendar } from "./calendar.js?v=20261022-1";
 
 let loadSequence = 0;
 
@@ -34,7 +34,7 @@ async function load() {
   renderSources(sources);
   renderSourcesOverview(sources);
   renderAccounts(accounts, state);
-  document.getElementById("forecast-confirmed").textContent = document.getElementById("projected-balance").textContent.replace("Прогноз: ", "");
+  document.getElementById("forecast-confirmed").textContent = money(dashboard.radar.projected_balance);
   renderPlans(dashboard.planning, sources);
   const expectedEvents = dashboard.planning.plans.filter((plan) => plan.source_available && plan.due_date >= state.period_start && plan.due_date <= state.period_end).map((plan) => ({ date: plan.due_date, title: plan.title, amount: plan.net, kind: "planned_income" }));
   renderCalendar([...dashboard.radar.calendar, ...expectedEvents].sort((a, b) => a.date.localeCompare(b.date)));
