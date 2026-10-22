@@ -250,6 +250,20 @@ class RepositoryTest(unittest.TestCase):
         status_text = status(101)
         self.assertIn("ФИНАНСОВЫЙ РАДАР", status_text)
         self.assertIn("Чтобы сохранить 2 500 ₽", status_text)
+        from services.analytics import financial_radar
+
+        snapshot = repository.get_status_snapshot(101)
+        radar = financial_radar(
+            101, snapshot["remaining"], [],
+            target_balance=snapshot["target_balance"],
+            period=(snapshot["start"], snapshot["end"]),
+        )
+        from services.formatting import money
+
+        self.assertIn(
+            f"Можно потратить сегодня: <b>{money(radar['safe_today'])} ₽</b>",
+            status_text,
+        )
 
     def test_radar_does_not_repeat_one_time_rent_in_daily_forecast(self):
         from datetime import date

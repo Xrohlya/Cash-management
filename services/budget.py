@@ -76,6 +76,7 @@ def status(user_id: int, snapshot: dict | None = None) -> str:
     )
     text += (
         "\n\n🧭 <b>ФИНАНСОВЫЙ РАДАР</b>\n"
+        f"Можно потратить сегодня: <b>{money(radar['safe_today'])} ₽</b>\n\n"
         f"<b>{escape(radar['explanation']['title'])}</b>\n"
         f"{escape(radar['explanation']['pace'])}\n"
         f"{escape(radar['explanation']['guidance'])}\n"
