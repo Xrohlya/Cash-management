@@ -234,7 +234,8 @@ class RepositoryTest(unittest.TestCase):
 
         self.assertEqual(radar["reserved"], 200)
         self.assertEqual(radar["target_balance"], 300)
-        self.assertEqual(radar["safe_today"], 20)
+        self.assertEqual(radar["calculation"]["daily_budget"], 24)
+        self.assertEqual(radar["safe_today"], 0)
         self.assertEqual(radar["weekly"]["current"], 100)
         self.assertEqual(radar["weekly"]["previous"], 200)
         self.assertEqual(radar["weekly"]["change_percent"], -50)
@@ -264,6 +265,62 @@ class RepositoryTest(unittest.TestCase):
             f"Можно потратить сегодня: <b>{money(radar['safe_today'])} ₽</b>",
             status_text,
         )
+
+    def test_radar_deducts_todays_expenses_from_daily_allowance(self):
+        from datetime import date
+
+        today = date(2026, 10, 23)
+        period = (today, date(2026, 11, 2))
+        payments = [{"title": "Связь", "amount": 1000, "day_of_month": 1,
+                     "active": 1, "last_run": None}]
+        with db.get_connection() as conn:
+            conn.execute(
+                "INSERT INTO transactions(user_id,created_at,kind,amount,description) "
+                "VALUES (202, ?, 'expense', 9000, 'Чужой расход')",
+                (today.isoformat(),),
+            )
+        for spent, expected in [(0, 2000), (500, 1500), (1500, 500), (2100, 0)]:
+            with self.subTest(spent=spent):
+                with db.get_connection() as conn:
+                    conn.execute("DELETE FROM transactions WHERE user_id=101")
+                    conn.execute(
+                        "INSERT INTO transactions(user_id,created_at,kind,amount,description) "
+                        "VALUES (101, ?, 'expense', ?, 'Еда')",
+                        (today.isoformat(), spent),
+                    )
+                radar = financial_radar(101, 23000 - spent, payments, today,
+                                        target_balance=2000, period=period)
+                self.assertEqual(radar["calculation"]["daily_budget"], 2000)
+                self.assertEqual(radar["safe_today"], expected)
+
+    def test_radar_refund_restores_allowance_and_new_day_reallocates_balance(self):
+        from datetime import date, timedelta
+
+        today = date(2026, 10, 23)
+        period = (today, date(2026, 11, 2))
+        with db.get_connection() as conn:
+            for kind, amount in [("expense", 500), ("expense", -200),
+                                 ("rent", 50000), ("recurring", 1000)]:
+                conn.execute(
+                    "INSERT INTO transactions(user_id,created_at,kind,amount,description) "
+                    "VALUES (101, ?, ?, ?, 'Тест')",
+                    (today.isoformat(), kind, amount),
+                )
+        radar = financial_radar(101, 19700, [], today, period=period)
+        self.assertEqual(radar["safe_today"], 1700)
+        self.assertEqual(radar["calculation"]["spent_today"], 300)
+        tomorrow = financial_radar(101, 19700, [], today + timedelta(days=1), period=period)
+        self.assertEqual(tomorrow["calculation"]["spent_today"], 0)
+        self.assertEqual(tomorrow["safe_today"], 2188.89)
+
+        with db.get_connection() as conn:
+            conn.execute(
+                "INSERT INTO transactions(user_id,created_at,kind,amount,description) "
+                "VALUES (101, ?, 'expense', -2000, 'Возврат')",
+                (today.isoformat(),),
+            )
+        protected = financial_radar(101, 500, [], today, target_balance=1000, period=period)
+        self.assertEqual(protected["safe_today"], 0)
 
     def test_radar_does_not_repeat_one_time_rent_in_daily_forecast(self):
         from datetime import date

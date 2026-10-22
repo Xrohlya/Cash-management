@@ -13,7 +13,7 @@ def explain_radar(radar):
     if calculation["available"] - radar["reserved"] < target:
         guidance = "Доступных средств уже недостаточно для платежей и желаемого остатка. Безопасный лимит — 0 ₽."
     else:
-        guidance = f"Чтобы сохранить {money(target)} ₽: до {money(radar['safe_today'])} ₽ в день."
+        guidance = f"Чтобы сохранить {money(target)} ₽: на сегодня осталось до {money(radar['safe_today'])} ₽."
     elapsed = calculation["elapsed_days"]
     provisional = "Предварительный прогноз" if elapsed <= 7 else "Прогноз"
     notice = f"{provisional} по {elapsed} дн. периода. Это не долг и не текущий баланс."

@@ -191,7 +191,16 @@ def financial_radar(
 
     days_left = max(1, (end - today).days)
     target_balance = max(0.0, float(target_balance))
-    safe_today = max(0.0, (float(remaining) - reserved - target_balance) / days_left)
+    spent_today = sum(
+        float(row["amount"])
+        for row in spend_rows
+        if row["kind"] == "expense"
+        and date.fromisoformat(row["created_at"][:10]) == today
+    )
+    # Restore today's spending before allocating the day, then deduct it once.
+    daily_budget = max(0.0, (float(remaining) + spent_today - reserved - target_balance) / days_left)
+    spendable = max(0.0, float(remaining) - reserved - target_balance)
+    safe_today = max(0.0, min(spendable, daily_budget - spent_today))
     elapsed = max(1, (today - start).days + 1)
     period_spending = sum(
         float(row["amount"])
@@ -249,6 +258,8 @@ def financial_radar(
     }
     result["calculation"] = {
         "available": round(float(remaining), 2),
+        "daily_budget": round(daily_budget, 2),
+        "spent_today": round(spent_today, 2),
         "period_spending": round(period_spending, 2),
         "elapsed_days": elapsed,
         "daily_average": round(daily_pace, 2),
