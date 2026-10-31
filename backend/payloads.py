@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, timedelta
 from database.repository import get_status_snapshot, get_user_profile
 from services.analytics import current_period_stats
 from database.db import get_connection
@@ -56,6 +56,9 @@ def state(user_id: int):
 def analytics_payload(user_id: int):
     stats = current_period_stats(user_id)
     return {
+        "period_start": stats["start"].isoformat(),
+        "period_end": (stats["end"] - timedelta(days=1)).isoformat(),
+        "as_of": date.today().isoformat(),
         "average": round(stats["avg"], 2),
         "forecast": round(stats["forecast"], 2),
         "categories": [

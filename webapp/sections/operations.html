@@ -4,6 +4,29 @@
         <div id="week-metrics" class="week-metrics"></div>
         <ul id="week-insights" class="week-insights"></ul>
       </section>
+      <section class="chart-section expense-charts" id="expense-charts">
+        <div class="section-heading"><h2>Расходы и возвраты</h2><button class="icon-button" id="charts-retry" type="button" aria-label="Повторить загрузку графиков" title="Повторить загрузку графиков" hidden><i data-lucide="refresh-cw" aria-hidden="true"></i></button></div>
+        <p class="chart-caption">Основной счёт · <span id="days-left"></span></p>
+        <div class="chart-layout">
+          <div>
+            <div class="chart-heading"><h3>По дням</h3>
+              <div class="chart-range" id="chart-range" role="group" aria-label="Период графика">
+                <label><input type="radio" name="chart-range" value="7"><span>7 дней</span></label>
+                <label><input type="radio" name="chart-range" value="14" checked><span>14 дней</span></label>
+                <label><input type="radio" name="chart-range" value="0"><span>Период</span></label>
+              </div>
+            </div>
+            <p class="chart-notice" id="daily-chart-notice" role="status">Загрузка графика…</p>
+            <div id="daily-chart" class="interactive-chart" aria-label="Расходы и возвраты по дням" hidden></div>
+          </div>
+          <div>
+            <div class="chart-heading"><h3>По категориям</h3></div>
+            <p class="chart-notice" id="category-chart-notice" role="status">Загрузка графика…</p>
+            <div id="category-chart" class="interactive-chart" aria-label="Расходы и возвраты по категориям" hidden></div>
+          </div>
+        </div>
+        <details class="chart-breakdown" id="category-breakdown"><summary>Суммы по категориям</summary><div id="categories" class="categories"></div></details>
+      </section>
       <section class="undo-section">
         <h2>Последняя ручная операция</h2>
         <p id="undo-summary" class="undo-summary">—</p>
@@ -20,19 +43,6 @@
         </form>
         <div id="category-limits-list" class="planning-list"></div>
       </section>
-      <section class="category-section">
-        <div class="section-heading">
-          <h2>Расходы по категориям</h2>
-          <span id="days-left"></span>
-        </div>
-        <div id="categories" class="categories" aria-live="polite"></div>
-      </section>
-
-      <section class="chart-section">
-        <h2>Расходы по дням</h2>
-        <div id="daily-chart" class="daily-chart" aria-label="График расходов по дням"></div>
-      </section>
-
       <details class="history-section history-details">
         <summary>Все операции</summary>
         <div id="history" class="history" aria-live="polite"></div>

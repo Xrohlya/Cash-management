@@ -3,6 +3,7 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery
 from bot.routes import budget, operations, reports, analytics, settings, messages, wallets
 from bot.routes.common import answer_callback
+from bot.routes import income_matching
 
 router = Router()
 router.message.filter(F.chat.type == "private")
@@ -17,5 +18,5 @@ async def acknowledge_callback(handler, event: CallbackQuery, data):
 
 router.include_routers(
     budget.router, wallets.router, operations.router, reports.router,
-    analytics.router, settings.router, messages.router,
+    analytics.router, settings.router, income_matching.router, messages.router,
 )

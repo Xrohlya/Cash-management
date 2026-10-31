@@ -1,4 +1,4 @@
-import { kindLabels, money, shortDate, operationWord } from "./core.js?v=20261022-1";
+import { kindLabels, money, shortDate, operationWord } from "./core.js?v=20261031-1";
 
 function renderHistory(items) {
   const root = document.getElementById("history");
@@ -66,26 +66,4 @@ function renderCategories(items) {
   }));
 }
 
-function renderDaily(items) {
-  const root = document.getElementById("daily-chart");
-  if (!items.length) {
-    root.innerHTML = '<p class="empty">Данных для графика пока нет</p>';
-    return;
-  }
-  const max = Math.max(...items.map((item) => Number(item.amount || 0)), 1);
-  root.replaceChildren(...items.slice(-14).map((item) => {
-    const column = document.createElement("div");
-    column.className = "day-column";
-    column.title = `${item.date.split("-").reverse().join(".")}: ${money(item.amount)}`;
-    const amount = document.createElement("small");
-    amount.textContent = Math.round(item.amount).toLocaleString("ru-RU");
-    const bar = document.createElement("i");
-    bar.style.height = `${Math.max(5, Number(item.amount || 0) / max * 100)}%`;
-    const label = document.createElement("span");
-    label.textContent = item.date.slice(8, 10);
-    column.append(amount, bar, label);
-    return column;
-  }));
-}
-
-export { renderHistory, renderCategories, renderDaily };
+export { renderHistory, renderCategories };

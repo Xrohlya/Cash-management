@@ -43,6 +43,13 @@ async def plain_text(message: Message):
             if source:
                 add_income_from_source(user_id, amount, source["id"], source["name"])
             else:
+                from database.repository import list_income_sources
+                from services.text_matching import income_hint
+                from bot.routes.income_matching import suggest_income
+                sources = [row for row in list_income_sources(user_id) if int(row["active"])]
+                if sources and income_hint(text):
+                    await suggest_income(message, amount, sources)
+                    return
                 add_income(user_id, amount, 0)
             await delete_user_message(message)
             await update_status(message, user_id)

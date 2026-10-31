@@ -4,7 +4,7 @@ from database.operations import _claim_request
 from database.telegram_sync import mark_dirty
 
 
-def post_income(conn, user_id, gross, description, key, source_id=None, request_id=None):
+def post_income(conn, user_id, gross, description, key, source_id=None, request_id=None, expected_source=None):
     source = None
     if source_id is not None:
         source = conn.execute(
@@ -13,6 +13,8 @@ def post_income(conn, user_id, gross, description, key, source_id=None, request_
         ).fetchone()
         if not source:
             raise ValueError("Источник дохода удалён. Выберите другой источник.")
+        if expected_source is not None and expected_source != (source["name"], float(source["withholding_percent"])):
+            raise ValueError("Источник изменился. Подтвердите доход заново.")
     percent = float(source["withholding_percent"]) if source else 0
     fee = round(gross * percent / 100, 2)
     net = round(gross - fee, 2)

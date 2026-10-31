@@ -1,4 +1,4 @@
-from services.categories import normalize_expense_category
+from services.categories import normalize_new_expense_category as normalize_expense_category
 from datetime import datetime
 from database.db import get_connection
 from database.periods import ensure_month, financial_period_start, get_month, month_key, rebuild_month_from_transactions

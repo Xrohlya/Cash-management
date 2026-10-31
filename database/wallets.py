@@ -6,7 +6,7 @@ from database import db
 from database.db import get_connection
 from database.operations import _claim_request
 from database.periods import ensure_month, month_key
-from services.categories import normalize_expense_category
+from services.categories import normalize_new_expense_category as normalize_expense_category
 from database.telegram_sync import mark_dirty
 
 

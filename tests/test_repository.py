@@ -75,6 +75,13 @@ class RepositoryTest(unittest.TestCase):
         status_text = status(101)
         self.assertIn("Кафе — <b>30 000 ₽</b> за месяц · удержание <b>6%</b>", status_text)
 
+    def test_income_confirmation_rechecks_percentage_before_posting(self):
+        repository.create_income_source(101, "Кафе", 6)
+        source = repository.find_income_source(101, "получил 30000 кафе")
+        with self.assertRaises(ValueError):
+            repository.add_income_from_source(101, 30000, source["id"], expected_source=("Кафе", 5))
+        self.assertEqual(len(repository.recent_transactions(101)), 0)
+
     def test_expense_can_be_corrected_and_month_is_rebuilt(self):
         repository.add_income(101, 1000, 0)
         repository.add_expense(101, 100, "Кафе")

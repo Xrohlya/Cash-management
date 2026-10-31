@@ -65,14 +65,15 @@ def delete_income_source(user_id: int, source_id: int):
 
 
 def find_income_source(user_id: int, text: str):
-    normalized = " ".join(text.casefold().split())
+    from services.text_matching import income_hint, normalized
+    hint = income_hint(text)
     sources = list_income_sources(user_id)
-    matches = [source for source in sources if int(source["active"]) and source["name"].casefold() in normalized]
-    return max(matches, key=lambda source: len(source["name"])) if matches else None
+    matches = [source for source in sources if int(source["active"]) and normalized(source["name"]) == hint]
+    return matches[0] if len(matches) == 1 else None
 
 
-def add_income_from_source(user_id: int, gross: float, source_id: int, description="Доход", request_id=None):
+def add_income_from_source(user_id: int, gross: float, source_id: int, description="Доход", request_id=None, expected_source=None):
     ensure_month(user_id)
     key = month_key(user_id)
     with get_connection() as conn:
-        return post_income(conn, user_id, gross, description, key, source_id, request_id)[:3]
+        return post_income(conn, user_id, gross, description, key, source_id, request_id, expected_source)[:3]

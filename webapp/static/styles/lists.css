@@ -160,11 +160,6 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px r
 .category-item small { position: relative; z-index: 1; color: var(--muted); }
 .category-item b { color: var(--danger); }
 .category-bar { position: absolute; bottom: 0; left: 0; height: 2px; background: var(--accent); box-shadow: 0 0 9px rgba(53, 169, 255, 0.7); }
-.daily-chart { display: flex; align-items: stretch; gap: 7px; overflow-x: auto; min-height: 190px; padding: 10px 2px 0; border-bottom: 1px solid var(--line); }
-.day-column { display: grid; flex: 1 0 31px; grid-template-rows: 28px 120px 26px; align-items: end; min-width: 31px; text-align: center; }
-.day-column small { overflow: hidden; color: var(--muted); font-size: 9px; text-overflow: ellipsis; }
-.day-column i { display: block; width: 72%; max-height: 120px; min-height: 5px; margin: 0 auto; border-radius: 4px 4px 0 0; background: var(--accent-strong); box-shadow: 0 0 12px rgba(22, 136, 255, 0.35); }
-.day-column span { padding-top: 6px; color: var(--muted); font-size: 11px; }
 .history-details { margin-top: 4px; padding-bottom: 8px; }
 .history-details summary { padding: 14px 0; border-bottom: 1px solid var(--line); color: #a8d8ff; cursor: pointer; font-weight: 650; list-style-position: inside; }
 .history { border-top: 1px solid var(--line); }

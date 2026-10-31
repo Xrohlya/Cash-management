@@ -41,6 +41,15 @@ CATEGORY_ALIASES = {
 }
 
 
+def normalize_new_expense_category(description):
+    from services.text_matching import category_suggestion
+
+    category = normalize_expense_category(description)
+    if category in CATEGORY_ALIASES.values():
+        return category
+    return category_suggestion(category, CATEGORY_ALIASES) or category
+
+
 def normalize_expense_category(description: str) -> str:
     value = " ".join((description or "").strip().split())
     if not value:
