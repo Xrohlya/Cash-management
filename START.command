@@ -23,12 +23,14 @@ if [ ! -d ".venv" ]; then
   "$PYTHON" -m venv .venv
 fi
 source .venv/bin/activate
+python tools/clean_venv_metadata.py
 
 REQUIREMENTS_HASH="$(shasum -a 256 requirements.txt | awk '{print $1}')"
 INSTALLED_HASH="$(cat .venv/.requirements.sha256 2>/dev/null || true)"
 if [ "$REQUIREMENTS_HASH" != "$INSTALLED_HASH" ]; then
   echo "Устанавливаю зависимости..."
-  python -m pip install -q -r requirements.txt
+  python -m pip --disable-pip-version-check install -q -r requirements.txt
+  python tools/clean_venv_metadata.py
   printf '%s\n' "$REQUIREMENTS_HASH" > .venv/.requirements.sha256
 fi
 
