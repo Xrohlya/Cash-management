@@ -38,6 +38,8 @@ def set_financial_day(user_id: int, financial_day: int):
                      (user_id, start.isoformat(), opening, datetime.now().isoformat(timespec="seconds")))
         conn.execute("UPDATE months SET budget=?,spent=?,rent=?,saved=? WHERE user_id=? AND month=?",
                      (round(net + opening, 2), round(spent, 2), totals["rent"], totals["save"], user_id, start.isoformat()))
+        from database.telegram_sync import mark_dirty
+        mark_dirty(conn, user_id)
 
 
 def financial_period_start(user_id: int, dt=None) -> date:

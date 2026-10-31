@@ -111,6 +111,7 @@ def reset_user_data(user_id: int):
 
     with get_connection() as conn:
         clear_game(conn, user_id)
+        conn.execute("DELETE FROM telegram_sync WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM period_openings WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM wallet_entries WHERE user_id=?", (user_id,))
         conn.execute("DELETE FROM expected_income WHERE user_id=?", (user_id,))
@@ -128,3 +129,5 @@ def reset_user_data(user_id: int):
             "UPDATE users SET mandatory_percent=0,financial_day=20,target_balance=0,savings=0,status_chat_id=NULL,status_message_id=NULL WHERE user_id=?",
             (user_id,),
         )
+        from database.telegram_sync import mark_dirty
+        mark_dirty(conn, user_id)

@@ -7,6 +7,7 @@ from database.db import get_connection
 from database.operations import _claim_request
 from database.periods import ensure_month, month_key
 from services.categories import normalize_expense_category
+from database.telegram_sync import mark_dirty
 
 
 def amount_value(value):
@@ -50,6 +51,7 @@ def move_balance(conn, user_id, wallet, delta, key):
 def record(conn, user_id, kind, amount, description, operation, source, destination="", original_id=None, timestamp=None, original_data=None):
     row = conn.execute("INSERT INTO transactions(user_id,created_at,kind,amount,description) VALUES (?,?,?,?,?) RETURNING id", (user_id, timestamp or datetime.now().isoformat(timespec="seconds"), kind, amount, description)).fetchone()
     conn.execute("INSERT INTO wallet_entries(transaction_id,user_id,operation,source,destination,original_id,original_data) VALUES (?,?,?,?,?,?,?)", (row["id"], user_id, operation, source, destination, original_id, original_data))
+    mark_dirty(conn, user_id)
     return row["id"]
 
 

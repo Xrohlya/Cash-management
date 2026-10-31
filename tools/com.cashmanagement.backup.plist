@@ -14,8 +14,8 @@
   <key>StartCalendarInterval</key>
   <dict><key>Hour</key><integer>3</integer><key>Minute</key><integer>15</integer></dict>
   <key>StandardOutPath</key>
-  <string>/Volumes/Expansion/001-WORK/08-KIMI/004/01-CashManagement/logs/backup.log</string>
+  <string>/Users/alexej/Library/Logs/CashManagement/backup.log</string>
   <key>StandardErrorPath</key>
-  <string>/Volumes/Expansion/001-WORK/08-KIMI/004/01-CashManagement/logs/backup-error.log</string>
+  <string>/Users/alexej/Library/Logs/CashManagement/backup-error.log</string>
 </dict>
 </plist>

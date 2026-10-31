@@ -253,6 +253,8 @@ def _init_db_once():
         create_wallet_schema(conn)
         from database.openings import create_opening_schema
         create_opening_schema(conn)
+        from database.telegram_sync import create_sync_schema
+        create_sync_schema(conn)
         if DATABASE_URL:
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT NOT NULL DEFAULT ''")
             conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT NOT NULL DEFAULT ''")

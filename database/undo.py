@@ -5,6 +5,7 @@ from datetime import date, datetime
 from database import db
 from database.db import get_connection
 from database.periods import financial_period_end_for_start, financial_period_start_for_day
+from database.telegram_sync import mark_dirty
 
 
 def _last_rows(conn, user_id):
@@ -91,6 +92,7 @@ def undo_last_operation(user_id, expected_id):
         if plan:
             conn.execute("UPDATE expected_income SET status='planned',confirmed_at=NULL,confirmed_transaction_id=NULL WHERE user_id=? AND id=?", (user_id, plan["id"]))
             conn.execute("DELETE FROM operation_requests WHERE user_id=? AND request_id=?", (user_id, f"planned-income-{plan['id']}"))
+        mark_dirty(conn, user_id)
 
 
 def _undo_account(conn, user_id, original):

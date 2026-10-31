@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from database.operations import _claim_request
+from database.telegram_sync import mark_dirty
 
 
 def post_income(conn, user_id, gross, description, key, source_id=None, request_id=None):
@@ -30,4 +31,5 @@ def post_income(conn, user_id, gross, description, key, source_id=None, request_
             (user_id, now, fee, f"Удержание {percent:g}% · {source['name']}", source_id),
         )
     conn.execute("UPDATE months SET budget=budget+? WHERE user_id=? AND month=?", (net, user_id, key))
+    mark_dirty(conn, user_id)
     return fee, net, True, int(income["id"])

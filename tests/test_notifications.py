@@ -20,5 +20,5 @@ class NotificationTests(unittest.IsolatedAsyncioTestCase):
             await refresh_telegram_status(101)
         save.assert_called_once_with(101, 101, 6)
         bot.send_message.assert_awaited_once()
-        bot.delete_message.assert_awaited_once_with(101, 5)
+        bot.delete_message.assert_awaited_once_with(101, 5, request_timeout=10)
         bot.session.close.assert_awaited_once()

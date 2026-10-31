@@ -2,6 +2,7 @@ from services.categories import normalize_expense_category
 from datetime import datetime
 from database.db import get_connection
 from database.periods import ensure_month, financial_period_start, get_month, month_key, rebuild_month_from_transactions
+from database.telegram_sync import mark_dirty
 
 
 def _claim_request(conn, user_id: int, request_id: str | None) -> bool:
@@ -28,6 +29,7 @@ def add_income(user_id: int, gross: float, percent: float, description="Дохо
             (user_id, now, gross, description),
         )
         conn.execute("UPDATE months SET budget=budget+? WHERE user_id=? AND month=?", (net, user_id, key))
+        mark_dirty(conn, user_id)
     return fee, net, True
 
 
@@ -59,6 +61,7 @@ def _add_budget_reduction(user_id, kind, column, amount, description, request_id
         )
         if kind == "save":
             conn.execute("UPDATE users SET savings=savings+? WHERE user_id=?", (amount, user_id))
+        mark_dirty(conn, user_id)
     return True
 
 
@@ -113,6 +116,7 @@ def add_bulk_expenses(user_id: int, items: list[tuple[float, str]], request_id=N
                 "INSERT INTO transactions(user_id, created_at, kind, amount, description) VALUES (?, ?, 'expense', ?, ?)",
                 (user_id, now, amount, normalize_expense_category(description)),
             )
+        mark_dirty(conn, user_id)
     return True
 
 
@@ -143,3 +147,4 @@ def update_expense(user_id: int, transaction_id: int, amount: float, description
             "UPDATE transactions SET amount=?,description=? WHERE id=? AND user_id=? AND kind='expense'",
             (round(amount, 2), normalize_expense_category(description), transaction_id, user_id),
         )
+        mark_dirty(conn, user_id)

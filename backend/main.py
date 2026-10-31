@@ -1,5 +1,6 @@
 import os
-from contextlib import asynccontextmanager
+import asyncio
+from contextlib import asynccontextmanager, suppress
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from database.db import init_db
@@ -20,7 +21,17 @@ WEBAPP_DIR = Path(__file__).resolve().parent.parent / "webapp"
 async def lifespan(_app: FastAPI):
     init_db()
     rollover_all_users()
-    yield
+    from backend.sync_worker import refresh_loop
+    from backend.audit_worker import audit_loop
+    tasks = [asyncio.create_task(refresh_loop()), asyncio.create_task(audit_loop())]
+    try:
+        yield
+    finally:
+        for task in tasks:
+            task.cancel()
+        for task in tasks:
+            with suppress(asyncio.CancelledError):
+                await task
 
 
 app = FastAPI(title="Cash Management API", version="2.0.0", lifespan=lifespan)

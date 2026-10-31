@@ -3,6 +3,7 @@ from database.db import get_connection
 from database.operations import _claim_request
 from database.periods import ensure_month, month_key
 from database.users import ensure_user
+from database.telegram_sync import mark_dirty
 
 def list_extra_accounts(user_id: int):
     ensure_user(user_id)
@@ -117,3 +118,4 @@ def transfer_extra_account(user_id: int, account_id: int, amount: float, directi
             "INSERT INTO account_transactions(account_id,user_id,created_at,kind,amount) VALUES (?, ?, ?, ?, ?)",
             (account_id, user_id, now, account_kind, amount),
         )
+        mark_dirty(conn, user_id)

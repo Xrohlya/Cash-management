@@ -96,6 +96,8 @@ async def main():
     database_name = "PostgreSQL · Aiven" if DATABASE_URL else "SQLite · локальная"
     show_startup(bot_info, users, database_name, WEBAPP_URL)
     notification_task = asyncio.create_task(recurring_notification_loop(bot))
+    from services.backup_runner import backup_loop
+    backup_task = asyncio.create_task(backup_loop())
     try:
         await dp.start_polling(
             bot, allowed_updates=dp.resolve_used_update_types(),
@@ -103,6 +105,8 @@ async def main():
         )
     finally:
         notification_task.cancel()
+        backup_task.cancel()
+        await asyncio.gather(notification_task, backup_task, return_exceptions=True)
         close_db_pool()
         print("\nБот остановлен.")
 
