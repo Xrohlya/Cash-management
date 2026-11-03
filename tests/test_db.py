@@ -7,6 +7,18 @@ from database import db
 
 
 class DatabaseStartupTest(unittest.TestCase):
+    def test_pool_keeps_one_warm_connection_and_limits_concurrency_to_three(self):
+        pool = Mock()
+        with patch.object(db, "DATABASE_URL", "postgresql://test"), patch.object(db, "DB_POOL_MAX", 3), patch.object(db, "_PG_POOL", None), patch("psycopg_pool.ConnectionPool", return_value=pool) as factory:
+            wrapper = db.get_connection()
+            self.assertIsInstance(wrapper, db._PGConnection)
+            self.assertEqual(factory.call_args.kwargs["min_size"], 1)
+            self.assertEqual(factory.call_args.kwargs["max_size"], 3)
+            self.assertEqual(factory.call_args.kwargs["max_idle"], 60)
+            with wrapper:
+                pass
+        pool.putconn.assert_called_once_with(pool.getconn.return_value)
+
     def test_query_failure_and_recovery_are_reported_without_replaying_writes(self):
         cursor = Mock()
         cursor.execute.side_effect = [OperationalError("connection lost"), None]

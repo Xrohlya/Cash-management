@@ -119,7 +119,7 @@ def get_connection():
                 conninfo=DATABASE_URL,
                 min_size=1,
                 max_size=max(2, DB_POOL_MAX),
-                max_idle=300,
+                max_idle=60,
                 max_lifetime=1800,
                 check=ConnectionPool.check_connection,
                 open=True,
